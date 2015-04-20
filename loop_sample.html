@@ -1,0 +1,67 @@
+<html>
+  <head>
+      <title>Tornado Test</title>
+  </head>
+  <div id="holder"></div>
+  <div id="holder2"></div>
+  <script charset="utf-8">
+    // <div><ul>{#friends}<li>{name} is the name</li>{/friends}</ul></div>
+    var template = (function(){
+      var fragments={};
+      return {
+        build_frag0: function() {
+          console.log('BUILDING FRAG0');
+          var frag = document.createDocumentFragment();
+          var el0 = document.createElement('div');
+          var el1 = document.createElement('ul');
+          el0.appendChild(el1);
+          frag.appendChild(el0);
+          fragments.frag0 = frag;
+          return frag;
+        },
+        build_frag1: function() {
+          console.log('BUILDING FRAG1');
+          var frag = document.createDocumentFragment();
+          var el0 = document.createElement('li');
+          var el1 = document.createTextNode(' is the name');
+          el0.appendChild(el1);
+          frag.appendChild(el0);
+          fragments.frag1 = frag;
+          return frag;
+        },
+        render: function(context) {
+          var root = fragments.frag0 || this.build_frag0();
+          root = root.cloneNode(true);
+          for(var i=0; (item=context['friends'][i]); i++) {
+            var frag1 = this.render_frag1(item);
+            root.childNodes[0].appendChild(frag1);
+          }
+          return root;
+        },
+        render_frag1: function(context){
+          var frag = fragments.frag1 || this.build_frag1();
+          frag = frag.cloneNode(true);
+          var frag1 = document.createElement('div');
+          frag1.innerHTML = context['name'];
+          frag.childNodes[0].insertBefore(frag1.childNodes[0], frag.childNodes[0].childNodes[0]);
+          return frag;
+        }
+      };
+    })();
+
+    document.querySelector('#holder').appendChild(template.render({
+      friends: [
+      {name: 'Prash'},
+      {name: 'Tonya'},
+      {name: 'Seth'}
+      ]
+    }));
+    document.querySelector('#holder2').appendChild(template.render({
+      friends: [
+      {name: 'Prash'},
+      {name: 'Tonya'},
+      {name: "<b>Seth<\/b>"}
+      ]
+    }));
+  </script>
+</html>

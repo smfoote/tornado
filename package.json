@@ -1,0 +1,21 @@
+{
+  "name": "tornado",
+  "version": "0.0.1",
+  "description": "\"Asynchronous HTML templating\"",
+  "main": "tornado.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "HTML"
+  ],
+  "author": "Steven Foote",
+  "license": "MIT",
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-babel": "^4.0.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "load-grunt-tasks": "^3.1.0",
+    "pegjs": "^0.8.0"
+  }
+}
