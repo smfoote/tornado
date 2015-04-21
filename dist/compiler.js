@@ -13,7 +13,6 @@ var compiler = {
   compile: function compile(ast, name) {
     this.context = {
       tornadoBodiesIndex: 0,
-      elsWithRefs: [],
       htmlBodiesIndexes: [],
       htmlBodiesCount: -1,
       refCount: 0,
@@ -27,7 +26,7 @@ var compiler = {
   },
   step: function step(node) {
     if (node[0] && this[node[0]]) {
-      this[node[0]](node);
+      return this[node[0]](node);
     }
   },
   walk: function walk() {
@@ -38,9 +37,26 @@ var compiler = {
     nodes.forEach(function (n) {
       return _this.step(n);
     });
-    this.fragments = "" + this.fragments + "      return cache;\n  },\n";
+    this.fragments = "" + this.fragments + "      return cache;\n    },";
     this.renderers = "" + this.renderers + "      return root.frag;\n    },";
   },
+  /**
+   * Walk through the attributes of an HTML element
+   */
+  walkAttrs: function walkAttrs() {
+    var _this = this;
+
+    var items = arguments[0] === undefined ? [] : arguments[0];
+
+    var res = [];
+    items.forEach(function (item) {
+      res.push(_this.step(item));
+    });
+    return res.join("+");
+  },
+  /**
+   * Walk through the contents of an HTML element
+   */
   walkContents: function walkContents() {
     var _this = this;
 
@@ -49,42 +65,28 @@ var compiler = {
     var indexes = this.context.htmlBodiesIndexes;
     nodes.forEach(function (n) {
       _this.step(n);
-      console.log("indexes before: " + JSON.stringify(indexes));
       indexes[indexes.length - 1]++;
-      console.log("indexes after: " + JSON.stringify(indexes));
     });
   },
   buildElementAttributes: function buildElementAttributes() {
+    var _this = this;
+
     var attributes = arguments[0] === undefined ? [] : arguments[0];
 
     var attrs = "";
     var previousState = this.context.state;
+    var refCount = this.context.refCount;
     this.context.state = STATES.HTML_ATTRIBUTE;
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-      for (var _iterator = attributes[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-        var attr = _step.value;
-
-        attrs += "el" + this.context.htmlBodiesCount + ".setAttribute('" + attr.attrName + "', '" + this.walk(attr.value) + "');";
+    attributes.forEach(function (attr) {
+      var hasRef = attr.value.some(function (val) {
+        return val[0] === "TORNADO_REFERENCE";
+      });
+      if (hasRef) {
+        _this.renderers = "" + _this.renderers + "      root.ref" + refCount + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
+      } else {
+        _this.fragments = "" + _this.fragments + "      el" + _this.context.htmlBodiesCount + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       }
-    } catch (err) {
-      _didIteratorError = true;
-      _iteratorError = err;
-    } finally {
-      try {
-        if (!_iteratorNormalCompletion && _iterator["return"]) {
-          _iterator["return"]();
-        }
-      } finally {
-        if (_didIteratorError) {
-          throw _iteratorError;
-        }
-      }
-    }
-
+    });
     this.context.state = previousState;
     return attrs;
   },
@@ -104,10 +106,13 @@ var compiler = {
     var indexes = this.context.htmlBodiesIndexes;
     var idx = indexes[indexes.length - 1]++;
     var refCount = this.context.refCount++;
+    var containerName = this.getElContainerName();
     if (this.context.state === STATES.HTML_BODY) {
-      var containerName = this.getElContainerName();
       this.fragments = "" + this.fragments + "      cache.ref" + refCount + " = " + containerName + ";\n      " + this.getElContainerName() + ".appendChild(document.createComment(''));\n";
       this.renderers = "" + this.renderers + "      root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", document.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
+    } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
+      this.fragments = "" + this.fragments + "      cache.ref" + refCount + " = " + containerName + ";\n";
+      return "td.get(c, " + JSON.stringify(node[1].key) + ")";
     }
   },
   HTML_ELEMENT: function HTML_ELEMENT(node) {
@@ -116,9 +121,8 @@ var compiler = {
     this.context.state = STATES.HTML_BODY;
     this.context.htmlBodiesIndexes.push(0);
     var count = ++this.context.htmlBodiesCount;
-    console.log(nodeInfo.key);
-    console.log(JSON.stringify(this.context.htmlBodiesIndexes));
-    this.fragments = "" + this.fragments + "      var el" + count + " = document.createElement(\"" + nodeInfo.key + "\");" + this.buildElementAttributes(nodeInfo.attributes) + "\n";
+    this.fragments = "" + this.fragments + "      var el" + count + " = document.createElement(\"" + nodeInfo.key + "\");\n";
+    this.buildElementAttributes(nodeInfo.attributes);
     this.walkContents(nodeContents);
     this.context.htmlBodiesIndexes.pop();
     this.context.htmlBodiesCount--;
@@ -126,7 +130,7 @@ var compiler = {
   },
   PLAIN_TEXT: function PLAIN_TEXT(node) {
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
-      return node[1];
+      return "'" + node[1] + "'";
     } else if (this.context.state === STATES.HTML_BODY) {
       this.fragments = "" + this.fragments + "      " + this.getElContainerName() + ".appendChild(document.createTextNode('" + node[1] + "'));\n";
     }
