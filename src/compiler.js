@@ -99,10 +99,10 @@ let compiler = {
   },
   TORNADO_REFERENCE(node) {
     let indexes = this.context.htmlBodiesIndexes;
-    let idx = indexes[indexes.length - 1]++;
+    let idx = indexes[indexes.length - 1]++ || 0;
     let refCount = this.context.refCount++;
     let containerName = this.getElContainerName();
-    if (this.context.state === STATES.HTML_BODY) {
+    if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments = `${this.fragments}      cache.ref${refCount} = ${containerName};
       ${this.getElContainerName()}.appendChild(document.createComment(''));\n`;
       this.renderers = `${this.renderers}      root.ref${refCount}.replaceChildAtIdx(${idx}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
