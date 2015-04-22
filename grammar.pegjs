@@ -2235,11 +2235,11 @@
 
   var tornadoBodyTypes = {
     '?': 'exists',
-    '^': 'not-exists',
+    '^': 'notExists',
     '#': 'section',
     '@': 'helper',
     '+': 'block',
-    '<': 'inline-partial',
+    '<': 'inlinePartial',
     '%': 'pragma'
   };
 }

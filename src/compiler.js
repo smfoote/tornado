@@ -174,6 +174,19 @@ let compiler = {
       }\n`;
     },
 
+    notExists(node) {
+      let refCount = this.context.refCount;
+      let indexes = this.context.htmlBodiesIndexes;
+      let idx = indexes[indexes.length - 1]++ || 0;
+      let tdIndex = this.context.tornadoBodiesIndex;
+      let containerName = this.getElContainerName();
+      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};
+      ${containerName}.appendChild(document.createComment(''));\n`;
+      this.renderers[tdIndex] += `      if(!td.exists(c, ${JSON.stringify(node.key)})){
+        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 1}(c));
+      }\n`;
+    },
+
     section(node) {
       let refCount = this.context.refCount;
       let indexes = this.context.htmlBodiesIndexes;
