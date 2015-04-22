@@ -1,1 +1,1 @@
-{name}
+{#name}{hello}{:else}{world}{/name}

@@ -4,8 +4,9 @@ let PEG = require('pegjs'),
 let grammar = fs.readFileSync('grammar.pegjs', {encoding: 'utf8'});
 let parser = PEG.buildParser(grammar);
 let html = fs.readFileSync('test.td', {encoding: 'utf8'});
+console.log(html);
 let ast = parser.parse(html);
-//console.log(JSON.stringify(ast));
+console.log(JSON.stringify(ast, null, 2));
 console.log(`==START COMPILE==\n\n`);
 let compiledTemplate = compiler.compile(ast, 'abc');
 console.log(`\n\n==END COMPILE==`);
