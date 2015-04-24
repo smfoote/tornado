@@ -2358,7 +2358,7 @@ tornado_body
   }
 
 tornado_bodies
-  = b:(lbrace ":" type:key rbrace h:html{return {type: type, body: h};})* {
+  = b:(lbrace ":" type:key rbrace h:html{return ['TORNADO_BODY', {name: type, type: 'bodies', body: h}];})* {
     return b;
   }
 

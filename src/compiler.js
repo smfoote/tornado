@@ -12,7 +12,7 @@ let compiler = {
     this.context = {
       tornadoBodiesIndex: 0,
       htmlBodiesIndexes: [],
-      htmlBodiesCount: -1,
+      htmlBodiesCount: [-1],
       refCount: 0,
       blocks: {},
       state: STATES.OUTER_SPACE
@@ -31,8 +31,8 @@ let compiler = {
   "use strict";
   var frags = {},
   t = {
-    ${this.fragments.join(',')},
-    ${this.renderers.join(',')}
+    ${this.fragments.join(',\n    ')},
+    ${this.renderers.join(',\n    ')}
   };
   t.render = t.r0;
   td.register("${name}", t);
@@ -76,18 +76,18 @@ let compiler = {
       let hasRef = attr.value.some(function(val) {
         return val[0] === 'TORNADO_REFERENCE';
       });
+      let tdIndex = this.context.tornadoBodiesIndex;
       if (hasRef) {
-        let tdIndex = this.context.tornadoBodiesIndex;
         this.renderers[tdIndex] += `      root.ref${refCount}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
-        this.fragments[tdIndex] += `      el${this.context.htmlBodiesCount}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.fragments[tdIndex] += `      el${this.context.htmlBodiesCount[tdIndex]}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       }
     });
     this.context.state = previousState;
     return attrs;
   },
   getElContainerName() {
-    let count = this.context.htmlBodiesCount;
+    let count = this.context.htmlBodiesCount[this.context.tornadoBodiesIndex];
     if (this.context.state === STATES.OUTER_SPACE || count === -1) {
       return 'frag';
     } else {
@@ -104,6 +104,7 @@ let compiler = {
     // Build the fragment and renderer, then walk the bodies.
     this.context.tornadoBodiesIndex++;
     this.context.refCount++;
+    this.context.htmlBodiesCount.push(-1);
     let tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
@@ -113,8 +114,13 @@ let compiler = {
     this.renderers[tdIndex] = `r${this.context.tornadoBodiesIndex}: function(c) {
       var root = frags.frag${this.context.tornadoBodiesIndex} || this.f${this.context.tornadoBodiesIndex}();\n`;
 
-    // Walk the bodies
+    // Walk the body
     this.walk(bodyInfo.body);
+
+    if (bodyInfo.bodies) {
+      bodyInfo.bodies.forEach((body) => this.TORNADO_BODY(body));
+    }
+
 
     // Close the functions
     this.fragments[this.context.tornadoBodiesIndex] += `      return cache;
@@ -144,13 +150,13 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesIndex;
     this.context.state = STATES.HTML_BODY;
     this.context.htmlBodiesIndexes.push(0);
-    let count = ++this.context.htmlBodiesCount;
+    let count = ++this.context.htmlBodiesCount[tdIndex];
     this.fragments[tdIndex] += `      var el${count} = document.createElement("${nodeInfo.key}");\n`;
     this.buildElementAttributes(nodeInfo.attributes);
     this.walkContents(nodeContents);
     this.context.htmlBodiesIndexes.pop();
-    this.context.htmlBodiesCount--;
-    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodiesCount+1});\n`;
+    this.context.htmlBodiesCount[tdIndex]--;
+    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodiesCount[tdIndex]+1});\n`;
   },
   PLAIN_TEXT(node) {
     let tdIndex = this.context.tornadoBodiesIndex;
@@ -172,6 +178,11 @@ let compiler = {
       this.renderers[tdIndex] += `      if(td.exists(c, ${JSON.stringify(node.key)})){
         root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 1}(c));
       }\n`;
+      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
+        this.renderers[tdIndex] += `      else {
+        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 2}(c));
+      }\n`;
+      }
     },
 
     notExists(node) {
@@ -185,6 +196,11 @@ let compiler = {
       this.renderers[tdIndex] += `      if(!td.exists(c, ${JSON.stringify(node.key)})){
         root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 1}(c));
       }\n`;
+      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
+        this.renderers[tdIndex] += `      else {
+        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 2}(c));
+      }\n`;
+      }
     },
 
     section(node) {
@@ -197,9 +213,11 @@ let compiler = {
       ${containerName}.appendChild(document.createComment(''));\n`;
       this.renderers[tdIndex] += `      var list = td.get(c, ${JSON.stringify(node.key)});
       for (var i=0, item; item=list[i]; i++) {
-        root.ref${refCount}.replaceChildAtIdx((${idx} + i), this.r${tdIndex + 1}(c));
+        root.ref${refCount}.replaceChildAtIdx((${idx} + i), this.r${tdIndex + 1}(item));
       }\n`;
-    }
+    },
+
+    bodies() {}
   }
 };
 
