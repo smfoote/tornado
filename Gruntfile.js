@@ -2,7 +2,7 @@ var grunt = require('grunt');
 require('load-grunt-tasks')(grunt); // npm install --save-dev load-grunt-tasks
 
 grunt.initConfig({
-  'babel': {
+  babel: {
     dist: {
       options: {
           sourceMap: true
@@ -13,15 +13,18 @@ grunt.initConfig({
       ]
     }
   },
-  watch: {
-  scripts: {
-    files: ['**/*.js', 'test.es6'],
-    tasks: ['babel'],
-    options: {
-      spawn: false,
-    },
+  browserify: {
+    'test/bundle.js': ['test/sandbox.js']
   },
-}
+  watch: {
+    scripts: {
+      files: ['**/*.js', 'test.es6'],
+      tasks: ['babel'],
+      options: {
+        spawn: false,
+      },
+    },
+  }
 });
 
-grunt.registerTask('default', ['babel']);
+grunt.registerTask('default', ['babel', 'browserify']);
