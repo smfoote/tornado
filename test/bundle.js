@@ -19,11 +19,11 @@ var compiler = {
       blocks: {},
       state: STATES.OUTER_SPACE
     };
-    this.fragments = ["f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n"];
-    this.renderers = ["r" + this.context.tornadoBodiesIndex + ": function(c) {\n      var root = frags.frag" + this.context.tornadoBodiesIndex + " || this.f" + this.context.tornadoBodiesIndex + "();\n"];
+    this.fragments = [];
+    this.renderers = [];
+    this.createMethodHeaders();
     this.walk(ast);
-    this.fragments[this.context.tornadoBodiesIndex] += "      frags.frag0 = frag;\n      return frag;\n    }";
-    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
+    this.createMethodFooters();
     return "(function(){\n  \"use strict\";\n  var frags = {},\n  t = {\n    " + this.fragments.join(",\n    ") + ",\n    " + this.renderers.join(",\n    ") + "\n  };\n  t.render = t.r0;\n  td.register(\"" + name + "\", t);\n  return t;\n})();";
   },
   step: function step(node) {
@@ -105,8 +105,7 @@ var compiler = {
     var tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
-    this.fragments[tdIndex] = "f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n";
-    this.renderers[tdIndex] = "r" + this.context.tornadoBodiesIndex + ": function(c) {\n      var root = frags.frag" + this.context.tornadoBodiesIndex + " || this.f" + this.context.tornadoBodiesIndex + "();\n";
+    this.createMethodHeaders();
 
     // Walk the body
     this.walk(bodyInfo.body);
@@ -118,9 +117,7 @@ var compiler = {
     }
 
     // Close the functions
-    tdIndex = this.context.tornadoBodiesIndex;
-    this.fragments[tdIndex] += "      frags.frag" + tdIndex + " = frag;\n      return frag;\n    }";
-    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
+    this.createMethodFooters();
     this.context.tornadoBodiesIndex--;
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node) {
@@ -196,6 +193,16 @@ var compiler = {
     },
 
     bodies: function bodies() {}
+  },
+  createMethodHeaders: function createMethodHeaders() {
+    var tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] = "f" + tdIndex + ": function() {\n      var frag = document.createDocumentFragment();\n";
+    this.renderers[tdIndex] = "r" + tdIndex + ": function(c) {\n      var root = frags.frag" + tdIndex + " || this.f" + tdIndex + "();\n      root = root.cloneNode(true);\n";
+  },
+  createMethodFooters: function createMethodFooters() {
+    var tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] += "      frags.frag" + tdIndex + " = frag;\n      return frag;\n    }";
+    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
   }
 };
 

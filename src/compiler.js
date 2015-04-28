@@ -16,16 +16,11 @@ let compiler = {
       blocks: {},
       state: STATES.OUTER_SPACE
     };
-    this.fragments = [`f${this.context.tornadoBodiesIndex}: function() {
-      var frag = document.createDocumentFragment();\n`];
-    this.renderers = [`r${this.context.tornadoBodiesIndex}: function(c) {
-      var root = frags.frag${this.context.tornadoBodiesIndex} || this.f${this.context.tornadoBodiesIndex}();\n`];
+    this.fragments = [];
+    this.renderers = [];
+    this.createMethodHeaders();
     this.walk(ast);
-    this.fragments[this.context.tornadoBodiesIndex] += `      frags.frag0 = frag;
-      return frag;
-    }`;
-    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
-    }`;
+    this.createMethodFooters();
     return `(function(){
   "use strict";
   var frags = {},
@@ -103,10 +98,7 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
-    this.fragments[tdIndex] = `f${this.context.tornadoBodiesIndex}: function() {
-      var frag = document.createDocumentFragment();\n`;
-    this.renderers[tdIndex] = `r${this.context.tornadoBodiesIndex}: function(c) {
-      var root = frags.frag${this.context.tornadoBodiesIndex} || this.f${this.context.tornadoBodiesIndex}();\n`;
+    this.createMethodHeaders();
 
     // Walk the body
     this.walk(bodyInfo.body);
@@ -115,14 +107,8 @@ let compiler = {
       bodyInfo.bodies.forEach((body) => this.TORNADO_BODY(body));
     }
 
-
     // Close the functions
-    tdIndex = this.context.tornadoBodiesIndex;
-    this.fragments[tdIndex] += `      frags.frag${tdIndex} = frag;
-      return frag;
-    }`;
-    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
-    }`;
+    this.createMethodFooters();
     this.context.tornadoBodiesIndex--;
   },
   TORNADO_REFERENCE(node) {
@@ -209,6 +195,22 @@ let compiler = {
     },
 
     bodies() {}
+  },
+  createMethodHeaders() {
+    let tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] = `f${tdIndex}: function() {
+      var frag = document.createDocumentFragment();\n`;
+    this.renderers[tdIndex] = `r${tdIndex}: function(c) {
+      var root = frags.frag${tdIndex} || this.f${tdIndex}();
+      root = root.cloneNode(true);\n`;
+  },
+  createMethodFooters() {
+    let tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] += `      frags.frag${tdIndex} = frag;
+      return frag;
+    }`;
+    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
+    }`;
   }
 };
 
