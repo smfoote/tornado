@@ -11,21 +11,20 @@ let compiler = {
   compile(ast, name) {
     this.context = {
       tornadoBodiesIndex: 0,
-      htmlBodiesIndexes: [],
-      htmlBodiesCount: [-1],
+      htmlBodies: [{count: -1, htmlBodiesIndexes: [0]}],
       refCount: 0,
       blocks: {},
       state: STATES.OUTER_SPACE
     };
     this.fragments = [`f${this.context.tornadoBodiesIndex}: function() {
-      var frag = document.createDocumentFragment();
-      var cache = {frag: frag};\n`];
+      var frag = document.createDocumentFragment();\n`];
     this.renderers = [`r${this.context.tornadoBodiesIndex}: function(c) {
       var root = frags.frag${this.context.tornadoBodiesIndex} || this.f${this.context.tornadoBodiesIndex}();\n`];
     this.walk(ast);
-    this.fragments[this.context.tornadoBodiesIndex] += `      return cache;
+    this.fragments[this.context.tornadoBodiesIndex] += `      frags.frag0 = frag;
+      return frag;
     }`;
-    this.renderers[this.context.tornadoBodiesIndex] += `      return root.frag;
+    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
     }`;
     return `(function(){
   "use strict";
@@ -40,12 +39,19 @@ let compiler = {
 })();`;
   },
   step(node) {
+
     if (node[0] && this[node[0]]) {
-      return this[node[0]](node);
+      let val = this[node[0]](node);
+      let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex];
+      return val;
     }
   },
   walk(nodes = []) {
-    nodes.forEach((n) => this.step(n));
+    nodes.forEach((n) => {
+      this.step(n);
+      let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+      indexes[indexes.length - 1]++;
+    });
   },
   /**
    * Walk through the attributes of an HTML element
@@ -56,16 +62,6 @@ let compiler = {
       res.push(this.step(item));
     });
     return res.join('+');
-  },
-  /**
-   * Walk through the contents of an HTML element
-   */
-  walkContents(nodes = []) {
-    var indexes = this.context.htmlBodiesIndexes;
-    nodes.forEach((n) => {
-      this.step(n);
-      indexes[indexes.length-1]++;
-    });
   },
   buildElementAttributes(attributes = []) {
     let attrs = '';
@@ -80,14 +76,14 @@ let compiler = {
       if (hasRef) {
         this.renderers[tdIndex] += `      root.ref${refCount}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
-        this.fragments[tdIndex] += `      el${this.context.htmlBodiesCount[tdIndex]}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       }
     });
     this.context.state = previousState;
     return attrs;
   },
   getElContainerName() {
-    let count = this.context.htmlBodiesCount[this.context.tornadoBodiesIndex];
+    let count = this.context.htmlBodies[this.context.tornadoBodiesIndex].count;
     if (this.context.state === STATES.OUTER_SPACE || count === -1) {
       return 'frag';
     } else {
@@ -95,7 +91,6 @@ let compiler = {
     }
   },
   TORNADO_BODY(node) {
-    // console.log(node);
     let bodyInfo = node[1];
 
     // Set up the body in the parent fragment and renderer
@@ -104,13 +99,12 @@ let compiler = {
     // Build the fragment and renderer, then walk the bodies.
     this.context.tornadoBodiesIndex++;
     this.context.refCount++;
-    this.context.htmlBodiesCount.push(-1);
+    this.context.htmlBodies.push({count: -1, htmlBodiesIndexes: [0]});
     let tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
     this.fragments[tdIndex] = `f${this.context.tornadoBodiesIndex}: function() {
-      var frag = document.createDocumentFragment();
-      var cache = {frag: frag}\n`;
+      var frag = document.createDocumentFragment();\n`;
     this.renderers[tdIndex] = `r${this.context.tornadoBodiesIndex}: function(c) {
       var root = frags.frag${this.context.tornadoBodiesIndex} || this.f${this.context.tornadoBodiesIndex}();\n`;
 
@@ -123,24 +117,23 @@ let compiler = {
 
 
     // Close the functions
-    this.fragments[this.context.tornadoBodiesIndex] += `      return cache;
+    tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] += `      frags.frag${tdIndex} = frag;
+      return frag;
     }`;
-    this.renderers[this.context.tornadoBodiesIndex] += `      return root.frag;
+    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
     }`;
     this.context.tornadoBodiesIndex--;
   },
   TORNADO_REFERENCE(node) {
-    let indexes = this.context.htmlBodiesIndexes;
-    let idx = indexes[indexes.length - 1]++ || 0;
+    let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
     let refCount = this.context.refCount++;
     let containerName = this.getElContainerName();
     let tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};
-      ${containerName}.appendChild(document.createComment(''));\n`;
-      this.renderers[tdIndex] += `      root.ref${refCount}.replaceChildAtIdx(${idx}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
+      this.renderers[tdIndex] += `      td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
-      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};\n`;
       return `td.get(c, ${JSON.stringify(node[1].key)})`;
     }
   },
@@ -149,17 +142,18 @@ let compiler = {
     let nodeContents = node[1].tag_contents;
     let tdIndex = this.context.tornadoBodiesIndex;
     this.context.state = STATES.HTML_BODY;
-    this.context.htmlBodiesIndexes.push(0);
-    let count = ++this.context.htmlBodiesCount[tdIndex];
+    this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
+    let count = ++this.context.htmlBodies[tdIndex].count;
     this.fragments[tdIndex] += `      var el${count} = document.createElement("${nodeInfo.key}");\n`;
     this.buildElementAttributes(nodeInfo.attributes);
-    this.walkContents(nodeContents);
-    this.context.htmlBodiesIndexes.pop();
-    this.context.htmlBodiesCount[tdIndex]--;
-    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodiesCount[tdIndex]+1});\n`;
+    this.walk(nodeContents);
+    this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
+    this.context.htmlBodies[tdIndex].count--;
+    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count+1});\n`;
   },
   PLAIN_TEXT(node) {
     let tdIndex = this.context.tornadoBodiesIndex;
+    let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
     } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
@@ -169,51 +163,48 @@ let compiler = {
   tornadoBodies: {
     exists(node) {
       let refCount = this.context.refCount;
-      let indexes = this.context.htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let tdIndex = this.context.tornadoBodiesIndex;
+      let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
-      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};
-      ${containerName}.appendChild(document.createComment(''));\n`;
+      this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
       this.renderers[tdIndex] += `      if(td.exists(c, ${JSON.stringify(node.key)})){
-        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 1}(c));
+        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
       }\n`;
       if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
         this.renderers[tdIndex] += `      else {
-        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 2}(c));
+        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
       }\n`;
       }
     },
 
     notExists(node) {
       let refCount = this.context.refCount;
-      let indexes = this.context.htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let tdIndex = this.context.tornadoBodiesIndex;
+      let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
-      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};
-      ${containerName}.appendChild(document.createComment(''));\n`;
+      this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
       this.renderers[tdIndex] += `      if(!td.exists(c, ${JSON.stringify(node.key)})){
-        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 1}(c));
+        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
       }\n`;
       if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
         this.renderers[tdIndex] += `      else {
-        root.ref${refCount}.replaceChildAtIdx(${idx}, this.r${tdIndex + 2}(c));
+          td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
       }\n`;
       }
     },
 
     section(node) {
       let refCount = this.context.refCount;
-      let indexes = this.context.htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let tdIndex = this.context.tornadoBodiesIndex;
+      let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
-      this.fragments[tdIndex] += `      cache.ref${refCount} = ${containerName};
-      ${containerName}.appendChild(document.createComment(''));\n`;
+      this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
       this.renderers[tdIndex] += `      var list = td.get(c, ${JSON.stringify(node.key)});
       for (var i=0, item; item=list[i]; i++) {
-        root.ref${refCount}.replaceChildAtIdx((${idx} + i), this.r${tdIndex + 1}(item));
+        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(item));
       }\n`;
     },
 

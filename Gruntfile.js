@@ -19,7 +19,7 @@ grunt.initConfig({
   watch: {
     scripts: {
       files: ['**/*.js', 'test.es6'],
-      tasks: ['babel'],
+      tasks: ['default'],
       options: {
         spawn: false,
       },
