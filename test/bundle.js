@@ -14,22 +14,24 @@ var compiler = {
   compile: function compile(ast, name) {
     this.context = {
       tornadoBodiesIndex: 0,
-      htmlBodiesIndexes: [],
-      htmlBodiesCount: [-1],
+      htmlBodies: [{ count: -1, htmlBodiesIndexes: [0] }],
       refCount: 0,
       blocks: {},
       state: STATES.OUTER_SPACE
     };
-    this.fragments = ["f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n      var cache = {frag: frag};\n"];
+    this.fragments = ["f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n"];
     this.renderers = ["r" + this.context.tornadoBodiesIndex + ": function(c) {\n      var root = frags.frag" + this.context.tornadoBodiesIndex + " || this.f" + this.context.tornadoBodiesIndex + "();\n"];
     this.walk(ast);
-    this.fragments[this.context.tornadoBodiesIndex] += "      return cache;\n    }";
-    this.renderers[this.context.tornadoBodiesIndex] += "      return root.frag;\n    }";
+    this.fragments[this.context.tornadoBodiesIndex] += "      frags.frag0 = frag;\n      return frag;\n    }";
+    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
     return "(function(){\n  \"use strict\";\n  var frags = {},\n  t = {\n    " + this.fragments.join(",\n    ") + ",\n    " + this.renderers.join(",\n    ") + "\n  };\n  t.render = t.r0;\n  td.register(\"" + name + "\", t);\n  return t;\n})();";
   },
   step: function step(node) {
+
     if (node[0] && this[node[0]]) {
-      return this[node[0]](node);
+      var val = this[node[0]](node);
+      var indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex];
+      return val;
     }
   },
   walk: function walk() {
@@ -38,7 +40,9 @@ var compiler = {
     var nodes = arguments[0] === undefined ? [] : arguments[0];
 
     nodes.forEach(function (n) {
-      return _this.step(n);
+      _this.step(n);
+      var indexes = _this.context.htmlBodies[_this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+      indexes[indexes.length - 1]++;
     });
   },
   /**
@@ -54,20 +58,6 @@ var compiler = {
       res.push(_this.step(item));
     });
     return res.join("+");
-  },
-  /**
-   * Walk through the contents of an HTML element
-   */
-  walkContents: function walkContents() {
-    var _this = this;
-
-    var nodes = arguments[0] === undefined ? [] : arguments[0];
-
-    var indexes = this.context.htmlBodiesIndexes;
-    nodes.forEach(function (n) {
-      _this.step(n);
-      indexes[indexes.length - 1]++;
-    });
   },
   buildElementAttributes: function buildElementAttributes() {
     var _this = this;
@@ -86,14 +76,14 @@ var compiler = {
       if (hasRef) {
         _this.renderers[tdIndex] += "      root.ref" + refCount + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       } else {
-        _this.fragments[tdIndex] += "      el" + _this.context.htmlBodiesCount[tdIndex] + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
+        _this.fragments[tdIndex] += "      el" + _this.context.htmlBodies[tdIndex].count + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       }
     });
     this.context.state = previousState;
     return attrs;
   },
   getElContainerName: function getElContainerName() {
-    var count = this.context.htmlBodiesCount[this.context.tornadoBodiesIndex];
+    var count = this.context.htmlBodies[this.context.tornadoBodiesIndex].count;
     if (this.context.state === STATES.OUTER_SPACE || count === -1) {
       return "frag";
     } else {
@@ -103,7 +93,6 @@ var compiler = {
   TORNADO_BODY: function TORNADO_BODY(node) {
     var _this = this;
 
-    // console.log(node);
     var bodyInfo = node[1];
 
     // Set up the body in the parent fragment and renderer
@@ -112,11 +101,11 @@ var compiler = {
     // Build the fragment and renderer, then walk the bodies.
     this.context.tornadoBodiesIndex++;
     this.context.refCount++;
-    this.context.htmlBodiesCount.push(-1);
+    this.context.htmlBodies.push({ count: -1, htmlBodiesIndexes: [0] });
     var tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
-    this.fragments[tdIndex] = "f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n      var cache = {frag: frag}\n";
+    this.fragments[tdIndex] = "f" + this.context.tornadoBodiesIndex + ": function() {\n      var frag = document.createDocumentFragment();\n";
     this.renderers[tdIndex] = "r" + this.context.tornadoBodiesIndex + ": function(c) {\n      var root = frags.frag" + this.context.tornadoBodiesIndex + " || this.f" + this.context.tornadoBodiesIndex + "();\n";
 
     // Walk the body
@@ -129,21 +118,20 @@ var compiler = {
     }
 
     // Close the functions
-    this.fragments[this.context.tornadoBodiesIndex] += "      return cache;\n    }";
-    this.renderers[this.context.tornadoBodiesIndex] += "      return root.frag;\n    }";
+    tdIndex = this.context.tornadoBodiesIndex;
+    this.fragments[tdIndex] += "      frags.frag" + tdIndex + " = frag;\n      return frag;\n    }";
+    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
     this.context.tornadoBodiesIndex--;
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node) {
-    var indexes = this.context.htmlBodiesIndexes;
-    var idx = indexes[indexes.length - 1]++ || 0;
+    var indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
     var refCount = this.context.refCount++;
     var containerName = this.getElContainerName();
     var tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += "      cache.ref" + refCount + " = " + containerName + ";\n      " + containerName + ".appendChild(document.createComment(''));\n";
-      this.renderers[tdIndex] += "      root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", document.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
+      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.renderers[tdIndex] += "      td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", document.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
-      this.fragments[tdIndex] += "      cache.ref" + refCount + " = " + containerName + ";\n";
       return "td.get(c, " + JSON.stringify(node[1].key) + ")";
     }
   },
@@ -152,17 +140,18 @@ var compiler = {
     var nodeContents = node[1].tag_contents;
     var tdIndex = this.context.tornadoBodiesIndex;
     this.context.state = STATES.HTML_BODY;
-    this.context.htmlBodiesIndexes.push(0);
-    var count = ++this.context.htmlBodiesCount[tdIndex];
+    this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
+    var count = ++this.context.htmlBodies[tdIndex].count;
     this.fragments[tdIndex] += "      var el" + count + " = document.createElement(\"" + nodeInfo.key + "\");\n";
     this.buildElementAttributes(nodeInfo.attributes);
-    this.walkContents(nodeContents);
-    this.context.htmlBodiesIndexes.pop();
-    this.context.htmlBodiesCount[tdIndex]--;
-    this.fragments[tdIndex] += "      " + this.getElContainerName() + ".appendChild(el" + (this.context.htmlBodiesCount[tdIndex] + 1) + ");\n";
+    this.walk(nodeContents);
+    this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
+    this.context.htmlBodies[tdIndex].count--;
+    this.fragments[tdIndex] += "      " + this.getElContainerName() + ".appendChild(el" + (this.context.htmlBodies[tdIndex].count + 1) + ");\n";
   },
   PLAIN_TEXT: function PLAIN_TEXT(node) {
     var tdIndex = this.context.tornadoBodiesIndex;
+    var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return "'" + node[1] + "'";
     } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
@@ -172,38 +161,38 @@ var compiler = {
   tornadoBodies: {
     exists: function exists(node) {
       var refCount = this.context.refCount;
-      var indexes = this.context.htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var tdIndex = this.context.tornadoBodiesIndex;
+      var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
-      this.fragments[tdIndex] += "      cache.ref" + refCount + " = " + containerName + ";\n      " + containerName + ".appendChild(document.createComment(''));\n";
-      this.renderers[tdIndex] += "      if(td.exists(c, " + JSON.stringify(node.key) + ")){\n        root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
+      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.renderers[tdIndex] += "      if(td.exists(c, " + JSON.stringify(node.key) + ")){\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
       if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
-        this.renderers[tdIndex] += "      else {\n        root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
+        this.renderers[tdIndex] += "      else {\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
       }
     },
 
     notExists: function notExists(node) {
       var refCount = this.context.refCount;
-      var indexes = this.context.htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var tdIndex = this.context.tornadoBodiesIndex;
+      var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
-      this.fragments[tdIndex] += "      cache.ref" + refCount + " = " + containerName + ";\n      " + containerName + ".appendChild(document.createComment(''));\n";
-      this.renderers[tdIndex] += "      if(!td.exists(c, " + JSON.stringify(node.key) + ")){\n        root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
+      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.renderers[tdIndex] += "      if(!td.exists(c, " + JSON.stringify(node.key) + ")){\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
       if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
-        this.renderers[tdIndex] += "      else {\n        root.ref" + refCount + ".replaceChildAtIdx(" + idx + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
+        this.renderers[tdIndex] += "      else {\n          td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
       }
     },
 
     section: function section(node) {
       var refCount = this.context.refCount;
-      var indexes = this.context.htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var tdIndex = this.context.tornadoBodiesIndex;
+      var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
-      this.fragments[tdIndex] += "      cache.ref" + refCount + " = " + containerName + ";\n      " + containerName + ".appendChild(document.createComment(''));\n";
-      this.renderers[tdIndex] += "      var list = td.get(c, " + JSON.stringify(node.key) + ");\n      for (var i=0, item; item=list[i]; i++) {\n        root.ref" + refCount + ".replaceChildAtIdx((" + idx + " + i), this.r" + (tdIndex + 1) + "(item));\n      }\n";
+      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.renderers[tdIndex] += "      var list = td.get(c, " + JSON.stringify(node.key) + ");\n      for (var i=0, item; item=list[i]; i++) {\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(item));\n      }\n";
     },
 
     bodies: function bodies() {}
