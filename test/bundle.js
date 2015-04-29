@@ -127,7 +127,7 @@ var compiler = {
     var tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", document.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
+      this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", document.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return "td.get(c, " + JSON.stringify(node[1].key) + ")";
     }
@@ -160,12 +160,11 @@ var compiler = {
       var refCount = this.context.refCount;
       var tdIndex = this.context.tornadoBodiesIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      if(td.exists(c, " + JSON.stringify(node.key) + ")){\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
+      this.renderers[tdIndex] += "      if(td.exists(td.get(c, " + JSON.stringify(node.key) + "))){\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
       if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
-        this.renderers[tdIndex] += "      else {\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
+        this.renderers[tdIndex] += "      else {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
       }
     },
 
@@ -173,12 +172,11 @@ var compiler = {
       var refCount = this.context.refCount;
       var tdIndex = this.context.tornadoBodiesIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      if(!td.exists(c, " + JSON.stringify(node.key) + ")){\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
+      this.renderers[tdIndex] += "      if(!td.exists(td.get(c, " + JSON.stringify(node.key) + "))){\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
       if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
-        this.renderers[tdIndex] += "      else {\n          td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
+        this.renderers[tdIndex] += "      else {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
       }
     },
 
@@ -186,10 +184,9 @@ var compiler = {
       var refCount = this.context.refCount;
       var tdIndex = this.context.tornadoBodiesIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      var idx = indexes[indexes.length - 1]++ || 0;
       var containerName = this.getElContainerName();
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      var list = td.get(c, " + JSON.stringify(node.key) + ");\n      for (var i=0, item; item=list[i]; i++) {\n        td.replaceChildAtIdx(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(item));\n      }\n";
+      this.renderers[tdIndex] += "      var list = td.get(c, " + JSON.stringify(node.key) + ");\n      for (var i=0, item; item=list[i]; i++) {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(item));\n      }\n";
     },
 
     bodies: function bodies() {}
@@ -6045,22 +6042,153 @@ module.exports = (function() {
 })();
 
 },{}],3:[function(require,module,exports){
-var parser = require('../dist/parser.js'),
-    compiler = require('../dist/compiler');
+"use strict";
 
+var tornado = {
 
-var td = {
-  templates: {},
-  get: function(context, path) {
-    return context[path[0]];
+  /**
+   * A cache of all registered templates
+   */
+  templateCache: {},
+
+  /**
+   * Method for registering templates. This method is intended
+   * to be called within a compiled template, but can be called
+   * outside of that context as well.
+   * @param {String} name The name of the template to be registered.
+   * If a name is not provided, or the name parameter is not a string,
+   * a default name will be provided of the form 'default{TIMESTAMP}'
+   * @param {Object} template A Tornado template object.
+   */
+  register: function register(name, template) {
+    if (!name || typeof name !== "string") {
+      name = "default" + new Date();
+    }
+    this.templateCache[name] = template;
   },
-  register: function(name, tl) {
-    this.templates[name] = tl;
+
+  /**
+   * Method for retrieving values from the given context
+   * @param {Object} context The context from which the value should
+   * be retrieved.
+   * @param {Array} path An array of key names.
+   * @return {*} The value at the end of the path, or an empty string.
+   */
+  get: function get(context, path) {
+    var pathLength = path.length;
+    var newContext = undefined;
+    if (pathLength === 1) {
+      return context[path.pop()] || "";
+    } else if (!pathLength || pathLength < 0) {
+      return "";
+    }
+    newContext = context[path.pop()];
+    if (this.util.isObject(newContext)) {
+      return this.get(newContext, path);
+    }
+    return "";
   },
-  exists: function(context, path) {
-    return !!this.get(context, path);
+
+  /**
+   * Replace a DOM node (text or element or comment or whatever) with a given
+   * set of indexes from the root element. If a node is not found in the path of indexes, the
+   * function does nothing.
+   * @example
+   *
+   * Root element
+   * ============
+   * [documentFragment]<div>This is some text. <span>And a span.</span></div>[/documentFragment]
+   *
+   * Method call
+   * ===========
+   * // The call below would replace the text node "And a span." with `myNewNode`.
+   * td.replaceChildAtIdx(root, [0,1,0], myNewNode);
+   * // [
+   *      0 **the outer div is the 0th child of the root**,
+   *      1 **the span is the 1st child of the div**,
+   *      0 **the text node is the 0th child of the span**
+   *    ]
+   *
+   * @param {DocumentFragment} root When used within a compiled template, this is always a document
+   * fragment, but it could be a regular HTML Element
+   * @param {Array} indexPath An array of indexes leading to the node to be replaced
+   * @param {Node} newNode The node to take the place of the replaced node.
+   */
+  replaceChildAtIdxPath: function replaceChildAtIdxPath(root, indexPath, newNode) {
+    var finalIndex = indexPath.pop();
+    var parentNode = this.util.getNodeAtIdxPath(root, indexPath);
+    var oldNode = undefined;
+    if (parentNode) {
+      oldNode = this.util.getNodeAtIdxPath(parentNode, [finalIndex]);
+    } else {
+      return;
+    }
+    if (oldNode) {
+      parentNode.replaceChild(newNode, oldNode);
+    }
+  },
+
+  /**
+   * Tornado-specific truthiness (based on dust.isEmpty). 0 is truthy, empty array is falsy,
+   * everything else matches JavaScript truthiness.
+   * @param {*} val The value to be checked for existence.
+   * @return {Boolean}
+   */
+  exists: function exists(val) {
+    if (val === 0) {
+      return true;
+    }
+    if (Array.isArray(val) && !val.length) {
+      return false;
+    }
+    return !!val;
+  },
+
+  util: {
+    /**
+     * Determine if a value is an object
+     * @param {*} val The value in question
+     * @return {Boolean}
+     */
+    isObject: function isObject(val) {
+      return typeof val === "object" && val !== null;
+    },
+
+    /**
+     * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
+     * for more details.
+     * @param {HTMLNode} root The parent node
+     * @param {Array} indexPath The path of indexes to the node being searched for.
+     * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
+     */
+    getNodeAtIdxPath: function getNodeAtIdxPath(root, indexPath) {
+      var nextIdx = undefined;
+
+      if (indexPath.length === 0) {
+        return root;
+      }
+
+      // Make sure we are dealing with an HTML element
+      var intermediateNode = root.childNodes ? root : false;
+      while (intermediateNode && indexPath.length) {
+        if (intermediateNode.childNodes) {
+          nextIdx = indexPath.shift();
+          intermediateNode = intermediateNode.childNodes[nextIdx];
+        } else {
+          return false;
+        }
+      }
+      return intermediateNode || false;
+    }
   }
 };
+
+module.exports = tornado;
+//# sourceMappingURL=runtime.js.map
+},{}],4:[function(require,module,exports){
+var parser = require('../dist/parser.js'),
+    compiler = require('../dist/compiler'),
+    td = require('../dist/runtime');
 
 Node.prototype.replaceChildAtIdx = function(idx, newChild) {
   var refNode = this.childNodes[idx];
@@ -6100,4 +6228,4 @@ output.addEventListener('click', function(evt) {
   target.classList.toggle('min');
 });
 
-},{"../dist/compiler":1,"../dist/parser.js":2}]},{},[3]);
+},{"../dist/compiler":1,"../dist/parser.js":2,"../dist/runtime":3}]},{},[4]);
