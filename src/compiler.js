@@ -118,7 +118,7 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return `td.get(c, ${JSON.stringify(node[1].key)})`;
     }
@@ -151,15 +151,14 @@ let compiler = {
       let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      if(td.exists(c, ${JSON.stringify(node.key)})){
-        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
+      this.renderers[tdIndex] += `      if(td.exists(td.get(c, ${JSON.stringify(node.key)}))){
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
       }\n`;
       if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
         this.renderers[tdIndex] += `      else {
-        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
       }\n`;
       }
     },
@@ -168,15 +167,14 @@ let compiler = {
       let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      if(!td.exists(c, ${JSON.stringify(node.key)})){
-        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
+      this.renderers[tdIndex] += `      if(!td.exists(td.get(c, ${JSON.stringify(node.key)}))){
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
       }\n`;
       if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
         this.renderers[tdIndex] += `      else {
-          td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
+          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
       }\n`;
       }
     },
@@ -185,12 +183,11 @@ let compiler = {
       let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      let idx = indexes[indexes.length - 1]++ || 0;
       let containerName = this.getElContainerName();
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
       this.renderers[tdIndex] += `      var list = td.get(c, ${JSON.stringify(node.key)});
       for (var i=0, item; item=list[i]; i++) {
-        td.replaceChildAtIdx(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(item));
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(item));
       }\n`;
     },
 

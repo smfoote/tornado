@@ -1,19 +1,6 @@
 var parser = require('../dist/parser.js'),
-    compiler = require('../dist/compiler');
-
-
-var td = {
-  templates: {},
-  get: function(context, path) {
-    return context[path[0]];
-  },
-  register: function(name, tl) {
-    this.templates[name] = tl;
-  },
-  exists: function(context, path) {
-    return !!this.get(context, path);
-  }
-};
+    compiler = require('../dist/compiler'),
+    td = require('../dist/runtime');
 
 Node.prototype.replaceChildAtIdx = function(idx, newChild) {
   var refNode = this.childNodes[idx];
