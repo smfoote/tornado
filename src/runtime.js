@@ -130,7 +130,7 @@ let tornado = {
    */
   setAttribute(node, attrName, vals) {
     Promise.all(vals).then(values => {
-      node.setAttribute(attrName, values.join(''));
+      node.setAttribute(attrName, this.getAttrValue(node.tagName, attrName, values.join('')));
     });
   },
 
@@ -330,6 +330,31 @@ let tornado = {
     return div.innerHTML;
   },
 
+  /**
+   * Get a secure value for a given attribute on a given node type
+   * @param {String} nodeType The type of HTML element the attribute will be applied to.
+   * @param {String} attrType The type of attribute.
+   * @param {String} val The initial value, to be run through the filters
+   */
+  getAttrValue(nodeType, attrType, val) {
+    let filter = this.getAttrFilter(`${nodeType.toLowerCase()}[${attrType.toLowerCase()}]`);
+    val = Array.isArray(val) ? val.join('') : val;
+    if (filter) {
+      return filter(val);
+    }
+    return val;
+  },
+
+  /**
+   * Return a filter method for a filter selector.
+   * TODO: Make these filters registerable
+   * @param {String} filterSelector A filter selector of type `'el-name[attr-name]'`. For example,
+   * a filter for `href`s on an `a` tag would be `'a[href]'`.
+   */
+  getAttrFilter(filterSelector) {
+    return this.attrFilters[filterSelector];
+  },
+
   util: {
     /**
      * Determine if a value is an object
@@ -398,6 +423,12 @@ let tornado = {
         result[keys[i]] = values[i];
       }
       return result;
+    }
+  },
+
+  attrFilters: {
+    'a[href]': function(val) {
+      return val.replace(/^javascript:.*/, '');
     }
   }
 };
