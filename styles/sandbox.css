@@ -1,0 +1,22 @@
+textarea {
+  width: 45vw;
+  height: 500px;
+  font-family: monospace;
+  font-size: 16px;
+  background-color: #292C33;
+  color: #57AFC1;
+}
+
+#output pre,
+#output div {
+  border: 1px solid #CCC;
+  background-color: #DDD;
+  max-height: 2000px;
+  overflow: hidden;
+  transition: max-height 400ms ease;
+}
+
+#output pre.min,
+#output div.min {
+  max-height: 10px;
+}
