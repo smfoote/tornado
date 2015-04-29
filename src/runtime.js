@@ -79,6 +79,8 @@ let tornado = {
       }
       if (oldNode) {
         parentNode.replaceChild(newNode, oldNode);
+      } else if (finalIndex >= parentNode.childNodes.length) {
+        parentNode.appendChild(newNode);
       }
     },
 
@@ -118,7 +120,7 @@ let tornado = {
       */
       getNodeAtIdxPath(root, indexPath) {
         let nextIdx;
-        
+
         if (indexPath.length === 0) {
           return root;
         }
