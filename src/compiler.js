@@ -62,14 +62,16 @@ let compiler = {
     let attrs = '';
     let previousState = this.context.state;
     let refCount = this.context.refCount;
+    let tdIndex = this.context.tornadoBodiesIndex;
+    let indexesClone = this.context.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
+    indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
       let hasRef = attr.value.some(function(val) {
         return val[0] === 'TORNADO_REFERENCE';
       });
-      let tdIndex = this.context.tornadoBodiesIndex;
       if (hasRef) {
-        this.renderers[tdIndex] += `      root.ref${refCount}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.renderers[tdIndex] += `      td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}).setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
         this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       }

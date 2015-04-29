@@ -70,10 +70,10 @@ let tornado = {
     */
     replaceChildAtIdxPath(root, indexPath, newNode) {
       let finalIndex = indexPath.pop();
-      let parentNode = this.util.getNodeAtIdxPath(root, indexPath);
+      let parentNode = this.getNodeAtIdxPath(root, indexPath);
       let oldNode;
       if (parentNode) {
-        oldNode = this.util.getNodeAtIdxPath(parentNode, [finalIndex]);
+        oldNode = this.getNodeAtIdxPath(parentNode, [finalIndex]);
       } else {
         return;
       }
@@ -99,7 +99,32 @@ let tornado = {
        }
        return !!val;
      },
+ /**
+  * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
+  * for more details.
+  * @param {HTMLNode} root The parent node
+  * @param {Array} indexPath The path of indexes to the node being searched for.
+  * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
+  */
+  getNodeAtIdxPath(root, indexPath) {
+    let nextIdx;
 
+    if (indexPath.length === 0) {
+      return root;
+    }
+
+    // Make sure we are dealing with an HTML element
+    let intermediateNode = root.childNodes ? root : false;
+    while (intermediateNode && indexPath.length) {
+      if (intermediateNode.childNodes) {
+        nextIdx = indexPath.shift();
+        intermediateNode = intermediateNode.childNodes[nextIdx];
+      } else {
+        return false;
+      }
+    }
+    return intermediateNode || false;
+  },
 
    util: {
      /**
@@ -109,34 +134,7 @@ let tornado = {
       */
      isObject(val) {
        return typeof val === 'object' && val !== null;
-     },
-
-     /**
-      * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
-      * for more details.
-      * @param {HTMLNode} root The parent node
-      * @param {Array} indexPath The path of indexes to the node being searched for.
-      * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
-      */
-      getNodeAtIdxPath(root, indexPath) {
-        let nextIdx;
-
-        if (indexPath.length === 0) {
-          return root;
-        }
-
-        // Make sure we are dealing with an HTML element
-        let intermediateNode = root.childNodes ? root : false;
-        while (intermediateNode && indexPath.length) {
-          if (intermediateNode.childNodes) {
-            nextIdx = indexPath.shift();
-            intermediateNode = intermediateNode.childNodes[nextIdx];
-          } else {
-            return false;
-          }
-        }
-        return intermediateNode || false;
-      }
+     }
    }
 }
 

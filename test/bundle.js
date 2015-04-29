@@ -67,14 +67,16 @@ var compiler = {
     var attrs = "";
     var previousState = this.context.state;
     var refCount = this.context.refCount;
+    var tdIndex = this.context.tornadoBodiesIndex;
+    var indexesClone = this.context.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
+    indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach(function (attr) {
       var hasRef = attr.value.some(function (val) {
         return val[0] === "TORNADO_REFERENCE";
       });
-      var tdIndex = _this.context.tornadoBodiesIndex;
       if (hasRef) {
-        _this.renderers[tdIndex] += "      root.ref" + refCount + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
+        _this.renderers[tdIndex] += "      td.getNodeAtIdxPath(root, " + JSON.stringify(indexesClone) + ").setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       } else {
         _this.fragments[tdIndex] += "      el" + _this.context.htmlBodies[tdIndex].count + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       }
@@ -6123,10 +6125,10 @@ var tornado = {
    */
   replaceChildAtIdxPath: function replaceChildAtIdxPath(root, indexPath, newNode) {
     var finalIndex = indexPath.pop();
-    var parentNode = this.util.getNodeAtIdxPath(root, indexPath);
+    var parentNode = this.getNodeAtIdxPath(root, indexPath);
     var oldNode = undefined;
     if (parentNode) {
-      oldNode = this.util.getNodeAtIdxPath(parentNode, [finalIndex]);
+      oldNode = this.getNodeAtIdxPath(parentNode, [finalIndex]);
     } else {
       return;
     }
@@ -6152,6 +6154,32 @@ var tornado = {
     }
     return !!val;
   },
+  /**
+   * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
+   * for more details.
+   * @param {HTMLNode} root The parent node
+   * @param {Array} indexPath The path of indexes to the node being searched for.
+   * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
+   */
+  getNodeAtIdxPath: function getNodeAtIdxPath(root, indexPath) {
+    var nextIdx = undefined;
+
+    if (indexPath.length === 0) {
+      return root;
+    }
+
+    // Make sure we are dealing with an HTML element
+    var intermediateNode = root.childNodes ? root : false;
+    while (intermediateNode && indexPath.length) {
+      if (intermediateNode.childNodes) {
+        nextIdx = indexPath.shift();
+        intermediateNode = intermediateNode.childNodes[nextIdx];
+      } else {
+        return false;
+      }
+    }
+    return intermediateNode || false;
+  },
 
   util: {
     /**
@@ -6161,33 +6189,6 @@ var tornado = {
      */
     isObject: function isObject(val) {
       return typeof val === "object" && val !== null;
-    },
-
-    /**
-     * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
-     * for more details.
-     * @param {HTMLNode} root The parent node
-     * @param {Array} indexPath The path of indexes to the node being searched for.
-     * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
-     */
-    getNodeAtIdxPath: function getNodeAtIdxPath(root, indexPath) {
-      var nextIdx = undefined;
-
-      if (indexPath.length === 0) {
-        return root;
-      }
-
-      // Make sure we are dealing with an HTML element
-      var intermediateNode = root.childNodes ? root : false;
-      while (intermediateNode && indexPath.length) {
-        if (intermediateNode.childNodes) {
-          nextIdx = indexPath.shift();
-          intermediateNode = intermediateNode.childNodes[nextIdx];
-        } else {
-          return false;
-        }
-      }
-      return intermediateNode || false;
     }
   }
 };
