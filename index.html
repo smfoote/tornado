@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="stylesheet" href="styles/sandbox.css">
+  </head>
+  <body>
+    <div id="input">
+      <textarea id="template" placeholder="Template goes here">&lt;div&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Some text &lt;span&gt;with&lt;/span&gt; some other text. &lt;button&gt;Click &lt;b&gt;me&lt;/b&gt;&lt;/button&gt;&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;</textarea>
+      <textarea id="context" placeholder="Context goes here">{
+  name: "Ruby"
+}</textarea>
+      <button id="render">Render</button>
+    </div>
+    <div id="output">
+      <div class="output"></div>
+      <pre class="string"></pre>
+      <pre class="ast"></pre>
+      <pre class="compiled"></pre>
+    </div>
+    <script src="scripts/bundle.js"></script>
+  </body>
+</html>
