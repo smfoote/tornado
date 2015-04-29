@@ -5,9 +5,12 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here">&lt;div&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Some text &lt;span&gt;with&lt;/span&gt; some other text. &lt;button&gt;Click &lt;b&gt;me&lt;/b&gt;&lt;/button&gt;&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;</textarea>
+      <textarea id="template" placeholder="Template goes here">&lt;ul&gt;{#names}&lt;li&gt;{name}&lt;/li&gt;{/names}&lt;/ul&gt;</textarea>
       <textarea id="context" placeholder="Context goes here">{
-  name: "Ruby"
+  names: [
+    {name: "Ruby"},
+    {name: "Toto"}
+  ]
 }</textarea>
       <button id="render">Render</button>
     </div>

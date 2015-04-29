@@ -185,8 +185,15 @@ var compiler = {
       var tdIndex = this.context.tornadoBodiesIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       var containerName = this.getElContainerName();
+      var elseReplace = "td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));";
+      var arrayElse = undefined,
+          sectionElse = undefined;
+      if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
+        arrayElse = "\n        if (!sectionVal.length) {\n          " + elseReplace + "\n        }";
+        sectionElse = " else {\n          " + elseReplace + "\n        }";
+      }
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      var list = td.get(c, " + JSON.stringify(node.key) + ");\n      for (var i=0, item; item=list[i]; i++) {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(item));\n      }\n";
+      this.renderers[tdIndex] += "      var sectionVal = td.get(c, " + JSON.stringify(node.key) + ");\n      if (Array.isArray(sectionVal)) {\n        for (var i=0, item; item=sectionVal[i]; i++) {\n          td.replaceChildAtIdxPath(root, [" + indexes.join(",") + "+(2*i)], this.r" + (tdIndex + 1) + "(item));\n        }" + arrayElse + "\n      } else {\n        if (td.exists(sectionVal)) {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(sectionVal));\n        }" + sectionElse + "\n      }\n";
     },
 
     bodies: function bodies() {}
@@ -6125,6 +6132,8 @@ var tornado = {
     }
     if (oldNode) {
       parentNode.replaceChild(newNode, oldNode);
+    } else if (finalIndex >= parentNode.childNodes.length) {
+      parentNode.appendChild(newNode);
     }
   },
 

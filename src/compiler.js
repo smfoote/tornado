@@ -184,10 +184,26 @@ let compiler = {
       let tdIndex = this.context.tornadoBodiesIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
+      let elseReplace = `td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));`;
+      let arrayElse, sectionElse;
+      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else'){
+        arrayElse = `\n        if (!sectionVal.length) {
+          ${elseReplace}
+        }`;
+        sectionElse = ` else {
+          ${elseReplace}
+        }`;
+      }
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      var list = td.get(c, ${JSON.stringify(node.key)});
-      for (var i=0, item; item=list[i]; i++) {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(item));
+      this.renderers[tdIndex] += `      var sectionVal = td.get(c, ${JSON.stringify(node.key)});
+      if (Array.isArray(sectionVal)) {
+        for (var i=0, item; item=sectionVal[i]; i++) {
+          td.replaceChildAtIdxPath(root, [${indexes.join(',')}+(2*i)], this.r${tdIndex + 1}(item));
+        }${arrayElse}
+      } else {
+        if (td.exists(sectionVal)) {
+          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(sectionVal));
+        }${sectionElse}
       }\n`;
     },
 
