@@ -3,6 +3,7 @@ const STATES = {
   HTML_TAG: 'HTML_TAG',
   HTML_BODY: 'HTML_BODY',
   HTML_ATTRIBUTE: 'HTML_ATTRIBUTE',
+  ESCAPABLE_RAW: 'ESCAPABLE_RAW',
   TORNADO_TAG: 'TORNADO_TAG',
   TORNADO_BODY: 'TORNADO_BODY'
 };
@@ -145,7 +146,12 @@ let compiler = {
     let nodeInfo = node[1].tag_info;
     let nodeContents = node[1].tag_contents;
     let tdIndex = this.context.tornadoBodiesIndex;
-    this.context.state = STATES.HTML_BODY;
+    let previousState = this.context.state;
+    if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
+      this.context.state = STATES.ESCAPABLE_RAW;
+    } else {
+      this.context.state = STATES.HTML_BODY;
+    }
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
     let count = ++this.context.htmlBodies[tdIndex].count;
     this.fragments[tdIndex] += `      var el${count} = document.createElement("${nodeInfo.key}");\n`;
@@ -153,7 +159,12 @@ let compiler = {
     this.walk(nodeContents);
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
     this.context.htmlBodies[tdIndex].count--;
-    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count+1});\n`;
+    this.context.state = previousState;
+    if (this.context.state === STATES.ESCAPABLE_RAW) {
+      this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.nodeToString(el${this.context.htmlBodies[tdIndex].count + 1});\n`
+    } else {
+      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
+    }
   },
   PLAIN_TEXT(node) {
     let tdIndex = this.context.tornadoBodiesIndex;
@@ -161,7 +172,9 @@ let compiler = {
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
     } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(document.createTextNode('${node[1]}'));\n`;
+      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(document.createTextNode('${node[1].replace(/'/g, "\\'")}'));\n`;
+    } else if (this.context.state === STATES.ESCAPABLE_RAW) {
+      this.fragments[tdIndex] += `      ${this.getElContainerName()}.defaultValue += '${node[1].replace(/'/g, "\\'")}';\n`;
     }
   },
   tornadoBodies: {
@@ -185,11 +198,11 @@ let compiler = {
         }
       } else {
         let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
-      return td.fragToString(this.r${tdIndex + 1}(c));
+      return td.nodeToString(this.r${tdIndex + 1}(c));
     }.bind(this))`;
         if (hasElseBlock) {
           returnVal += `.catch(function() {
-        return td.fragToString(this.r${tdIndex + 2}(c));
+        return td.nodeToString(this.r${tdIndex + 2}(c));
       }.bind(this))`;
         }
         return returnVal;
@@ -257,6 +270,10 @@ let compiler = {
     }`;
     this.renderers[this.context.tornadoBodiesIndex] += `      return root;
     }`;
+  },
+
+  elTypes: {
+    escapableRaw: ['textarea', 'title']
   }
 };
 

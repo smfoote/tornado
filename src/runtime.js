@@ -235,10 +235,10 @@ let tornado = {
 
   /**
    * Turn a document fragment into a string
-   * @param {DocumentFragment} frag The document fragment to be turned into a string
+   * @param {DocumentFragment|HTMLElement} frag The document fragment to be turned into a string
    * @return {String}
    */
-  fragToString(frag) {
+  nodeToString(frag) {
     let div = document.createElement('div');
     div.appendChild(frag);
     return div.innerHTML;
@@ -278,6 +278,6 @@ let tornado = {
        return !!val;
      }
   }
-}
+};
 
 module.exports = tornado;
