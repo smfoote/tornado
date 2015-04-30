@@ -31,7 +31,8 @@ button.addEventListener('click', function(evt) {
   var data = {};
   eval('data = ' + c + ';');
   var out = tl.render(eval(data));
-  outputContainer.replaceChildAtIdx(0, out);
+  outputContainer.innerHTML = '';
+  outputContainer.appendChild(out);
   stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 });
 
