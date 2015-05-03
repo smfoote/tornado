@@ -2381,7 +2381,11 @@ tornado_body_tag_end
 
 tornado_reference
   = lbrace r:tornado_key filters:tornado_filters rbrace {
-    return ['TORNADO_REFERENCE', {key: r.split('.'), filters: filters}]
+    var key = r.split('.');
+    if (r === '.') {
+      key = [];
+    }
+    return ['TORNADO_REFERENCE', {key: key, filters: filters}]
   }
 
 tornado_partial

@@ -33,10 +33,13 @@ let tornado = {
     let newContext;
     if (pathLength === 1) {
       return context[path.pop()] || '';
+    } else if (pathLength === 0) {
+      // return the current context for {.}
+      return context || '';
     } else if (!pathLength || pathLength < 0) {
       return '';
     }
-    newContext = context[path.pop()];
+    newContext = context[path.shift()];
     if (this.util.isObject(newContext)) {
       return this.get(newContext, path);
     }

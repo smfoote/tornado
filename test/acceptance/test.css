@@ -1,0 +1,11 @@
+ul {
+  list-style-type: none;
+}
+
+li {
+  background-color: #E8A5A5;
+}
+
+li.pass {
+  background-color: #9BF29B;
+}
