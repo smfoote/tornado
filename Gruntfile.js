@@ -8,13 +8,21 @@ grunt.initConfig({
           sourceMap: true
       },
       files: [
-        {expand: true, cwd: 'src/', dest: 'dist/', ext: '.js', src: '**/*.js'},
-        {dest: 'test.js', src: 'test.es6'}
+        {expand: true, cwd: 'src/', dest: 'dist/', ext: '.js', src: '**/*.js'}
+      ]
+    },
+    acceptance: {
+      options: {
+        sourceMap: true
+      },
+      files: [
+        {expand: true, cwd: 'test/acceptance/', dest: 'test/cacceptance/', ext: '.js', src: '**/*.js'},
+        {dest: 'test/testRunner.js', src: 'test/testRunner.es6'}
       ]
     }
   },
   browserify: {
-    'test/bundle.js': ['test/sandbox.js']
+      'test/cacceptance/bundle.js': ['test/cacceptance/runner.js']
   },
   watch: {
     scripts: {
@@ -26,5 +34,7 @@ grunt.initConfig({
     },
   }
 });
+
+grunt.registerTask('acceptance', ['babel:acceptance', 'browserify']);
 
 grunt.registerTask('default', ['babel', 'browserify']);
