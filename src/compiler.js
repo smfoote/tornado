@@ -56,6 +56,7 @@ let compiler = {
     items.forEach((item) => {
       res.push(this.step(item));
     });
+    res = res.length ? res : ['\'\''];
     return res.join('+');
   },
   buildElementAttributes(attributes = []) {
@@ -67,7 +68,7 @@ let compiler = {
     indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
-      let hasRef = attr.value.some(function(val) {
+      let hasRef = attr.value && attr.value.some(function(val) {
         return val[0] === 'TORNADO_REFERENCE';
       });
       if (hasRef) {
@@ -86,6 +87,18 @@ let compiler = {
     } else {
       return `el${count}`;
     }
+  },
+  TORNADO_PARTIAL(node) {
+    let meta = node[1];
+    let params = meta.params;
+    let context = 'c';
+    let tdIndex = this.context.tornadoBodiesIndex;
+    let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+    if (params.length === 1 && params[0].key === 'context') {
+      context = `td.get(c, ${params[0].val})`;
+    }
+    this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(document.createTextNode(''));\n`;
+    this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}));\n`;
   },
   TORNADO_BODY(node) {
     let bodyInfo = node[1];

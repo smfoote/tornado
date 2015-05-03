@@ -46,6 +46,34 @@ let tornado = {
     return '';
   },
 
+  getPartial(name, context) {
+    let partial = this.templateCache[name];
+    if (partial) {
+      return partial.render(context);
+    } else {
+      return this.fetchPartial(name)
+          .then(partial => {
+            return partial.render(context);
+          })
+          .catch(error => this.throwError(error));
+    }
+  },
+
+  fetchPartial(name) {
+    return new Promise((resolve, reject) => {
+
+      // TODO: Make this really work correctly.
+      let fakePartial = {
+        render(c) {
+          let frag = document.createDocumentFragment();
+          frag.appendChild(document.createTextNode('It worked!'));
+          return frag;
+        }
+      };
+      resolve(fakePartial);
+    });
+  },
+
   /**
    * Replace a DOM node (text or element or comment or whatever) with a given
    * set of indexes from the root element. If a node is not found in the path of indexes, the
@@ -74,6 +102,7 @@ let tornado = {
   replaceChildAtIdxPath(root, indexPath, newNode) {
     let finalIndex = indexPath.pop();
     let parentNode = this.getNodeAtIdxPath(root, indexPath);
+    let isPromise = typeof newNode.then === 'function';
     let oldNode;
     if (parentNode) {
       oldNode = this.getNodeAtIdxPath(parentNode, [finalIndex]);
@@ -81,9 +110,20 @@ let tornado = {
       return;
     }
     if (oldNode) {
-      parentNode.replaceChild(newNode, oldNode);
+      if (isPromise) {
+        newNode.then(node => {
+          parentNode = oldNode.parentNode;
+          parentNode.replaceChild(node, oldNode);
+        });
+      } else {
+        parentNode.replaceChild(newNode, oldNode);
+      }
     } else if (finalIndex >= parentNode.childNodes.length) {
-      parentNode.appendChild(newNode);
+      if (isPromise) {
+        newNode.then(node => parentNode.appendChild(node));
+      } else {
+        parentNode.appendChild(newNode);
+      }
     }
   },
 
