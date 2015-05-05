@@ -32,13 +32,16 @@ let tornado = {
     let pathLength = path.length;
     let newContext;
     if (pathLength === 1) {
+      // there is only one more item left in the path
       return context[path.pop()] || '';
     } else if (pathLength === 0) {
       // return the current context for {.}
       return context || '';
     } else if (!pathLength || pathLength < 0) {
+      // There is something wrong with the path (maybe it was not an array?)
       return '';
     }
+    // There are still more steps in the array
     newContext = context[path.shift()];
     if (this.util.isObject(newContext)) {
       return this.get(newContext, path);
@@ -46,6 +49,29 @@ let tornado = {
     return '';
   },
 
+  /**
+   * Create a text node (like document.createTextNode), possibly asynchronously if the value is a
+   * Promise
+   * @param {String|Promise} val The value to be text noded
+   * @return {TextNode}
+   */
+  createTextNode(val) {
+    if (this.util.isPromise(val)) {
+      return val.then(data => document.createTextNode(data))
+                .catch(error => document.createTextNode(''));
+    } else {
+      return document.createTextNode(val);
+    }
+  },
+
+  /**
+   * Get and render a partial. First look in the cache. If the partial is not found there,
+   * call td.fetchPartial (which can be user defined), and render the partial that is returned
+   * when the Promise returned by td.fetchPartial resolves.
+   * @param {String} name The name of the partial to be rendered and returned
+   * @param {Object} context The context to be used to render the partial
+   * @param {DocumentFragment|Promise}
+   */
   getPartial(name, context) {
     let partial = this.templateCache[name];
     if (partial) {
@@ -59,6 +85,12 @@ let tornado = {
     }
   },
 
+  /**
+   * TODO: Flesh out a good default for this function.
+   * Return a promise that resolves with the fetched partial, from wherever you want to fetch it.
+   * @param {String} name The name of the partial to be fetched.
+   * @return {Promise} A promise that resolves with a Tornado partial
+   */
   fetchPartial(name) {
     return new Promise((resolve, reject) => {
 
@@ -102,7 +134,7 @@ let tornado = {
   replaceChildAtIdxPath(root, indexPath, newNode) {
     let finalIndex = indexPath.pop();
     let parentNode = this.getNodeAtIdxPath(root, indexPath);
-    let isPromise = typeof newNode.then === 'function';
+    let isPromise = this.util.isPromise(newNode);
     let oldNode;
     if (parentNode) {
       oldNode = this.getNodeAtIdxPath(parentNode, [finalIndex]);
@@ -178,7 +210,16 @@ let tornado = {
      */
     isObject(val) {
       return typeof val === 'object' && val !== null;
-    }
+    },
+
+    /**
+     * Deterime if a value is a Promise
+     * @param {*} val The value in question
+     * @param {Boolean}
+     */
+     isPromise(val) {
+       return typeof val.then === 'function';
+     }
   }
 }
 

@@ -26,12 +26,19 @@ grunt.initConfig({
   },
   watch: {
     scripts: {
-      files: ['**/*.js', 'test.es6'],
+      files: ['**/*.js'],
       tasks: ['default'],
       options: {
-        spawn: false,
-      },
+        spawn: false
+      }
     },
+    test: {
+      files: ['**/*.js', 'test/**/*.es6'],
+      tasks: ['default', 'acceptance'],
+      options: {
+        spawn: false
+      }
+    }
   }
 });
 

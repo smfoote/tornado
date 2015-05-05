@@ -13,13 +13,16 @@ function runSuites(suites) {
       var tl = undefined;
       eval("tl = " + compiledTemplate + ";");
       var out = tl.render(test.context);
-      var res = compareNodes(out, test.expectedDom);
-      if (!res) {
-        var div = document.createElement("div");
-        div.appendChild(out);
-        test.fail = "Expected " + div.innerHTML + " to equal " + test.expectedHtml;
-      }
-      container.appendChild(createTestOutput(test, res));
+      var res = undefined;
+      setTimeout(function () {
+        res = compareNodes(out, test.expectedDom);
+        if (!res) {
+          var div = document.createElement("div");
+          div.appendChild(out);
+          test.fail = "Expected " + div.innerHTML + " to equal " + test.expectedHtml;
+        }
+        container.appendChild(createTestOutput(test, res));
+      }, 0);
     });
   });
 }
