@@ -11,13 +11,16 @@ function runSuites(suites) {
       let tl;
       eval(`tl = ${compiledTemplate};`);
       let out = tl.render(test.context);
-      let res = compareNodes(out, test.expectedDom);
-      if (!res) {
-        let div = document.createElement('div');
-        div.appendChild(out);
-        test.fail = `Expected ${div.innerHTML} to equal ${test.expectedHtml}`;
-      }
-      container.appendChild(createTestOutput(test, res));
+      let res;
+      setTimeout(() => {
+        res = compareNodes(out, test.expectedDom);
+        if (!res) {
+          let div = document.createElement('div');
+          div.appendChild(out);
+          test.fail = `Expected ${div.innerHTML} to equal ${test.expectedHtml}`;
+        }
+        container.appendChild(createTestOutput(test, res));
+      }, 0);
     });
   });
 }

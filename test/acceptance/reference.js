@@ -173,6 +173,23 @@ let tests = [
       return frag;
     })(),
     expectedHtml: 'Dorothy'
+  },
+  {
+    description: 'Reference is a promise',
+    template: '<div>{now}</div>',
+    context: {
+      now: new Promise((resolve, reject) => {
+        resolve('and later')
+      })
+    },
+    expectedDom: (() => {
+      let frag = document.createDocumentFragment();
+      let div = document.createElement('div');
+      div.appendChild(document.createTextNode('and later'));
+      frag.appendChild(div);
+      return frag;
+    })(),
+    expectedHtml: '<div>and later</div>'
   }
 ];
 

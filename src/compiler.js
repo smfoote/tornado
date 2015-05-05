@@ -133,7 +133,7 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, document.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return `td.get(c, ${JSON.stringify(node[1].key)})`;
     }
