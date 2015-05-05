@@ -57,7 +57,7 @@ let compiler = {
       res.push(this.step(item));
     });
     res = res.length ? res : ['\'\''];
-    return res.join('+');
+    return `[${res.join(',')}]`;
   },
   buildElementAttributes(attributes = []) {
     let attrs = '';
@@ -72,7 +72,7 @@ let compiler = {
         return val[0] === 'TORNADO_REFERENCE';
       });
       if (hasRef) {
-        this.renderers[tdIndex] += `      td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}).setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
         this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       }
@@ -168,13 +168,15 @@ let compiler = {
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      if(td.exists(td.get(c, ${JSON.stringify(node.key)}))){
+      this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
         td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
-      }\n`;
+      }.bind(this))`;
       if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
-        this.renderers[tdIndex] += `      else {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
-      }\n`;
+        this.renderers[tdIndex] += `      .catch(function() {
+          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
+        }.bind(this));\n`;
+      } else {
+        this.renderers[tdIndex] += ';\n';
       }
     },
 

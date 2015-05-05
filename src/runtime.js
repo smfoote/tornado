@@ -33,7 +33,12 @@ let tornado = {
     let newContext;
     if (pathLength === 1) {
       // there is only one more item left in the path
-      return context[path.pop()] || '';
+      let res = context[path.pop()];
+      if (res !== undefined) {
+        return res;
+      } else {
+        return '';
+      }
     } else if (pathLength === 0) {
       // return the current context for {.}
       return context || '';
@@ -62,6 +67,20 @@ let tornado = {
     } else {
       return document.createTextNode(val);
     }
+  },
+
+  /**
+   * Set an attribute on a given node. To support references and promises, the value of the
+   * attribute is an array of values
+   * @param {HTMLElement} node The element whose attribute is to be set
+   * @param {String} attrName The name of the attribute to be set
+   * @param {Array} vals An array of strings and Promises. When all of the promises resolve, the
+   * attribute will be set.
+   */
+  setAttribute(node, attrName, vals) {
+    Promise.all(vals).then(values => {
+      node.setAttribute(attrName, values.join(''));
+    });
   },
 
   /**
@@ -163,16 +182,28 @@ let tornado = {
    * Tornado-specific truthiness (based on dust.isEmpty). 0 is truthy, empty array is falsy,
    * everything else matches JavaScript truthiness.
    * @param {*} val The value to be checked for existence.
-   * @return {Boolean}
+   * @return {Promise}
    */
   exists(val) {
-    if (val === 0) {
-      return true;
-    }
-    if (Array.isArray(val) && !val.length) {
-      return false;
-    }
-    return !!val;
+    return new Promise((resolve, reject) => {
+      if (this.util.isPromise(val)) {
+        val.then(data => {
+          if (this.util.isTruthy(data)) {
+            resolve(data);
+          } else {
+            reject('Falsy reference');
+          }
+        }).catch(() => {
+          return reject();
+        });
+      } else {
+        if (this.util.isTruthy(val)) {
+          resolve(val);
+        } else {
+          reject('Falsy reference');
+        }
+      }
+    });
   },
 
   /**
@@ -219,6 +250,21 @@ let tornado = {
      */
      isPromise(val) {
        return typeof val.then === 'function';
+     },
+
+     /**
+      * Determine Tornado truthiness
+      * @param {*} val The value in question
+      * @return {Boolean}
+      */
+     isTruthy(val) {
+       if (val === 0) {
+         return true;
+       }
+       if (Array.isArray(val) && !val.length) {
+         return false;
+       }
+       return !!val;
      }
   }
 }
