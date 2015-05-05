@@ -4,7 +4,12 @@ let compiler = require('../dist/compiler'),
 function runSuites(suites) {
   let container = document.querySelector('#output');
   suites.forEach(suite => {
-    suite.forEach(test => {
+    let suiteContainer = document.createElement('div');
+    let header = document.createElement('h2');
+    header.appendChild(document.createTextNode(suite.name));
+    suiteContainer.appendChild(header);
+    container.appendChild(suiteContainer);
+    suite.tests.forEach(test => {
       let html = test.template;
       let ast = parser.parse(html);
       let compiledTemplate = compiler.compile(ast, 'abc');
@@ -17,9 +22,11 @@ function runSuites(suites) {
         if (!res) {
           let div = document.createElement('div');
           div.appendChild(out);
-          test.fail = `Expected ${div.innerHTML} to equal ${test.expectedHtml}`;
+          let expectedDiv = document.createElement('div');
+          expectedDiv.appendChild(test.expectedDom);
+          test.fail = `Expected ${div.innerHTML} to equal ${expectedDiv.innerHTML}`;
         }
-        container.appendChild(createTestOutput(test, res));
+        suiteContainer.appendChild(createTestOutput(test, res));
       }, 0);
     });
   });
@@ -40,11 +47,11 @@ function createTestOutput(test, res) {
 
 // Compare DOM nodes for equality
 function compareNodes(a, b) {
-  var aChildren = a.childNodes || [];
-  var bChildren = b.childNodes || [];
-  var aAttributes = a.attributes || [];
-  var bAttributes = b.attributes || [];
-  console.log(a.nodeType);
+  let aChildren = a.childNodes || [];
+  let bChildren = b.childNodes || [];
+  let aAttributes = a.attributes || [];
+  let bAttributes = b.attributes || [];
+  let childrenMatch = true;
   if (a.nodeType !== b.nodeType) {
     return false;
   }
@@ -59,10 +66,11 @@ function compareNodes(a, b) {
   if (!compareAttrs(aAttributes, bAttributes)) {
     return false;
   }
+
   for (var i=0, len=aChildren.length; i<len; i++) {
-    return compareNodes(aChildren[i], bChildren[i]);
+    childrenMatch = compareNodes(aChildren[i], bChildren[i]);
   }
-  return true;
+  return childrenMatch;
 }
 
 // Compare the attributes of two nodes for equality

@@ -6,7 +6,12 @@ var compiler = require("../dist/compiler"),
 function runSuites(suites) {
   var container = document.querySelector("#output");
   suites.forEach(function (suite) {
-    suite.forEach(function (test) {
+    var suiteContainer = document.createElement("div");
+    var header = document.createElement("h2");
+    header.appendChild(document.createTextNode(suite.name));
+    suiteContainer.appendChild(header);
+    container.appendChild(suiteContainer);
+    suite.tests.forEach(function (test) {
       var html = test.template;
       var ast = parser.parse(html);
       var compiledTemplate = compiler.compile(ast, "abc");
@@ -19,9 +24,11 @@ function runSuites(suites) {
         if (!res) {
           var div = document.createElement("div");
           div.appendChild(out);
-          test.fail = "Expected " + div.innerHTML + " to equal " + test.expectedHtml;
+          var expectedDiv = document.createElement("div");
+          expectedDiv.appendChild(test.expectedDom);
+          test.fail = "Expected " + div.innerHTML + " to equal " + expectedDiv.innerHTML;
         }
-        container.appendChild(createTestOutput(test, res));
+        suiteContainer.appendChild(createTestOutput(test, res));
       }, 0);
     });
   });
@@ -41,41 +48,30 @@ function createTestOutput(test, res) {
 }
 
 // Compare DOM nodes for equality
-function compareNodes(_x, _x2) {
-  var _again = true;
-
-  _function: while (_again) {
-    _again = false;
-    var a = _x,
-        b = _x2;
-    aChildren = bChildren = aAttributes = bAttributes = i = len = undefined;
-
-    var aChildren = a.childNodes || [];
-    var bChildren = b.childNodes || [];
-    var aAttributes = a.attributes || [];
-    var bAttributes = b.attributes || [];
-    console.log(a.nodeType);
-    if (a.nodeType !== b.nodeType) {
-      return false;
-    }
-    if (a.nodeType === 3 && a.data !== b.data) {
-      // Compare text node values
-      return false;
-    }
-    if (aChildren.length !== bChildren.length || aAttributes.length !== bAttributes.length) {
-      return false;
-    }
-    if (!compareAttrs(aAttributes, bAttributes)) {
-      return false;
-    }
-    for (var i = 0, len = aChildren.length; i < len; i++) {
-      _x = aChildren[i];
-      _x2 = bChildren[i];
-      _again = true;
-      continue _function;
-    }
-    return true;
+function compareNodes(a, b) {
+  var aChildren = a.childNodes || [];
+  var bChildren = b.childNodes || [];
+  var aAttributes = a.attributes || [];
+  var bAttributes = b.attributes || [];
+  var childrenMatch = true;
+  if (a.nodeType !== b.nodeType) {
+    return false;
   }
+  if (a.nodeType === 3 && a.data !== b.data) {
+    // Compare text node values
+    return false;
+  }
+  if (aChildren.length !== bChildren.length || aAttributes.length !== bAttributes.length) {
+    return false;
+  }
+  if (!compareAttrs(aAttributes, bAttributes)) {
+    return false;
+  }
+
+  for (var i = 0, len = aChildren.length; i < len; i++) {
+    childrenMatch = compareNodes(aChildren[i], bChildren[i]);
+  }
+  return childrenMatch;
 }
 
 // Compare the attributes of two nodes for equality
