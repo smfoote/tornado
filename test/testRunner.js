@@ -49,7 +49,6 @@ function createTestOutput(test, res) {
 
 // Compare DOM nodes for equality
 function compareNodes(a, b) {
-  debugger;
   var aChildren = a.childNodes || [];
   var bChildren = b.childNodes || [];
   var aAttributes = a.attributes || [];
