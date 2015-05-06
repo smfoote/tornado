@@ -57,6 +57,32 @@ let suite = {
       expectedHtml: '<div>Hello, <span>world</span></div>'
     },
     {
+      description: 'Exists in an attribute',
+      template: '<div class="{?isSelected}selected{/isSelected}"></div>',
+      context: {isSelected: true},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'selected');
+        frag.appendChild(div);
+        return frag;
+      })(),
+      expectedHtml: '<div class="selected"></div>'
+    },
+    {
+      description: 'Exists in an attribute with an else',
+      template: '<div class="{?isSelected}selected{:else}not-selected{/isSelected}"></div>',
+      context: {isSelected: false},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'not-selected');
+        frag.appendChild(div);
+        return frag;
+      })(),
+      expectedHtml: '<div class="not-selected"></div>'
+    },
+    {
       description: 'Exists where reference is 0',
       template: 'Hello, {?zero}world{/zero}',
       context: {zero: 0},

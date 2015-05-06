@@ -233,6 +233,17 @@ let tornado = {
     return intermediateNode || false;
   },
 
+  /**
+   * Turn a document fragment into a string
+   * @param {DocumentFragment} frag The document fragment to be turned into a string
+   * @return {String}
+   */
+  fragToString(frag) {
+    let div = document.createElement('div');
+    div.appendChild(frag);
+    return div.innerHTML;
+  },
+
   util: {
     /**
      * Determine if a value is an object

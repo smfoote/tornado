@@ -13,6 +13,9 @@ function runSuites(suites) {
       let html = test.template;
       let ast = parser.parse(html);
       let compiledTemplate = compiler.compile(ast, 'abc');
+      if (test.description === 'Exists in an attribute with an else') {
+        console.log(compiledTemplate);
+      }
       let tl;
       eval(`tl = ${compiledTemplate};`);
       let out = tl.render(test.context);
