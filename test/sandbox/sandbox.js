@@ -1,15 +1,6 @@
-var parser = require('../dist/parser.js'),
-    compiler = require('../dist/compiler'),
-    td = require('../dist/runtime');
-
-Node.prototype.replaceChildAtIdx = function(idx, newChild) {
-  var refNode = this.childNodes[idx];
-  if (refNode) {
-    this.replaceChild(newChild, refNode);
-  } else if (idx >= this.childNodes.length) {
-    this.appendChild(newChild);
-  }
-};
+var parser = require('../../dist/parser'),
+    compiler = require('../../dist/compiler'),
+    td = require('../../dist/runtime');
 
 var button = document.querySelector('#render');
 var templateTextArea = document.querySelector('#template');
