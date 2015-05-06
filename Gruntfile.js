@@ -22,7 +22,14 @@ grunt.initConfig({
     }
   },
   browserify: {
-      'test/cacceptance/bundle.js': ['test/cacceptance/runner.js']
+    test: {
+      src: 'test/cacceptance/runner.js',
+      dest: 'test/cacceptance/bundle.js'
+    },
+    sandbox: {
+      src: 'test/sandbox/sandbox.js',
+      dest: 'test/sandbox/bundle.js'
+    }
   },
   watch: {
     scripts: {
@@ -42,6 +49,7 @@ grunt.initConfig({
   }
 });
 
-grunt.registerTask('acceptance', ['babel:acceptance', 'browserify']);
+grunt.registerTask('acceptance', ['babel:acceptance', 'browserify:test']);
+grunt.registerTask('sandbox', ['browserify:sandbox']);
 
 grunt.registerTask('default', ['babel', 'browserify']);
