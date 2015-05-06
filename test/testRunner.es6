@@ -13,9 +13,6 @@ function runSuites(suites) {
       let html = test.template;
       let ast = parser.parse(html);
       let compiledTemplate = compiler.compile(ast, 'abc');
-      if (test.description === 'Exists in an attribute with an else') {
-        console.log(compiledTemplate);
-      }
       let tl;
       eval(`tl = ${compiledTemplate};`);
       let out = tl.render(test.context);
@@ -55,7 +52,7 @@ function compareNodes(a, b) {
   let aAttributes = a.attributes || [];
   let bAttributes = b.attributes || [];
   let childrenMatch = true;
-  if (a.nodeType !== b.nodeType) {
+  if (a.nodeType !== b.nodeType || (a.tagName !== b.tagName)) {
     return false;
   }
   if (a.nodeType === 3 && a.data !== b.data) {
@@ -80,7 +77,7 @@ function compareNodes(a, b) {
 function compareAttrs(a, b) {
   var attr, attrName;
   for (var i=0, len=a.length; i<len; i++) {
-    attr = a[0];
+    attr = a[i];
     attrName = attr.name;
     if (!b[attrName] || b[attrName].value !== attr.value) {
       return false;
