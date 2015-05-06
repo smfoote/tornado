@@ -69,7 +69,7 @@ let compiler = {
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
       let hasRef = attr.value && attr.value.some(function(val) {
-        return val[0] === 'TORNADO_REFERENCE';
+        return val[0] === 'TORNADO_REFERENCE' || val[0] === 'TORNADO_BODY';
       });
       if (hasRef) {
         this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
@@ -102,9 +102,10 @@ let compiler = {
   },
   TORNADO_BODY(node) {
     let bodyInfo = node[1];
+    let previousState = this.context.state;
 
     // Set up the body in the parent fragment and renderer
-    this.tornadoBodies[bodyInfo.type].bind(this)(bodyInfo);
+    let renderVal = this.tornadoBodies[bodyInfo.type].bind(this)(bodyInfo);
 
     // Build the fragment and renderer, then walk the bodies.
     this.context.tornadoBodiesIndex++;
@@ -115,8 +116,9 @@ let compiler = {
     // Open the functions
     this.createMethodHeaders();
 
-    // Walk the body
+    this.context.state = STATES.OUTER_SPACE;
     this.walk(bodyInfo.body);
+    this.context.state = previousState;
 
     if (bodyInfo.bodies) {
       bodyInfo.bodies.forEach((body) => this.TORNADO_BODY(body));
@@ -125,6 +127,7 @@ let compiler = {
     // Close the functions
     this.createMethodFooters();
     this.context.tornadoBodiesIndex--;
+    return renderVal;
   },
   TORNADO_REFERENCE(node) {
     let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
@@ -167,16 +170,29 @@ let compiler = {
       let tdIndex = this.context.tornadoBodiesIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
-      this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
-      this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
-      }.bind(this))`;
-      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
-        this.renderers[tdIndex] += `      .catch(function() {
-          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
-        }.bind(this));\n`;
+      let hasElseBlock = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
+      if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+        this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
+        this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
+          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
+        }.bind(this))`;
+        if (hasElseBlock) {
+          this.renderers[tdIndex] += `      .catch(function() {
+            td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
+          }.bind(this));\n`;
+        } else {
+          this.renderers[tdIndex] += ';\n';
+        }
       } else {
-        this.renderers[tdIndex] += ';\n';
+        let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
+      return td.fragToString(this.r${tdIndex + 1}(c));
+    }.bind(this))`;
+        if (hasElseBlock) {
+          returnVal += `.catch(function() {
+        return td.fragToString(this.r${tdIndex + 2}(c));
+      }.bind(this))`;
+        }
+        return returnVal;
       }
     },
 
