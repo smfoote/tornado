@@ -207,6 +207,39 @@ let tornado = {
   },
 
   /**
+   * Render a block or inline partial based of a given name.
+   * @param {String} name The name of the block
+   * @param {Number} idx The index of the block (in case there are multiples)
+   * @param {TornadoTemplate} template The template in which the block was found
+   * @return {DocumentFragment}
+   */
+  block(name, idx, context, template) {
+    let renderer = this.getBlockRenderer(name, idx, template);
+    if (!renderer) {
+      let frag = document.createDocumentFragment();
+      frag.appendChild(document.createTextNode(''));
+      return frag;
+    }
+    return renderer(context);
+  },
+
+  getBlockRenderer(name, idx, template) {
+    let renderer = template[`f_i_${name}`];
+
+    if (renderer && typeof renderer === 'function') {
+      // Prefer the inline partial renderer
+      return renderer
+    } else {
+      // Fall back to the block renderer
+      renderer = template[`f_b_${name}${idx}`];
+      if (renderer && typeof renderer === 'function') {
+        return renderer;
+      }
+    }
+    // If no renderer is found, undefined will be returned.
+  },
+
+  /**
    * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
    * for more details.
    * @param {HTMLNode} root The parent node

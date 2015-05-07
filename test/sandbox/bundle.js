@@ -197,9 +197,9 @@ var compiler = {
       var hasElseBlock = node.bodies.length === 1 && node.bodies[0][1].name === "else";
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n        }.bind(this))";
+        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n      }.bind(this))";
         if (hasElseBlock) {
-          this.renderers[tdIndex] += "      .catch(function() {\n            td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n          }.bind(this));\n";
+          this.renderers[tdIndex] += "      .catch(function() {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n        }.bind(this));\n";
         } else {
           this.renderers[tdIndex] += ";\n";
         }
