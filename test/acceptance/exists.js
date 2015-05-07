@@ -229,6 +229,35 @@ let suite = {
         return frag;
       })(),
       expectedHtml: 'Hello, never'
+    },
+    {
+      description: 'Exists with sibling exists',
+      template: '{?brother}brother{/brother}{?sister} and sister{/sister}',
+      context: {
+        brother: true,
+        sister: true
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('brother'));
+        frag.appendChild(document.createTextNode(' and sister'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Exists with sibling exists in attribute',
+      template: '<div class="{?brother}brother{/brother}{?sister} sister{/sister}"></div>',
+      context: {
+        brother: true,
+        sister: true
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'brother sister');
+        frag.appendChild(div);
+        return frag;
+      })()
     }
   ]
 };

@@ -39,7 +39,7 @@ let suite = {
     {
       description: 'Reference surrounded by text',
       template: 'Ruby {color} slippers',
-      context: {name: 'red'},
+      context: {color: 'red'},
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createTextNode('Ruby '));
@@ -76,7 +76,7 @@ let suite = {
     {
       description: 'Reference surrounded by elements',
       template: '<span></span>{color}<span></span>',
-      context: {name: 'red'},
+      context: {color: 'red'},
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createElement('span'));
