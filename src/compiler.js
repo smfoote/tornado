@@ -11,7 +11,8 @@ let elIndex = -1;
 let compiler = {
   compile(ast, name) {
     this.context = {
-      tornadoBodiesIndex: 0,
+      tornadoBodies: [{parentIndex: null}],
+      tornadoBodiesCurrentIndex: 0,
       htmlBodies: [{count: -1, htmlBodiesIndexes: [0]}],
       refCount: 0,
       blocks: {},
@@ -38,14 +39,14 @@ let compiler = {
 
     if (node[0] && this[node[0]]) {
       let val = this[node[0]](node);
-      let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex];
+      let indexes = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex];
       return val;
     }
   },
   walk(nodes = []) {
     nodes.forEach((n) => {
       this.step(n);
-      let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+      let indexes = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex].htmlBodiesIndexes;
       indexes[indexes.length - 1]++;
     });
   },
@@ -64,7 +65,7 @@ let compiler = {
     let attrs = '';
     let previousState = this.context.state;
     let refCount = this.context.refCount;
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexesClone = this.context.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
     indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
@@ -82,7 +83,7 @@ let compiler = {
     return attrs;
   },
   getElContainerName() {
-    let count = this.context.htmlBodies[this.context.tornadoBodiesIndex].count;
+    let count = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex].count;
     if (this.context.state === STATES.OUTER_SPACE || count === -1) {
       return 'frag';
     } else {
@@ -93,8 +94,8 @@ let compiler = {
     let meta = node[1];
     let params = meta.params;
     let context = 'c';
-    let tdIndex = this.context.tornadoBodiesIndex;
-    let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
+    let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (params.length === 1 && params[0].key === 'context') {
       context = `td.get(c, ${params[0].val})`;
     }
@@ -109,10 +110,10 @@ let compiler = {
     let renderVal = this.tornadoBodies[bodyInfo.type].bind(this)(bodyInfo);
 
     // Build the fragment and renderer, then walk the bodies.
-    this.context.tornadoBodiesIndex++;
+    this.context.tornadoBodies.push({parentIndex: this.context.tornadoBodiesCurrentIndex});
+    let tdIndex = this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies.length - 1;
     this.context.refCount++;
     this.context.htmlBodies.push({count: -1, htmlBodiesIndexes: [0]});
-    let tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
     this.createMethodHeaders();
@@ -127,14 +128,14 @@ let compiler = {
 
     // Close the functions
     this.createMethodFooters();
-    this.context.tornadoBodiesIndex--;
+    this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies[tdIndex].parentIndex;
     return renderVal;
   },
   TORNADO_REFERENCE(node) {
-    let indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
+    let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     let refCount = this.context.refCount++;
     let containerName = this.getElContainerName();
-    let tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
       this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
@@ -145,7 +146,7 @@ let compiler = {
   HTML_ELEMENT(node) {
     let nodeInfo = node[1].tag_info;
     let nodeContents = node[1].tag_contents;
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let previousState = this.context.state;
     if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
       this.context.state = STATES.ESCAPABLE_RAW;
@@ -167,7 +168,7 @@ let compiler = {
     }
   },
   PLAIN_TEXT(node) {
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
@@ -180,29 +181,30 @@ let compiler = {
   tornadoBodies: {
     exists(node) {
       let refCount = this.context.refCount;
-      let tdIndex = this.context.tornadoBodiesIndex;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
+      let maxTdIndex = this.context.tornadoBodies.length - 1;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
       let hasElseBlock = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
         this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
-          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
+          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
         }.bind(this))`;
         if (hasElseBlock) {
           this.renderers[tdIndex] += `      .catch(function() {
-            td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
+            td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
           }.bind(this));\n`;
         } else {
           this.renderers[tdIndex] += ';\n';
         }
       } else {
         let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
-      return td.nodeToString(this.r${tdIndex + 1}(c));
+      return td.nodeToString(this.r${maxTdIndex + 1}(c));
     }.bind(this))`;
         if (hasElseBlock) {
           returnVal += `.catch(function() {
-        return td.nodeToString(this.r${tdIndex + 2}(c));
+        return td.nodeToString(this.r${maxTdIndex + 2}(c));
       }.bind(this))`;
         }
         return returnVal;
@@ -211,7 +213,7 @@ let compiler = {
 
     notExists(node) {
       let refCount = this.context.refCount;
-      let tdIndex = this.context.tornadoBodiesIndex;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
       this.fragments[tdIndex] += `      ${containerName}.appendChild(document.createTextNode(''));\n`;
@@ -227,7 +229,7 @@ let compiler = {
 
     section(node) {
       let refCount = this.context.refCount;
-      let tdIndex = this.context.tornadoBodiesIndex;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
       let elseReplace = `td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));`;
@@ -256,7 +258,7 @@ let compiler = {
     bodies() {}
   },
   createMethodHeaders() {
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     this.fragments[tdIndex] = `f${tdIndex}: function() {
       var frag = document.createDocumentFragment();\n`;
     this.renderers[tdIndex] = `r${tdIndex}: function(c) {
@@ -264,11 +266,11 @@ let compiler = {
       root = root.cloneNode(true);\n`;
   },
   createMethodFooters() {
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     this.fragments[tdIndex] += `      frags.frag${tdIndex} = frag;
       return frag;
     }`;
-    this.renderers[this.context.tornadoBodiesIndex] += `      return root;
+    this.renderers[tdIndex] += `      return root;
     }`;
   },
 

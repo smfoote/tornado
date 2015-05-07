@@ -14,7 +14,8 @@ var elIndex = -1;
 var compiler = {
   compile: function compile(ast, name) {
     this.context = {
-      tornadoBodiesIndex: 0,
+      tornadoBodies: [{ parentIndex: null }],
+      tornadoBodiesCurrentIndex: 0,
       htmlBodies: [{ count: -1, htmlBodiesIndexes: [0] }],
       refCount: 0,
       blocks: {},
@@ -31,7 +32,7 @@ var compiler = {
 
     if (node[0] && this[node[0]]) {
       var val = this[node[0]](node);
-      var indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex];
+      var indexes = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex];
       return val;
     }
   },
@@ -42,7 +43,7 @@ var compiler = {
 
     nodes.forEach(function (n) {
       _this.step(n);
-      var indexes = _this.context.htmlBodies[_this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+      var indexes = _this.context.htmlBodies[_this.context.tornadoBodiesCurrentIndex].htmlBodiesIndexes;
       indexes[indexes.length - 1]++;
     });
   },
@@ -61,15 +62,15 @@ var compiler = {
     res = res.length ? res : ["''"];
     return "[" + res.join(",") + "]";
   },
-  buildElementAttributes: function buildElementAttributes(elType) {
+  buildElementAttributes: function buildElementAttributes() {
     var _this = this;
 
-    var attributes = arguments[1] === undefined ? [] : arguments[1];
+    var attributes = arguments[0] === undefined ? [] : arguments[0];
 
     var attrs = "";
     var previousState = this.context.state;
     var refCount = this.context.refCount;
-    var tdIndex = this.context.tornadoBodiesIndex;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
     var indexesClone = this.context.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
     indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
@@ -79,16 +80,15 @@ var compiler = {
       });
       if (hasRef) {
         _this.renderers[tdIndex] += "      td.setAttribute(td.getNodeAtIdxPath(root, " + JSON.stringify(indexesClone) + "), '" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
-        // this.renderers[tdIndex] += `      td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}).setAttribute('${attr.attrName}', td.getAttrValue('${elType}', '${attr.attrName}', ${this.walkAttrs(attr.value)}));\n`;
       } else {
-        _this.fragments[tdIndex] += "      el" + _this.context.htmlBodies[tdIndex].count + ".setAttribute('" + attr.attrName + "', td.getAttrValue('" + elType + "', '" + attr.attrName + "', " + _this.walkAttrs(attr.value) + "));\n";
+        _this.fragments[tdIndex] += "      el" + _this.context.htmlBodies[tdIndex].count + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n";
       }
     });
     this.context.state = previousState;
     return attrs;
   },
   getElContainerName: function getElContainerName() {
-    var count = this.context.htmlBodies[this.context.tornadoBodiesIndex].count;
+    var count = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex].count;
     if (this.context.state === STATES.OUTER_SPACE || count === -1) {
       return "frag";
     } else {
@@ -99,8 +99,8 @@ var compiler = {
     var meta = node[1];
     var params = meta.params;
     var context = "c";
-    var tdIndex = this.context.tornadoBodiesIndex;
-    var indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
+    var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (params.length === 1 && params[0].key === "context") {
       context = "td.get(c, " + params[0].val + ")";
     }
@@ -117,10 +117,10 @@ var compiler = {
     var renderVal = this.tornadoBodies[bodyInfo.type].bind(this)(bodyInfo);
 
     // Build the fragment and renderer, then walk the bodies.
-    this.context.tornadoBodiesIndex++;
+    this.context.tornadoBodies.push({ parentIndex: this.context.tornadoBodiesCurrentIndex });
+    var tdIndex = this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies.length - 1;
     this.context.refCount++;
     this.context.htmlBodies.push({ count: -1, htmlBodiesIndexes: [0] });
-    var tdIndex = this.context.tornadoBodiesIndex;
 
     // Open the functions
     this.createMethodHeaders();
@@ -137,14 +137,14 @@ var compiler = {
 
     // Close the functions
     this.createMethodFooters();
-    this.context.tornadoBodiesIndex--;
+    this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies[tdIndex].parentIndex;
     return renderVal;
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node) {
-    var indexes = this.context.htmlBodies[this.context.tornadoBodiesIndex].htmlBodiesIndexes;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
+    var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     var refCount = this.context.refCount++;
     var containerName = this.getElContainerName();
-    var tdIndex = this.context.tornadoBodiesIndex;
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
       this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
@@ -155,7 +155,7 @@ var compiler = {
   HTML_ELEMENT: function HTML_ELEMENT(node) {
     var nodeInfo = node[1].tag_info;
     var nodeContents = node[1].tag_contents;
-    var tdIndex = this.context.tornadoBodiesIndex;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
     var previousState = this.context.state;
     if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
       this.context.state = STATES.ESCAPABLE_RAW;
@@ -165,7 +165,7 @@ var compiler = {
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
     var count = ++this.context.htmlBodies[tdIndex].count;
     this.fragments[tdIndex] += "      var el" + count + " = document.createElement(\"" + nodeInfo.key + "\");\n";
-    this.buildElementAttributes(nodeInfo.key, nodeInfo.attributes);
+    this.buildElementAttributes(nodeInfo.attributes);
     this.walk(nodeContents);
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
     this.context.htmlBodies[tdIndex].count--;
@@ -177,7 +177,7 @@ var compiler = {
     }
   },
   PLAIN_TEXT: function PLAIN_TEXT(node) {
-    var tdIndex = this.context.tornadoBodiesIndex;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
     var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return "'" + node[1] + "'";
@@ -190,22 +190,23 @@ var compiler = {
   tornadoBodies: {
     exists: function exists(node) {
       var refCount = this.context.refCount;
-      var tdIndex = this.context.tornadoBodiesIndex;
+      var tdIndex = this.context.tornadoBodiesCurrentIndex;
+      var maxTdIndex = this.context.tornadoBodies.length - 1;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       var containerName = this.getElContainerName();
       var hasElseBlock = node.bodies.length === 1 && node.bodies[0][1].name === "else";
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n        }.bind(this))";
+        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n        }.bind(this))";
         if (hasElseBlock) {
-          this.renderers[tdIndex] += "      .catch(function() {\n            td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n          }.bind(this));\n";
+          this.renderers[tdIndex] += "      .catch(function() {\n            td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n          }.bind(this));\n";
         } else {
           this.renderers[tdIndex] += ";\n";
         }
       } else {
-        var returnVal = "td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n      return td.nodeToString(this.r" + (tdIndex + 1) + "(c));\n    }.bind(this))";
+        var returnVal = "td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 1) + "(c));\n    }.bind(this))";
         if (hasElseBlock) {
-          returnVal += ".catch(function() {\n        return td.nodeToString(this.r" + (tdIndex + 2) + "(c));\n      }.bind(this))";
+          returnVal += ".catch(function() {\n        return td.nodeToString(this.r" + (maxTdIndex + 2) + "(c));\n      }.bind(this))";
         }
         return returnVal;
       }
@@ -213,7 +214,7 @@ var compiler = {
 
     notExists: function notExists(node) {
       var refCount = this.context.refCount;
-      var tdIndex = this.context.tornadoBodiesIndex;
+      var tdIndex = this.context.tornadoBodiesCurrentIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       var containerName = this.getElContainerName();
       this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
@@ -225,7 +226,7 @@ var compiler = {
 
     section: function section(node) {
       var refCount = this.context.refCount;
-      var tdIndex = this.context.tornadoBodiesIndex;
+      var tdIndex = this.context.tornadoBodiesCurrentIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       var containerName = this.getElContainerName();
       var elseReplace = "td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));";
@@ -242,14 +243,14 @@ var compiler = {
     bodies: function bodies() {}
   },
   createMethodHeaders: function createMethodHeaders() {
-    var tdIndex = this.context.tornadoBodiesIndex;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
     this.fragments[tdIndex] = "f" + tdIndex + ": function() {\n      var frag = document.createDocumentFragment();\n";
     this.renderers[tdIndex] = "r" + tdIndex + ": function(c) {\n      var root = frags.frag" + tdIndex + " || this.f" + tdIndex + "();\n      root = root.cloneNode(true);\n";
   },
   createMethodFooters: function createMethodFooters() {
-    var tdIndex = this.context.tornadoBodiesIndex;
+    var tdIndex = this.context.tornadoBodiesCurrentIndex;
     this.fragments[tdIndex] += "      frags.frag" + tdIndex + " = frag;\n      return frag;\n    }";
-    this.renderers[this.context.tornadoBodiesIndex] += "      return root;\n    }";
+    this.renderers[tdIndex] += "      return root;\n    }";
   },
 
   elTypes: {
@@ -6357,31 +6358,6 @@ var tornado = {
     return div.innerHTML;
   },
 
-  /**
-   * Get a secure value for a given attribute on a given node type
-   * @param {String} nodeType The type of HTML element the attribute will be applied to.
-   * @param {String} attrType The type of attribute.
-   * @param {String} val The initial value, to be run through the filters
-   */
-  getAttrValue: function getAttrValue(nodeType, attrType, val) {
-    var filter = this.getAttrFilter("" + nodeType + "[" + attrType + "]");
-    val = Array.isArray(val) ? val.join("") : val;
-    if (filter) {
-      return filter(val);
-    }
-    return val;
-  },
-
-  /**
-   * Return a filter method for a filter selector.
-   * TODO: Make these filters registerable
-   * @param {String} filterSelector A filter selector of type `'el-name[attr-name]'`. For example,
-   * a filter for `href`s on an `a` tag would be `'a[href]'`.
-   */
-  getAttrFilter: function getAttrFilter(filterSelector) {
-    return this.attrFilters[filterSelector];
-  },
-
   util: {
     /**
      * Determine if a value is an object
@@ -6414,12 +6390,6 @@ var tornado = {
         return false;
       }
       return !!val;
-    }
-  },
-
-  attrFilters: {
-    "a[href]": function aHref(val) {
-      return val.replace(/^javascript:.*/, "");
     }
   }
 };

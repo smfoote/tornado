@@ -53,7 +53,6 @@ function compareNodes(a, b) {
   var bChildren = b.childNodes || [];
   var aAttributes = a.attributes || [];
   var bAttributes = b.attributes || [];
-  var childrenMatch = true;
   if (a.nodeType !== b.nodeType || a.tagName !== b.tagName) {
     return false;
   }
@@ -69,9 +68,12 @@ function compareNodes(a, b) {
   }
 
   for (var i = 0, len = aChildren.length; i < len; i++) {
-    childrenMatch = compareNodes(aChildren[i], bChildren[i]);
+    var childrenMatch = compareNodes(aChildren[i], bChildren[i]);
+    if (!childrenMatch) {
+      return false;
+    }
   }
-  return childrenMatch;
+  return true;
 }
 
 // Compare the attributes of two nodes for equality
