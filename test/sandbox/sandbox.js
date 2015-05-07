@@ -22,9 +22,11 @@ button.addEventListener('click', function(evt) {
   var data = {};
   eval('data = ' + c + ';');
   var out = tl.render(eval(data));
-  outputContainer.innerHTML = '';
-  outputContainer.appendChild(out);
-  stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  setTimeout(function() {
+    outputContainer.innerHTML = '';
+    outputContainer.appendChild(out);
+    stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }, 0);
 });
 
 output.addEventListener('click', function(evt) {

@@ -232,15 +232,19 @@ let suite = {
     },
     {
       description: 'Exists with sibling exists',
-      template: '{?brother}brother{/brother}{?sister} and sister{/sister}',
+      template: '<div>{?brother}brother{/brother}</div><div>{?sister} and sister{/sister}</div>',
       context: {
         brother: true,
         sister: true
       },
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('brother'));
-        frag.appendChild(document.createTextNode(' and sister'));
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode('brother'));
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.appendChild(document.createTextNode(' and sister'));
+        frag.appendChild(div);
         return frag;
       })()
     },

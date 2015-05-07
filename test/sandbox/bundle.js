@@ -95,6 +95,9 @@ var compiler = {
       return "el" + count;
     }
   },
+  createPlaceholder: function createPlaceholder() {
+    return "" + this.getElContainerName() + ".appendChild(document.createTextNode(''))";
+  },
   TORNADO_PARTIAL: function TORNADO_PARTIAL(node) {
     var meta = node[1];
     var params = meta.params;
@@ -104,7 +107,7 @@ var compiler = {
     if (params.length === 1 && params[0].key === "context") {
       context = "td.get(c, " + params[0].val + ")";
     }
-    this.fragments[tdIndex] += "      " + this.getElContainerName() + ".appendChild(document.createTextNode(''));\n";
+    this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
     this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.getPartial('" + meta.name + "', " + context + "));\n";
   },
   TORNADO_BODY: function TORNADO_BODY(node) {
@@ -112,32 +115,55 @@ var compiler = {
 
     var bodyInfo = node[1];
     var previousState = this.context.state;
+    var createMethods = !!bodyInfo.body.length;
+    var methodName = undefined,
+        blockName = undefined,
+        blockIndex = undefined;
+
+    if (bodyInfo.type === "block" || bodyInfo.type === "inlinePartial") {
+      blockName = bodyInfo.key.join(".");
+      methodName = "_" + bodyInfo.type.substring(0, 1) + "_" + blockName;
+    }
+
+    if (bodyInfo.type === "block") {
+      var blocks = this.context.blocks;
+      if (blocks.hasOwnProperty(blockName)) {
+        blockIndex = ++blocks[blockName];
+      } else {
+        blockIndex = blocks[blockName] = 0;
+      }
+      bodyInfo.blockIndex = blockIndex;
+      bodyInfo.blockName = blockName;
+      methodName += blockIndex;
+    }
 
     // Set up the body in the parent fragment and renderer
     var renderVal = this.tornadoBodies[bodyInfo.type].bind(this)(bodyInfo);
 
-    // Build the fragment and renderer, then walk the bodies.
-    this.context.tornadoBodies.push({ parentIndex: this.context.tornadoBodiesCurrentIndex });
-    var tdIndex = this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies.length - 1;
-    this.context.refCount++;
-    this.context.htmlBodies.push({ count: -1, htmlBodiesIndexes: [0] });
+    if (createMethods) {
+      // Build the fragment and renderer, then walk the bodies.
+      this.context.tornadoBodies.push({ parentIndex: this.context.tornadoBodiesCurrentIndex });
+      var tdIndex = this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies.length - 1;
+      this.context.refCount++;
+      this.context.htmlBodies.push({ count: -1, htmlBodiesIndexes: [0] });
 
-    // Open the functions
-    this.createMethodHeaders();
+      // Open the functions
+      this.createMethodHeaders(methodName);
 
-    this.context.state = STATES.OUTER_SPACE;
-    this.walk(bodyInfo.body);
-    this.context.state = previousState;
+      this.context.state = STATES.OUTER_SPACE;
+      this.walk(bodyInfo.body);
+      this.context.state = previousState;
 
-    if (bodyInfo.bodies) {
-      bodyInfo.bodies.forEach(function (body) {
-        return _this.TORNADO_BODY(body);
-      });
+      if (bodyInfo.bodies) {
+        bodyInfo.bodies.forEach(function (body) {
+          return _this.TORNADO_BODY(body);
+        });
+      }
+
+      // Close the functions
+      this.createMethodFooters();
+      this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies[tdIndex].parentIndex;
     }
-
-    // Close the functions
-    this.createMethodFooters();
-    this.context.tornadoBodiesCurrentIndex = this.context.tornadoBodies[tdIndex].parentIndex;
     return renderVal;
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node) {
@@ -146,7 +172,7 @@ var compiler = {
     var refCount = this.context.refCount++;
     var containerName = this.getElContainerName();
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
       this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.createTextNode(td.get(c, " + JSON.stringify(node[1].key) + ")));\n";
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return "td.get(c, " + JSON.stringify(node[1].key) + ")";
@@ -188,7 +214,7 @@ var compiler = {
     }
   },
   tornadoBodies: {
-    exists: function exists(node) {
+    exists: function exists(node, reverse) {
       var refCount = this.context.refCount;
       var tdIndex = this.context.tornadoBodiesCurrentIndex;
       var maxTdIndex = this.context.tornadoBodies.length - 1;
@@ -196,32 +222,29 @@ var compiler = {
       var containerName = this.getElContainerName();
       var hasElseBlock = node.bodies.length === 1 && node.bodies[0][1].name === "else";
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
-        this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n      }.bind(this))";
+        var primaryBody = reverse ? ".catch(function(err) {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n        throw(err);\n      }.bind(this))" : ".then(function() {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 1) + "(c));\n      }.bind(this))";
+        this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
+        this.renderers[tdIndex] += "      td.exists(td.get(c, " + JSON.stringify(node.key) + "))" + primaryBody;
         if (hasElseBlock) {
-          this.renderers[tdIndex] += "      .catch(function() {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n        }.bind(this));\n";
+          var elseBody = reverse ? ".then(function() {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n      }.bind(this))" : ".catch(function(err) {\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (maxTdIndex + 2) + "(c));\n        throw(err);\n      }.bind(this))";
+          this.renderers[tdIndex] += "\n      " + elseBody + ";\n";
         } else {
           this.renderers[tdIndex] += ";\n";
         }
       } else {
-        var returnVal = "td.exists(td.get(c, " + JSON.stringify(node.key) + ")).then(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 1) + "(c));\n    }.bind(this))";
+        var primaryBody = reverse ? ".catch(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 1) + "(c));\n    }.bind(this))" : ".then(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 1) + "(c));\n    }.bind(this))";
+
+        var returnVal = "td.exists(td.get(c, " + JSON.stringify(node.key) + "))" + primaryBody;
         if (hasElseBlock) {
-          returnVal += ".catch(function() {\n        return td.nodeToString(this.r" + (maxTdIndex + 2) + "(c));\n      }.bind(this))";
+          var elseBody = reverse ? ".then(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 2) + "(c));\n    }.bind(this))" : ".catch(function() {\n      return td.nodeToString(this.r" + (maxTdIndex + 2) + "(c));\n    }.bind(this))";
+          returnVal += elseBody;
         }
         return returnVal;
       }
     },
 
     notExists: function notExists(node) {
-      var refCount = this.context.refCount;
-      var tdIndex = this.context.tornadoBodiesCurrentIndex;
-      var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      var containerName = this.getElContainerName();
-      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
-      this.renderers[tdIndex] += "      if(!td.exists(td.get(c, " + JSON.stringify(node.key) + "))){\n        td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(c));\n      }\n";
-      if (node.bodies.length === 1 && node.bodies[0][1].name === "else") {
-        this.renderers[tdIndex] += "      else {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 2) + "(c));\n      }\n";
-      }
+      return this.tornadoBodies.exists.bind(this)(node, true);
     },
 
     section: function section(node) {
@@ -236,20 +259,29 @@ var compiler = {
         arrayElse = "\n        if (!sectionVal.length) {\n          " + elseReplace + "\n        }";
         sectionElse = " else {\n          " + elseReplace + "\n        }";
       }
-      this.fragments[tdIndex] += "      " + containerName + ".appendChild(document.createTextNode(''));\n";
+      this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
       this.renderers[tdIndex] += "      var sectionVal = td.get(c, " + JSON.stringify(node.key) + ");\n      if (Array.isArray(sectionVal)) {\n        for (var i=0, item; item=sectionVal[i]; i++) {\n          td.replaceChildAtIdxPath(root, [" + indexes.join(",") + "+(2*i)], this.r" + (tdIndex + 1) + "(item));\n        }" + arrayElse + "\n      } else {\n        if (td.exists(sectionVal)) {\n          td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", this.r" + (tdIndex + 1) + "(sectionVal));\n        }" + sectionElse + "\n      }\n";
+    },
+
+    block: function block(node) {
+      var tdIndex = this.context.tornadoBodiesCurrentIndex;
+      var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
+      this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.block('" + node.blockName + "', " + node.blockIndex + ", c, this));\n";
     },
 
     bodies: function bodies() {}
   },
-  createMethodHeaders: function createMethodHeaders() {
+  createMethodHeaders: function createMethodHeaders(name) {
     var tdIndex = this.context.tornadoBodiesCurrentIndex;
-    this.fragments[tdIndex] = "f" + tdIndex + ": function() {\n      var frag = document.createDocumentFragment();\n";
-    this.renderers[tdIndex] = "r" + tdIndex + ": function(c) {\n      var root = frags.frag" + tdIndex + " || this.f" + tdIndex + "();\n      root = root.cloneNode(true);\n";
+    name = name || tdIndex;
+    this.fragments[tdIndex] = "f" + name + ": function() {\n      var frag = document.createDocumentFragment();\n";
+    this.renderers[tdIndex] = "r" + name + ": function(c) {\n      var root = frags.frag" + name + " || this.f" + name + "();\n      root = root.cloneNode(true);\n";
   },
-  createMethodFooters: function createMethodFooters() {
+  createMethodFooters: function createMethodFooters(name) {
     var tdIndex = this.context.tornadoBodiesCurrentIndex;
-    this.fragments[tdIndex] += "      frags.frag" + tdIndex + " = frag;\n      return frag;\n    }";
+    name = name || tdIndex;
+    this.fragments[tdIndex] += "      frags.frag" + name + " = frag;\n      return frag;\n    }";
     this.renderers[tdIndex] += "      return root;\n    }";
   },
 
@@ -6321,6 +6353,39 @@ var tornado = {
   },
 
   /**
+   * Render a block or inline partial based of a given name.
+   * @param {String} name The name of the block
+   * @param {Number} idx The index of the block (in case there are multiples)
+   * @param {TornadoTemplate} template The template in which the block was found
+   * @return {DocumentFragment}
+   */
+  block: function block(name, idx, context, template) {
+    var renderer = this.getBlockRenderer(name, idx, template);
+    if (!renderer) {
+      var frag = document.createDocumentFragment();
+      frag.appendChild(document.createTextNode(""));
+      return frag;
+    }
+    return renderer(context);
+  },
+
+  getBlockRenderer: function getBlockRenderer(name, idx, template) {
+    var renderer = template["f_i_" + name];
+
+    if (renderer && typeof renderer === "function") {
+      // Prefer the inline partial renderer
+      return renderer;
+    } else {
+      // Fall back to the block renderer
+      renderer = template["f_b_" + name + "" + idx];
+      if (renderer && typeof renderer === "function") {
+        return renderer;
+      }
+    }
+    // If no renderer is found, undefined will be returned.
+  },
+
+  /**
    * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
    * for more details.
    * @param {HTMLNode} root The parent node
@@ -6421,9 +6486,11 @@ button.addEventListener('click', function(evt) {
   var data = {};
   eval('data = ' + c + ';');
   var out = tl.render(eval(data));
-  outputContainer.innerHTML = '';
-  outputContainer.appendChild(out);
-  stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  setTimeout(function() {
+    outputContainer.innerHTML = '';
+    outputContainer.appendChild(out);
+    stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }, 0);
 });
 
 output.addEventListener('click', function(evt) {
