@@ -203,7 +203,7 @@ let compiler = {
     }
   },
   tornadoBodies: {
-    exists(node) {
+    exists(node, reverse) {
       let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let maxTdIndex = this.context.tornadoBodies.length - 1;
@@ -211,44 +211,51 @@ let compiler = {
       let containerName = this.getElContainerName();
       let hasElseBlock = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+        let primaryBody = reverse ? `.catch(function(err) {
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
+        throw(err);
+      }.bind(this))` :
+        `.then(function() {
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
+      }.bind(this))`;
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
-          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
-        }.bind(this))`;
+        this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBlock) {
-          this.renderers[tdIndex] += `      .catch(function() {
-            td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
-          }.bind(this));\n`;
+          let elseBody = reverse ? `.then(function() {
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
+      }.bind(this))` :
+          `.catch(function(err) {
+        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
+        throw(err);
+      }.bind(this))`;
+          this.renderers[tdIndex] += `\n      ${elseBody};\n`;
         } else {
           this.renderers[tdIndex] += ';\n';
         }
       } else {
-        let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function() {
+        let primaryBody = reverse ? `.catch(function() {
+      return td.nodeToString(this.r${maxTdIndex + 1}(c));
+    }.bind(this))` :
+    `.then(function() {
       return td.nodeToString(this.r${maxTdIndex + 1}(c));
     }.bind(this))`;
+
+        let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBlock) {
-          returnVal += `.catch(function() {
-        return td.nodeToString(this.r${maxTdIndex + 2}(c));
-      }.bind(this))`;
+          let elseBody = reverse ? `.then(function() {
+      return td.nodeToString(this.r${maxTdIndex + 2}(c));
+    }.bind(this))` :
+          `.catch(function() {
+      return td.nodeToString(this.r${maxTdIndex + 2}(c));
+    }.bind(this))`
+          returnVal += elseBody;
         }
         return returnVal;
       }
     },
 
     notExists(node) {
-      let refCount = this.context.refCount;
-      let tdIndex = this.context.tornadoBodiesCurrentIndex;
-      let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      let containerName = this.getElContainerName();
-      this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      if(!td.exists(td.get(c, ${JSON.stringify(node.key)}))){
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(c));
-      }\n`;
-      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else') {
-        this.renderers[tdIndex] += `      else {
-          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));
-      }\n`;
-      }
+      return this.tornadoBodies.exists.bind(this)(node, true);
     },
 
     section(node) {
@@ -280,7 +287,7 @@ let compiler = {
     },
 
     block(node) {
-      let tdIndex = this.context.tornadoBodiesIndex;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
       this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
@@ -289,7 +296,7 @@ let compiler = {
     bodies() {}
   },
   createMethodHeaders(name) {
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     name = name || tdIndex;
     this.fragments[tdIndex] = `f${name}: function() {
       var frag = document.createDocumentFragment();\n`;
@@ -298,7 +305,7 @@ let compiler = {
       root = root.cloneNode(true);\n`;
   },
   createMethodFooters(name) {
-    let tdIndex = this.context.tornadoBodiesIndex;
+    let tdIndex = this.context.tornadoBodiesCurrentIndex;
     name = name || tdIndex
     this.fragments[tdIndex] += `      frags.frag${name} = frag;
       return frag;
