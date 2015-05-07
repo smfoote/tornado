@@ -266,9 +266,15 @@ var compiler = {
     block: function block(node) {
       var tdIndex = this.context.tornadoBodiesCurrentIndex;
       var indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
-      this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.block('" + node.blockName + "', " + node.blockIndex + ", c, this));\n";
+      if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+        this.fragments[tdIndex] += "      " + this.createPlaceholder() + ";\n";
+        this.renderers[tdIndex] += "      td.replaceChildAtIdxPath(root, " + JSON.stringify(indexes) + ", td.block('" + node.blockName + "', " + node.blockIndex + ", c, this));\n";
+      } else {
+        return "td.nodeToString(td.block('" + node.blockName + "', " + node.blockIndex + ", c, this))";
+      }
     },
+
+    inlinePartial: function inlinePartial(node) {},
 
     bodies: function bodies() {}
   },

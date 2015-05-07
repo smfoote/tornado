@@ -289,9 +289,15 @@ let compiler = {
     block(node) {
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+      if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+        this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
+        this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+      } else {
+        return `td.nodeToString(td.block('${node.blockName}', ${node.blockIndex}, c, this))`;
+      }
     },
+
+    inlinePartial(node) {},
 
     bodies() {}
   },
