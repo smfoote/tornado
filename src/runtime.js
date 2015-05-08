@@ -35,7 +35,7 @@ let tornado = {
       // there is only one more item left in the path
       let res = context[path.pop()];
       if (res !== undefined) {
-        return res;
+        return td.util.isFunction(res) ? res.bind(context)() : res;
       } else {
         return '';
       }
@@ -48,6 +48,13 @@ let tornado = {
     }
     // There are still more steps in the array
     newContext = context[path.shift()];
+    if (this.util.isFunction(newContext)) {
+      newContext = newContext.bind(context)();
+      if (this.util.isPromise(newContext)) {
+        return newContext.then(val => this.get(val, path));
+      }
+      // If newContext is not a promise, it will pass through to the next if statement
+    }
     if (this.util.isObject(newContext)) {
       return this.get(newContext, path);
     }
@@ -290,10 +297,19 @@ let tornado = {
     /**
      * Deterime if a value is a Promise
      * @param {*} val The value in question
-     * @param {Boolean}
+     * @return {Boolean}
      */
      isPromise(val) {
-       return typeof val.then === 'function';
+       return this.isFunction(val.then);
+     },
+
+     /**
+      * Determine if a value is a Function
+      * @param {*} val The value in question
+      * @return {Boolean}
+      */
+     isFunction(val) {
+       return typeof val === 'function';
      },
 
      /**

@@ -224,8 +224,97 @@ let suite = {
         div.setAttribute('class', 'later');
         frag.appendChild(div);
         return frag;
-      })(),
-      expectedHtml: '<div class="later"></div>'
+      })()
+    },
+    {
+      description: 'Reference is a function that returns a string',
+      template: '<blockquote>The name is {lastName}, {fullName}.</blockquote>',
+      context: {
+        fullName: function() {
+          return this.firstName + ' ' + this.lastName;
+        },
+        firstName: 'James',
+        lastName: 'Bond'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('blockquote');
+        div.appendChild(document.createTextNode('The name is '));
+        div.appendChild(document.createTextNode('Bond'));
+        div.appendChild(document.createTextNode(', '));
+        div.appendChild(document.createTextNode('James Bond'));
+        div.appendChild(document.createTextNode('.'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Reference is a function that returns a Promise',
+      template: '<blockquote>The name is {lastName}, {fullName}.</blockquote>',
+      context: {
+        fullName: function() {
+          return new Promise(function(resolve, reject) {
+            resolve(this.firstName + ' ' + this.lastName);
+          }.bind(this));
+        },
+        firstName: 'James',
+        lastName: 'Bond'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('blockquote');
+        div.appendChild(document.createTextNode('The name is '));
+        div.appendChild(document.createTextNode('Bond'));
+        div.appendChild(document.createTextNode(', '));
+        div.appendChild(document.createTextNode('James Bond'));
+        div.appendChild(document.createTextNode('.'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Reference with dots, where first part of path is a function returning an object',
+      template: '<blockquote>The name is {name.lastName}.</blockquote>',
+      context: {
+        name: function() {
+          return {
+            firstName: 'James',
+            lastName: 'Bond'
+          };
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('blockquote');
+        div.appendChild(document.createTextNode('The name is '));
+        div.appendChild(document.createTextNode('Bond'));
+        div.appendChild(document.createTextNode('.'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Reference with dots, where first part of path is a function returning a Promise',
+      template: '<blockquote>The name is {name.lastName}.</blockquote>',
+      context: {
+        name: function() {
+          return new Promise((resolve, reject) => {
+            resolve({
+              firstName: 'James',
+              lastName: 'Bond'
+            });
+          });
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('blockquote');
+        div.appendChild(document.createTextNode('The name is '));
+        div.appendChild(document.createTextNode('Bond'));
+        div.appendChild(document.createTextNode('.'));
+        frag.appendChild(div);
+        return frag;
+      })()
     }
   ]
 };

@@ -1,4 +1,5 @@
 node_modules/
 dist/
 test/cacceptance/
+test/sandbox/bundle.js
 *.map
