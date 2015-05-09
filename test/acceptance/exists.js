@@ -262,7 +262,69 @@ let suite = {
         frag.appendChild(div);
         return frag;
       })()
-    }
+    },
+    {
+      description: 'Exists where reference is a function',
+      template: '{?fun}Way fun!{/fun}',
+      context: {
+        fun: function() {
+          return true;
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Way fun!'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Exists where dotted reference contains a function',
+      template: '{?fun.fun}Way fun!{/fun.fun}',
+      context: {
+        fun: function() {
+          return {
+            fun: true
+          };
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Way fun!'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Exists where reference is a function that returns a Promise',
+      template: '{?fun}Way fun!{/fun}',
+      context: {
+        fun: function() {
+          return new Promise(function(resolve, reject) {
+            resolve(true);
+          });
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Way fun!'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Exists where dotted reference contains a function that returns a Promise',
+      template: '{?fun.fun}Way fun!{/fun.fun}',
+      context: {
+        fun: function() {
+          return new Promise(function(resolve, reject) {
+            resolve({fun: true});
+          });
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Way fun!'));
+        return frag;
+      })()
+    },
   ]
 };
 
