@@ -10,9 +10,12 @@ function runSuites(suites) {
     suiteContainer.appendChild(header);
     container.appendChild(suiteContainer);
     suite.tests.forEach(test => {
+      if (test.setup && typeof test.setup === 'function') {
+        test.setup(parser, compiler);
+      }
       let html = test.template;
       let ast = parser.parse(html);
-      let compiledTemplate = compiler.compile(ast, 'abc');
+      let compiledTemplate = compiler.compile(ast, test.name || 'abc');
       let tl;
       eval(`tl = ${compiledTemplate};`);
       let out = tl.render(test.context);

@@ -103,7 +103,7 @@ let compiler = {
       context = `td.get(c, ${params[0].val})`;
     }
     this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-    this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}));\n`;
+    this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}, this));\n`;
   },
   TORNADO_BODY(node) {
     let bodyInfo = node[1];
