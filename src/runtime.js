@@ -96,15 +96,18 @@ let tornado = {
    * when the Promise returned by td.fetchPartial resolves.
    * @param {String} name The name of the partial to be rendered and returned
    * @param {Object} context The context to be used to render the partial
+   * @param {TornadoTemplate} parentTemplate The template object that the template was called from
    * @param {DocumentFragment|Promise}
    */
-  getPartial(name, context) {
+  getPartial(name, context, parentTemplate) {
     let partial = this.templateCache[name];
     if (partial) {
+      partial.parentTemplate = parentTemplate;
       return partial.render(context);
     } else {
       return this.fetchPartial(name)
           .then(partial => {
+            partial.parentTemplate = parentTemplate;
             return partial.render(context);
           })
           .catch(error => this.throwError(error));
@@ -231,17 +234,21 @@ let tornado = {
   },
 
   getBlockRenderer(name, idx, template) {
-    let renderer = template[`f_i_${name}`];
+    let renderer;
+    while (template) {
+      renderer = template[`f_i_${name}`];
 
-    if (renderer && typeof renderer === 'function') {
-      // Prefer the inline partial renderer
-      return renderer
-    } else {
-      // Fall back to the block renderer
-      renderer = template[`f_b_${name}${idx}`];
       if (renderer && typeof renderer === 'function') {
-        return renderer;
+        // Prefer the inline partial renderer
+        return renderer
+      } else {
+        // Fall back to the block renderer
+        renderer = template[`f_b_${name}${idx}`];
+        if (renderer && typeof renderer === 'function') {
+          return renderer;
+        }
       }
+      template = template.parentTemplate;
     }
     // If no renderer is found, undefined will be returned.
   },
