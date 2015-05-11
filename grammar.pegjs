@@ -2256,10 +2256,10 @@ part
   = element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
 
 attr_part
-  = tornado_comment / tornado_body / tornado_reference / html_entity / attr_text
+  = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / attr_text
 
 single_quote_attr_part
-  = tornado_comment / tornado_body / tornado_reference / html_entity / single_quote_attr_text
+  = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / single_quote_attr_text
 
 element
   = e:start_tag h:html end_tag {
@@ -2449,12 +2449,12 @@ entity_chars
   }
 
 attr_text
-  = b:(!tornado_comment !tornado_body !tornado_reference !html_entity !quote c:.{return c;})+ {
+  = b:(!tornado_comment !tornado_body !tornado_reference !tornado_partial !html_entity !quote c:.{return c;})+ {
     return ['PLAIN_TEXT', b.join('')];
   }
 
 single_quote_attr_text
-  = b:(!tornado_comment !tornado_body !tornado_reference !html_entity !single_quote c:.{return c;})+ {
+  = b:(!tornado_comment !tornado_body !tornado_reference !tornado_partial !html_entity !single_quote c:.{return c;})+ {
     return ['PLAIN_TEXT', b.join('')];
   }
 

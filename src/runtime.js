@@ -102,8 +102,10 @@ let tornado = {
   getPartial(name, context, parentTemplate) {
     let partial = this.templateCache[name];
     if (partial) {
-      partial.parentTemplate = parentTemplate;
-      return partial.render(context);
+      return new Promise((resolve, reject) => {
+        partial.parentTemplate = parentTemplate;
+        resolve(partial.render(context));
+      });
     } else {
       return this.fetchPartial(name)
           .then(partial => {

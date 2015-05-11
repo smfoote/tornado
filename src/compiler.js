@@ -71,7 +71,8 @@ let compiler = {
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
       let hasRef = attr.value && attr.value.some(function(val) {
-        return val[0] === 'TORNADO_REFERENCE' || val[0] === 'TORNADO_BODY';
+        let type = val[0]
+        return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
       });
       if (hasRef) {
         this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
@@ -102,8 +103,12 @@ let compiler = {
     if (params.length === 1 && params[0].key === 'context') {
       context = `td.get(c, ${params[0].val})`;
     }
-    this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-    this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}, this));\n`;
+    if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+      this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
+      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}, this));\n`;
+    } else {
+      return `td.getPartial('${meta.name}', ${context}, this).then(function(node){return td.nodeToString(node)})`;
+    }
   },
   TORNADO_BODY(node) {
     let bodyInfo = node[1];
