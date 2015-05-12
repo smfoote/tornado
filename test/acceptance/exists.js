@@ -9,8 +9,7 @@ let suite = {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createTextNode('name exists'));
         return frag;
-      })(),
-      expectedHtml: 'name exists'
+      })()
     },
     {
       description: 'Exists alone with reference inside',
@@ -21,8 +20,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Dorothy'));
         frag.appendChild(document.createTextNode(' exists'));
         return frag;
-      })(),
-      expectedHtml: 'Dorothy exists'
+      })()
     },
     {
       description: 'Exists with HTML inside',
@@ -37,8 +35,7 @@ let suite = {
         div.appendChild(span);
         frag.appendChild(div);
         return frag;
-      })(),
-      expectedHtml: '<div>Hello, <span>world</span></div>'
+      })()
     },
     {
       description: 'Exists inside HTML',
@@ -53,8 +50,7 @@ let suite = {
         div.appendChild(span);
         frag.appendChild(div);
         return frag;
-      })(),
-      expectedHtml: '<div>Hello, <span>world</span></div>'
+      })()
     },
     {
       description: 'Exists in an attribute',
@@ -66,8 +62,7 @@ let suite = {
         div.setAttribute('class', 'selected');
         frag.appendChild(div);
         return frag;
-      })(),
-      expectedHtml: '<div class="selected"></div>'
+      })()
     },
     {
       description: 'Exists in an attribute with an else',
@@ -79,8 +74,7 @@ let suite = {
         div.setAttribute('class', 'not-selected');
         frag.appendChild(div);
         return frag;
-      })(),
-      expectedHtml: '<div class="not-selected"></div>'
+      })()
     },
     {
       description: 'Exists where reference is 0',
@@ -91,8 +85,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('world'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, world'
+      })()
     },
     {
       description: 'Exists where reference is empty string',
@@ -103,8 +96,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode(''));
         return frag;
-      })(),
-      expectedHtml: 'Hello, '
+      })()
     },
     {
       description: 'Exists where reference is empty array',
@@ -115,8 +107,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode(''));
         return frag;
-      })(),
-      expectedHtml: 'Hello, '
+      })()
     },
     {
       description: 'Exists where reference is false',
@@ -127,8 +118,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode(''));
         return frag;
-      })(),
-      expectedHtml: 'Hello, '
+      })()
     },
     {
       description: 'Exists with else where reference is truthy',
@@ -139,8 +129,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('world'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, world'
+      })()
     },
     {
       description: 'Exists with else where reference is falsy',
@@ -151,8 +140,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('abyss'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, abyss'
+      })()
     },
     {
       description: 'Exists where reference has dots',
@@ -163,8 +151,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('fullName'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, fullName'
+      })()
     },
     {
       description: 'Exists where reference is a promise',
@@ -179,8 +166,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('later'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, later'
+      })()
     },
     {
       description: 'Exists where reference is a promise that resolves to a falsy value',
@@ -195,8 +181,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode(''));
         return frag;
-      })(),
-      expectedHtml: 'Hello, '
+      })()
     },
     {
       description: 'Exists with an else where reference is a promise that resolves to a falsy value',
@@ -211,8 +196,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('never'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, never'
+      })()
     },
     {
       description: 'Exists with an else where reference is a promise that rejects',
@@ -227,8 +211,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Hello, '));
         frag.appendChild(document.createTextNode('never'));
         return frag;
-      })(),
-      expectedHtml: 'Hello, never'
+      })()
     },
     {
       description: 'Exists with sibling exists',
@@ -324,7 +307,7 @@ let suite = {
         frag.appendChild(document.createTextNode('Way fun!'));
         return frag;
       })()
-    },
+    }
   ]
 };
 

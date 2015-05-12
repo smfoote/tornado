@@ -35,7 +35,7 @@ let tornado = {
       // there is only one more item left in the path
       let res = context[path.pop()];
       if (res !== undefined) {
-        return td.util.isFunction(res) ? res.bind(context)() : res;
+        return this.util.isFunction(res) ? res.bind(context)() : res;
       } else {
         return '';
       }
@@ -191,8 +191,10 @@ let tornado = {
   },
 
   /**
-   * Tornado-specific truthiness (based on dust.isEmpty). 0 is truthy, empty array is falsy,
-   * everything else matches JavaScript truthiness.
+   * Check if a value is truthy. If the value is a promise, wait until the promise resolves,
+   * then check if the resolved value is truthy. Returns a promise which resolves with the value if
+   * truthy (based on Tornado's version of truthiness, inspired by Dust), or rejects if the value is
+   * not truthy.
    * @param {*} val The value to be checked for existence.
    * @return {Promise}
    */
