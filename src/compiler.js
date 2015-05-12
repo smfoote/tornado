@@ -214,7 +214,7 @@ let compiler = {
       let maxTdIndex = this.context.tornadoBodies.length - 1;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
-      let hasElseBlock = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
+      let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         let primaryBody = reverse ? `.catch(function(err) {
         td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
@@ -225,7 +225,7 @@ let compiler = {
       }.bind(this))`;
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
         this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
-        if (hasElseBlock) {
+        if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
         td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
       }.bind(this))` :
@@ -246,7 +246,7 @@ let compiler = {
     }.bind(this))`;
 
         let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
-        if (hasElseBlock) {
+        if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
       return td.nodeToString(this.r${maxTdIndex + 2}(c));
     }.bind(this))` :
@@ -266,29 +266,56 @@ let compiler = {
     section(node) {
       let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
+      let maxTdIndex = this.context.tornadoBodies.length - 1;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let containerName = this.getElContainerName();
-      let elseReplace = `td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 2}(c));`;
-      let arrayElse, sectionElse;
-      if (node.bodies.length === 1 && node.bodies[0][1].name === 'else'){
-        arrayElse = `\n        if (!sectionVal.length) {
-          ${elseReplace}
-        }`;
-        sectionElse = ` else {
-          ${elseReplace}
-        }`;
+      let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
+      let isInHtmlAttribute = (this.context.state === STATES.HTML_ATTRIBUTE);
+      let initAttrs = '';
+      let returnAttrs = '';
+      function action(contextName, tdBodyIncrease, inArray) {
+        let finalIndexIncrease = inArray ? '+(2*i)' : '';
+        if (isInHtmlAttribute) {
+          let innerAction = `td.nodeToString(this.r${maxTdIndex + tdBodyIncrease}(${contextName}))`;
+          if (inArray) {
+            return `attrs.push(${innerAction});`;
+          } else {
+            return `return ${innerAction};`
+          }
+        } else {
+          return `td.replaceChildAtIdxPath(root, [${indexes.join(',')}${finalIndexIncrease}], this.r${maxTdIndex + tdBodyIncrease}(${contextName}))`;
+        }
       }
-      this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      var sectionVal = td.get(c, ${JSON.stringify(node.key)});
-      if (Array.isArray(sectionVal)) {
-        for (var i=0, item; item=sectionVal[i]; i++) {
-          td.replaceChildAtIdxPath(root, [${indexes.join(',')}+(2*i)], this.r${tdIndex + 1}(item));
-        }${arrayElse}
+
+      if (isInHtmlAttribute) {
+        initAttrs = '\n          var attrs = [];';
+        returnAttrs = `\n          return Promise.all(attrs).then(function(vals) {
+            return vals.join('');
+          });`;
+      }
+
+      let output = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function(val) {
+        if (Array.isArray(val)) {${initAttrs}
+          for (var i=0, item; item=val[i]; i++) {
+            ${action('item', 1, true)};
+          }${returnAttrs}
+        } else {
+          ${action('val', 1)};
+        }
+      }.bind(this))`;
+
+      if (hasElseBody) {
+        output += `.catch(function(err) {
+          ${action('c', 2)};
+        }.bind(this))`;
+      }
+
+      if (isInHtmlAttribute) {
+        return output;
       } else {
-        if (td.exists(sectionVal)) {
-          td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${tdIndex + 1}(sectionVal));
-        }${sectionElse}
-      }\n`;
+        this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
+        this.renderers[tdIndex] += `      ${output};\n`;
+      }
     },
 
     block(node) {
