@@ -61,7 +61,7 @@ let compiler = {
     res = res.length ? res : ['\'\''];
     return `[${res.join(',')}]`;
   },
-  buildElementAttributes(attributes = []) {
+  buildElementAttributes(elType, attributes = []) {
     let attrs = '';
     let previousState = this.context.state;
     let refCount = this.context.refCount;
@@ -74,6 +74,7 @@ let compiler = {
         let type = val[0];
         return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
       });
+      attr.attrName = this.adjustAttrName(elType, attr.attrName);
       if (hasRef) {
         this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
@@ -183,7 +184,7 @@ let compiler = {
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
     let count = ++this.context.htmlBodies[tdIndex].count;
     this.fragments[tdIndex] += `      var el${count} = td.createElement('${nodeInfo.key}'${namespace});\n`;
-    this.buildElementAttributes(nodeInfo.attributes);
+    this.buildElementAttributes(nodeInfo.key, nodeInfo.attributes);
     this.walk(nodeContents);
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
     this.context.htmlBodies[tdIndex].count--;
@@ -367,8 +368,82 @@ let compiler = {
     }`;
   },
 
+  /**
+   * Adjust an attribute's name as necessary (e.g. SVG cares about case)
+   * @param {String} elType The element's tag name
+   * @param {String} attrName The attribute's name before adjustment
+   * @return {String} The adjusted attribute name (or the given attribute name if no adjustment
+   * is needed)
+   */
+  adjustAttrName(elType, attrName) {
+    if (this.context.namespace) {
+      attrName = this.svgAdjustAttrs[attrName] || attrName;
+    }
+    return attrName
+  },
+
   elTypes: {
     escapableRaw: ['textarea', 'title']
+  },
+  svgAdjustAttrs: {
+    'attributename': 'attributeName',
+    'attributetype': 'attributeType',
+    'basefrequency': 'baseFrequency',
+    'baseprofile': 'baseProfile',
+    'calcmode': 'calcMode',
+    'clippathunits': 'clipPathUnits',
+    'diffuseconstant': 'diffuseConstant',
+    'edgemode': 'edgeMode',
+    'filterunits': 'filterUnits',
+    'glyphref': 'glyphRef',
+    'gradienttransform': 'gradientTransform',
+    'gradientunits': 'gradientUnits',
+    'kernelmatrix': 'kernelMatrix',
+    'kernelunitlength': 'kernelUnitLength',
+    'keypoints': 'keyPoints',
+    'keysplines': 'keySplines',
+    'keytimes': 'keyTimes',
+    'lengthadjust': 'lengthAdjust',
+    'limitingconeangle': 'limitingConeAngle',
+    'markerheight': 'markerHeight',
+    'markerunits': 'markerUnits',
+    'markerwidth': 'markerWidth',
+    'maskcontentunits': 'maskContentUnits',
+    'maskunits': 'maskUnits',
+    'numoctaves': 'numOctaves',
+    'pathlength': 'pathLength',
+    'patterncontentunits': 'patternContentUnits',
+    'patterntransform': 'patternTransform',
+    'patternunits': 'patternUnits',
+    'pointsatx': 'pointsAtX',
+    'pointsaty': 'pointsAtY',
+    'pointsatz': 'pointsAtZ',
+    'preservealpha': 'preserveAlpha',
+    'preserveaspectratio': 'preserveAspectRatio',
+    'primitiveunits': 'primitiveUnits',
+    'refx': 'refX',
+    'refy': 'refY',
+    'repeatcount': 'repeatCount',
+    'repeatdur': 'repeatDur',
+    'requiredextensions': 'requiredExtensions',
+    'requiredfeatures': 'requiredFeatures',
+    'specularconstant': 'specularConstant',
+    'specularexponent': 'specularExponent',
+    'spreadmethod': 'spreadMethod',
+    'startoffset': 'startOffset',
+    'stddeviation': 'stdDeviation',
+    'stitchtiles': 'stitchTiles',
+    'surfacescale': 'surfaceScale',
+    'systemlanguage': 'systemLanguage',
+    'tablevalues': 'tableValues',
+    'targetx': 'targetX',
+    'targety': 'targetY',
+    'textlength': 'textLength',
+    'viewbox': 'viewBox',
+    'viewtarget': 'viewTarget',
+    'xchannelselector': 'xChannelSelector',
+    'ychannelselector': 'yChannelSelector',
+    'zoomandpan': 'zoomAndPan'
   }
 };
 
