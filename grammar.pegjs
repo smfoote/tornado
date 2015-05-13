@@ -2429,7 +2429,7 @@ integer "integer"
   = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
 
 plain_text
-  = b:(!comment !tornado_comment !start_tag !end_tag !html_entity !tornado_tag c:. {return c;})+ {
+  = b:(!comment !tornado_comment !start_tag !end_tag !self_closing_tag !html_entity !tornado_tag c:. {return c;})+ {
     return ['PLAIN_TEXT', b.join('').replace(/\n/g, '\\n')];
   }
 
