@@ -71,7 +71,7 @@ let compiler = {
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
       let hasRef = attr.value && attr.value.some(function(val) {
-        let type = val[0]
+        let type = val[0];
         return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
       });
       if (hasRef) {
@@ -177,21 +177,22 @@ let compiler = {
     let nodeContents = node[1].tag_contents;
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let previousState = this.context.state;
-    if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
-      this.context.state = STATES.ESCAPABLE_RAW;
-    } else {
-      this.context.state = STATES.HTML_BODY;
-    }
+    this.setHTMLElementState(nodeInfo);
+    let isNamespaceRoot = nodeInfo.attributes.some(attr => attr.attrName === 'xmlns');
+    let namespace = this.context.namespace ? `, '${this.context.namespace}'` : '';
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
     let count = ++this.context.htmlBodies[tdIndex].count;
-    this.fragments[tdIndex] += `      var el${count} = document.createElement("${nodeInfo.key}");\n`;
+    this.fragments[tdIndex] += `      var el${count} = td.createElement('${nodeInfo.key}'${namespace});\n`;
     this.buildElementAttributes(nodeInfo.attributes);
     this.walk(nodeContents);
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
     this.context.htmlBodies[tdIndex].count--;
     this.context.state = previousState;
+    if (isNamespaceRoot) {
+      this.context.namespace = null;
+    }
     if (this.context.state === STATES.ESCAPABLE_RAW) {
-      this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.nodeToString(el${this.context.htmlBodies[tdIndex].count + 1});\n`
+      this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.nodeToString(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     } else {
       this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     }
@@ -252,7 +253,7 @@ let compiler = {
     }.bind(this))` :
           `.catch(function() {
       return td.nodeToString(this.r${maxTdIndex + 2}(c));
-    }.bind(this))`
+    }.bind(this))`;
           returnVal += elseBody;
         }
         return returnVal;
@@ -280,7 +281,7 @@ let compiler = {
           if (inArray) {
             return `attrs.push(${innerAction});`;
           } else {
-            return `return ${innerAction};`
+            return `return ${innerAction};`;
           }
         } else {
           return `td.replaceChildAtIdxPath(root, [${indexes.join(',')}${finalIndexIncrease}], this.r${maxTdIndex + tdBodyIncrease}(${contextName}))`;
@@ -333,6 +334,20 @@ let compiler = {
 
     bodies() {}
   },
+
+  setHTMLElementState(nodeInfo) {
+    if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
+      this.context.state = STATES.ESCAPABLE_RAW;
+    } else {
+      this.context.state = STATES.HTML_BODY;
+    }
+    let namespace = nodeInfo.attributes.filter(attr => attr.attrName === 'xmlns');
+
+    // namespace values cannot be dynamic.
+    if (namespace.length) {
+      this.context.namespace = namespace[0].value[0][1];
+    }
+  },
   createMethodHeaders(name) {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     name = name || tdIndex;
@@ -344,7 +359,7 @@ let compiler = {
   },
   createMethodFooters(name) {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
-    name = name || tdIndex
+    name = name || tdIndex;
     this.fragments[tdIndex] += `      frags.frag${name} = frag;
       return frag;
     }`;

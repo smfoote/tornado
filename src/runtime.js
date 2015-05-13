@@ -77,6 +77,20 @@ let tornado = {
   },
 
   /**
+   * Create and return an element, possibly within an XML namespace (other than HTML).
+   * @param {String} name The name of the element to be created
+   * @param {String} [namespace] The optional XML namespace (e.g. 'http://www.w3.org/2000/svg')
+   * @return {HTMLElement}
+   */
+  createElement(name, namespace) {
+    if (namespace) {
+      return document.createElementNS(namespace, name);
+    } else {
+      return document.createElement(name);
+    }
+  },
+
+  /**
    * Set an attribute on a given node. To support references and promises, the value of the
    * attribute is an array of values
    * @param {HTMLElement} node The element whose attribute is to be set
