@@ -1,13 +1,20 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <link rel="stylesheet" href="styles/sandbox.css">
+    <link rel="stylesheet" href="test/sandbox/sandbox.css">
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here">&lt;div&gt;&lt;ul&gt;&lt;li&gt;&lt;p&gt;Some text &lt;span&gt;with&lt;/span&gt; some other text. &lt;button&gt;Click &lt;b&gt;me&lt;/b&gt;&lt;/button&gt;&lt;/p&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;</textarea>
+      <textarea id="template" placeholder="Template goes here"><p>Hello, {#names}{name}{/names}</p></textarea>
       <textarea id="context" placeholder="Context goes here">{
-  name: "Ruby"
+  names: new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      resolve([
+        {name: "Ruby"},
+        {name: "Toto"}
+      ]);
+    }, 1000)
+  })
 }</textarea>
       <button id="render">Render</button>
     </div>
@@ -17,6 +24,6 @@
       <pre class="ast"></pre>
       <pre class="compiled"></pre>
     </div>
-    <script src="scripts/bundle.js"></script>
+    <script src="test/sandbox/bundle.js"></script>
   </body>
 </html>
