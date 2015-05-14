@@ -77,6 +77,29 @@ let suite = {
       })()
     },
     {
+      description: 'Section inside HTML',
+      template: '<div>Hello, ({#name}{.} {/name}). Good numbers.</div>',
+      context: {name: [1,2,3,4]},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode('Hello, ('));
+        let frag2 = document.createDocumentFragment();
+        frag2.appendChild(document.createTextNode('1'));
+        frag2.appendChild(document.createTextNode(' '));
+        frag2.appendChild(document.createTextNode('2'));
+        frag2.appendChild(document.createTextNode(' '));
+        frag2.appendChild(document.createTextNode('3'));
+        frag2.appendChild(document.createTextNode(' '));
+        frag2.appendChild(document.createTextNode('4'));
+        frag2.appendChild(document.createTextNode(' '));
+        div.appendChild(frag2);
+        div.appendChild(document.createTextNode('). Good numbers.'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
       description: 'Section in an attribute',
       template: '<div class="{#colors}{.} {/colors}"></div>',
       context: {colors: ['red', 'blue']},

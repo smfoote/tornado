@@ -266,49 +266,44 @@ let compiler = {
     },
 
     section(node) {
-      let refCount = this.context.refCount;
-      let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let maxTdIndex = this.context.tornadoBodies.length - 1;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
-      let containerName = this.getElContainerName();
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       let isInHtmlAttribute = (this.context.state === STATES.HTML_ATTRIBUTE);
-      let initAttrs = '';
-      let returnAttrs = '';
-      function action(contextName, tdBodyIncrease, inArray) {
-        let finalIndexIncrease = inArray ? '+(2*i)' : '';
-        if (isInHtmlAttribute) {
-          let innerAction = `td.nodeToString(this.r${maxTdIndex + tdBodyIncrease}(${contextName}))`;
-          if (inArray) {
-            return `attrs.push(${innerAction});`;
-          } else {
-            return `return ${innerAction};`;
-          }
-        } else {
-          return `td.replaceChildAtIdxPath(root, [${indexes.join(',')}${finalIndexIncrease}], this.r${maxTdIndex + tdBodyIncrease}(${contextName}))`;
-        }
-      }
-
+      let tdBodyIncrease = 1;
+      let beforeLoop, loopAction, afterLoop, notArrayAction, elseBodyAction;
       if (isInHtmlAttribute) {
-        initAttrs = '\n          var attrs = [];';
-        returnAttrs = `\n          return Promise.all(attrs).then(function(vals) {
+        beforeLoop = 'var attrs = [];';
+        loopAction = `attrs.push(td.nodeToString(this.r${maxTdIndex + tdBodyIncrease}(item)));`;
+        afterLoop = `return Promise.all(attrs).then(function(vals) {
             return vals.join('');
           });`;
+        notArrayAction = `return td.nodeToString(this.r${maxTdIndex + 1}(val));`;
+        elseBodyAction = `return td.nodeToString(this.r${maxTdIndex + 2}(c));`;
+      } else {
+        beforeLoop = 'let frag = document.createDocumentFragment();';
+        loopAction = `frag.appendChild(this.r${maxTdIndex+1}(item));`;
+        afterLoop = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], frag);`;
+        notArrayAction = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], this.r${maxTdIndex + 1}(val))`;
+        elseBodyAction = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], this.r${maxTdIndex + 2}(c))`;
       }
 
       let output = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function(val) {
-        if (Array.isArray(val)) {${initAttrs}
+        if (Array.isArray(val)) {
+          ${beforeLoop}
           for (var i=0, item; item=val[i]; i++) {
-            ${action('item', 1, true)};
-          }${returnAttrs}
+            ${loopAction}
+          }
+          ${afterLoop}
         } else {
-          ${action('val', 1)};
+          ${notArrayAction}
         }
       }.bind(this))`;
 
       if (hasElseBody) {
         output += `.catch(function(err) {
-          ${action('c', 2)};
+          ${elseBodyAction};
         }.bind(this))`;
       }
 

@@ -5,11 +5,13 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here">{+part/}</textarea>
+      <textarea id="template" placeholder="Template goes here"><p>My friends ({#friends}{name}, {/friends}) are so <span>great</span>!</p></textarea>
       <textarea id="context" placeholder="Context goes here">{
-  names: [
-    {name: "Ruby"},
-    {name: "Toto"}
+  friends: [
+    {name: 'Jimmy'},
+    {name: 'Prash'},
+    {name: 'Seth'},
+    {name: 'Kate'}
   ]
 }</textarea>
       <button id="render">Render</button>
