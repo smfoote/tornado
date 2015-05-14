@@ -152,55 +152,21 @@ let tornado = {
   },
 
   /**
-   * Replace a DOM node (text or element or comment or whatever) with a given
-   * set of indexes from the root element. If a node is not found in the path of indexes, the
-   * function does nothing.
-   * @example
-   *
-   * Root element
-   * ============
-   * [documentFragment]<div>This is some text. <span>And a span.</span></div>[/documentFragment]
-   *
-   * Method call
-   * ===========
-   * // The call below would replace the text node "And a span." with `myNewNode`.
-   * td.replaceChildAtIdx(root, [0,1,0], myNewNode);
-   * // [
-   *      0 **the outer div is the 0th child of the root**,
-   *      1 **the span is the 1st child of the div**,
-   *      0 **the text node is the 0th child of the span**
-   *    ]
-   *
-   * @param {DocumentFragment} root When used within a compiled template, this is always a document
-   * fragment, but it could be a regular HTML Element
-   * @param {Array} indexPath An array of indexes leading to the node to be replaced
-   * @param {Node} newNode The node to take the place of the replaced node.
+   * Replace a given node with a new node. Nothing will happen if the oldNode
+   * does not have a parent node
+   * @param {Node} oldNode The node to be replaced
+   * @param {Node} newNode The new node to be inserted
    */
-  replaceChildAtIdxPath(root, indexPath, newNode) {
-    let finalIndex = indexPath.pop();
-    let parentNode = this.getNodeAtIdxPath(root, indexPath);
-    let isPromise = this.util.isPromise(newNode);
-    let oldNode;
-    if (parentNode) {
-      oldNode = this.getNodeAtIdxPath(parentNode, [finalIndex]);
-    } else {
+  replaceNode(oldNode, newNode) {
+    if(!oldNode) {
       return;
     }
-    if (oldNode) {
-      if (isPromise) {
-        newNode.then(node => {
-          parentNode = oldNode.parentNode;
-          parentNode.replaceChild(node, oldNode);
-        });
-      } else {
-        parentNode.replaceChild(newNode, oldNode);
-      }
-    } else if (finalIndex >= parentNode.childNodes.length) {
-      if (isPromise) {
-        newNode.then(node => parentNode.appendChild(node));
-      } else {
-        parentNode.appendChild(newNode);
-      }
+    let parentNode = oldNode.parentNode;
+    let isPromise = this.util.isPromise(newNode);
+    if (isPromise) {
+      newNode.then(node => parentNode.replaceChild(node, oldNode));
+    } else {
+      parentNode.replaceChild(newNode, oldNode);
     }
   },
 

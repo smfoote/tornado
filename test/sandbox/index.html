@@ -5,14 +5,16 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here"><p>My friends ({#friends}{name}, {/friends}) are so <span>great</span>!</p></textarea>
+      <textarea id="template" placeholder="Template goes here"><p>Hello, {#names}{name}{/names}</p></textarea>
       <textarea id="context" placeholder="Context goes here">{
-  friends: [
-    {name: 'Jimmy'},
-    {name: 'Prash'},
-    {name: 'Seth'},
-    {name: 'Kate'}
-  ]
+  names: new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      resolve([
+        {name: "Ruby"},
+        {name: "Toto"}
+      ]);
+    }, 1000)
+  })
 }</textarea>
       <button id="render">Render</button>
     </div>

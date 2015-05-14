@@ -101,12 +101,14 @@ let compiler = {
     let context = 'c';
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+    let indexHash = indexes.join('');
     if (params.length === 1 && params[0].key === 'context') {
       context = `td.get(c, ${params[0].val})`;
     }
     if (this.context.state !== STATES.HTML_ATTRIBUTE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.getPartial('${meta.name}', ${context}, this));\n`;
+      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+      td.replaceNode(oldNode${indexHash}, td.getPartial('${meta.name}', ${context}, this));\n`;
     } else {
       return `td.getPartial('${meta.name}', ${context}, this).then(function(node){return td.nodeToString(node)})`;
     }
@@ -164,11 +166,13 @@ let compiler = {
   TORNADO_REFERENCE(node) {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+    let indexHash = indexes.join('');
     let refCount = this.context.refCount++;
     let containerName = this.getElContainerName();
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+      td.replaceNode(oldNode${indexHash}, td.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return `td.get(c, ${JSON.stringify(node[1].key)})`;
     }
@@ -215,24 +219,26 @@ let compiler = {
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let maxTdIndex = this.context.tornadoBodies.length - 1;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let indexHash = indexes.join('');
       let containerName = this.getElContainerName();
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         let primaryBody = reverse ? `.catch(function(err) {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
+        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
         throw(err);
       }.bind(this))` :
         `.then(function() {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 1}(c));
+        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
       }.bind(this))`;
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+      td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
+        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
       }.bind(this))` :
           `.catch(function(err) {
-        td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, this.r${maxTdIndex + 2}(c));
+        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
         throw(err);
       }.bind(this))`;
           this.renderers[tdIndex] += `\n      ${elseBody};\n`;
@@ -269,6 +275,7 @@ let compiler = {
       let maxTdIndex = this.context.tornadoBodies.length - 1;
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let indexHash = indexes.join('');
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       let isInHtmlAttribute = (this.context.state === STATES.HTML_ATTRIBUTE);
       let tdBodyIncrease = 1;
@@ -284,9 +291,9 @@ let compiler = {
       } else {
         beforeLoop = 'let frag = document.createDocumentFragment();';
         loopAction = `frag.appendChild(this.r${maxTdIndex+1}(item));`;
-        afterLoop = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], frag);`;
-        notArrayAction = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], this.r${maxTdIndex + 1}(val))`;
-        elseBodyAction = `td.replaceChildAtIdxPath(root, [${indexes.join(',')}], this.r${maxTdIndex + 2}(c))`;
+        afterLoop = `td.replaceNode(oldNode${indexHash}, frag);`;
+        notArrayAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(val))`;
+        elseBodyAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c))`;
       }
 
       let output = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function(val) {
@@ -311,16 +318,19 @@ let compiler = {
         return output;
       } else {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      ${output};\n`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+      ${output};\n`;
       }
     },
 
     block(node) {
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let indexHash = indexes.join('');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      td.replaceChildAtIdxPath(root, ${JSON.stringify(indexes)}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+      td.replaceNode(oldNode${indexHash}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
       } else {
         return `td.nodeToString(td.block('${node.blockName}', ${node.blockIndex}, c, this))`;
       }
