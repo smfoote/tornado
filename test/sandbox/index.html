@@ -21,8 +21,7 @@
   {:pending}
     <li><h4>Reddit is still loading ... &#9731;</h4></li>
   {/reddit.data.children}
-</ul>
-</textarea>
+</ul></textarea>
       <textarea id="context" placeholder="Context goes here">{
   reddit: fetch('http://www.reddit.com/.json?limit=10').then(function(res) {
   return res.json();
