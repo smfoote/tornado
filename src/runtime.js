@@ -50,11 +50,12 @@ let tornado = {
     newContext = context[path.shift()];
     if (this.util.isFunction(newContext)) {
       newContext = newContext.bind(context)();
-      if (this.util.isPromise(newContext)) {
-        return newContext.then(val => this.get(val, path));
-      }
-      // If newContext is not a promise, it will pass through to the next if statement
     }
+
+    if (this.util.isPromise(newContext)) {
+      return newContext.then(val => this.get(val, path));
+    }
+
     if (this.util.isObject(newContext)) {
       return this.get(newContext, path);
     }

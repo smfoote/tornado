@@ -206,6 +206,21 @@ let suite = {
       })()
     },
     {
+      description: 'Section with dotted reference where first part is a promise',
+      template: 'Hello, {#right.now}later{/right.now}',
+      context: {
+        right: new Promise((resolve, reject) => {
+          resolve({now: true});
+        })
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello, '));
+        frag.appendChild(document.createTextNode('later'));
+        return frag;
+      })()
+    },
+    {
       description: 'Section with sibling exists',
       template: '<div>{#brother}brother{/brother}</div><div>{#sister} and sister{/sister}</div>',
       context: {
