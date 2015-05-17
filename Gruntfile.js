@@ -31,6 +31,9 @@ grunt.initConfig({
       dest: 'test/sandbox/bundle.js'
     }
   },
+  eslint: {
+    target: ['src']
+  },
   watch: {
     scripts: {
       files: ['**/*.js'],
@@ -52,4 +55,4 @@ grunt.initConfig({
 grunt.registerTask('acceptance', ['babel:acceptance', 'browserify:test']);
 grunt.registerTask('sandbox', ['browserify:sandbox']);
 
-grunt.registerTask('default', ['babel', 'browserify']);
+grunt.registerTask('default', ['eslint', 'babel', 'browserify']);
