@@ -1,5 +1,5 @@
 {
-  "name": "tornado",
+  "name": "tornado.js",
   "version": "0.0.1",
   "description": "\"Asynchronous HTML templating\"",
   "main": "tornado.js",
@@ -10,13 +10,27 @@
     "HTML"
   ],
   "author": "Steven Foote",
-  "license": "MIT",
+  "license": "Apache",
   "devDependencies": {
     "grunt": "^0.4.5",
     "grunt-babel": "^4.0.0",
     "grunt-browserify": "^3.7.0",
     "grunt-contrib-watch": "^0.6.1",
+    "grunt-contrib-concat": "^0.5.1",
     "load-grunt-tasks": "^3.1.0",
     "pegjs": "^0.8.0"
-  }
+  },
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/smfoote/tornado.git"
+  },
+  "bugs": {
+    "url": "https://github.com/smfoote/tornado/issues"
+  },
+  "homepage": "https://github.com/smfoote/tornado"
 }
