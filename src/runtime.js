@@ -71,7 +71,7 @@ let tornado = {
   createTextNode(val) {
     if (this.util.isPromise(val)) {
       return val.then(data => document.createTextNode(data))
-                .catch(error => document.createTextNode(''));
+                .catch(() => document.createTextNode(''));
     } else {
       return document.createTextNode(val);
     }
@@ -117,7 +117,7 @@ let tornado = {
   getPartial(name, context, parentTemplate) {
     let partial = this.templateCache[name];
     if (partial) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve/*, reject*/) => {
         partial.parentTemplate = parentTemplate;
         resolve(partial.render(context));
       });
@@ -137,12 +137,12 @@ let tornado = {
    * @param {String} name The name of the partial to be fetched.
    * @return {Promise} A promise that resolves with a Tornado partial
    */
-  fetchPartial(name) {
-    return new Promise((resolve, reject) => {
+  fetchPartial(/*name*/) {
+    return new Promise((resolve/*, reject*/) => {
 
       // TODO: Make this really work correctly.
       let fakePartial = {
-        render(c) {
+        render(/*c*/) {
           let frag = document.createDocumentFragment();
           frag.appendChild(document.createTextNode('It worked!'));
           return frag;
@@ -225,7 +225,7 @@ let tornado = {
 
       if (renderer && typeof renderer === 'function') {
         // Prefer the inline partial renderer
-        return renderer
+        return renderer;
       } else {
         // Fall back to the block renderer
         renderer = template[`f_b_${name}${idx}`];

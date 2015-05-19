@@ -32,7 +32,7 @@ grunt.initConfig({
     }
   },
   eslint: {
-    target: ['src']
+    target: ['src', 'test/acceptance/*.js']
   },
   watch: {
     scripts: {

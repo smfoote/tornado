@@ -149,7 +149,7 @@ let suite = {
       description: 'Section where reference is a promise',
       template: 'Hello, {#now}{.}{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('and later');
         })
       },
@@ -164,7 +164,7 @@ let suite = {
       description: 'Section where reference is a promise that resolves to a falsy value',
       template: 'Hello, {#now}later{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('');
         })
       },
@@ -179,7 +179,7 @@ let suite = {
       description: 'Section with an else where reference is a promise that resolves to a falsy value',
       template: 'Hello, {#now}later{:else}never{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('');
         })
       },
@@ -209,7 +209,7 @@ let suite = {
       description: 'Section with dotted reference where first part is a promise',
       template: 'Hello, {#right.now}later{/right.now}',
       context: {
-        right: new Promise((resolve, reject) => {
+        right: new Promise((resolve) => {
           resolve({now: true});
         })
       },
@@ -288,7 +288,7 @@ let suite = {
       template: '{#fun}Way fun!{/fun}',
       context: {
         fun: function() {
-          return new Promise(function(resolve, reject) {
+          return new Promise(function(resolve) {
             resolve(true);
           });
         }
@@ -304,7 +304,7 @@ let suite = {
       template: '{#fun.fun}Way fun!{/fun.fun}',
       context: {
         fun: function() {
-          return new Promise(function(resolve, reject) {
+          return new Promise(function(resolve) {
             resolve({fun: true});
           });
         }
