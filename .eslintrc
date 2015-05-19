@@ -68,14 +68,7 @@
     "white"         : false,
 
     "globals"       : {
-      "define"      : false,
-      "describe"    : false,
-      "expect"      : false,
-      "it"          : false,
-      "beforeEach"  : false,
-      "afterEach"   : false,
-      "beforeAll"   : false,
-      "afterAll"    : false
+      "td"          : false
     }
   }
 }

@@ -31,5 +31,12 @@
       <pre class="compiled"></pre>
     </div>
     <script src="bundle.js"></script>
+    <script>
+    td.registerHelper('createEl', function(context, params) {
+      var frag = document.createDocumentFragment();
+      frag.appendChild(document.createElement(params.name));
+      return frag;
+    });
+    </script>
   </body>
 </html>

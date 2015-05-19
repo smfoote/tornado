@@ -315,6 +315,41 @@ let compiler = {
       }
     },
 
+    helper(node) {
+      let maxTdIndex = this.context.tornadoBodies.length - 1;
+      let tdIndex = this.context.tornadoBodiesCurrentIndex;
+      let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
+      let indexHash = indexes.join('');
+      let paramsHash, bodiesHash;
+      paramsHash = node.params.reduce((acc, param) => {
+        let paramVal = param.val;
+        if (Array.isArray(paramVal)) {
+          paramVal = `td.get(c, ${JSON.stringify(paramVal[1].key)})`;
+        } else {
+          paramVal = `'${paramVal}'`;
+        }
+        acc.push(`${param.key}: ${paramVal}`);
+        return acc;
+      }, []);
+      paramsHash = `{${paramsHash.join(',')}}`;
+      bodiesHash = node.bodies.reduce((acc, body, idx) => {
+        let bodyName = body[1].name;
+        acc.push(`${bodyName}: this.r${maxTdIndex + idx + 2}.bind(this)`);
+        return acc;
+      }, []);
+      if (node.body.length) {
+        bodiesHash.push(`main: this.r${maxTdIndex + 1}.bind(this)`);
+      }
+      bodiesHash = `{${bodiesHash.join(',')}}`;
+      if (this.context.state !== STATES.HTML_ATTRIBUTE) {
+        this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+        td.helper('${node.key.join('')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
+          td.replaceNode(oldNode${indexHash}, val);
+        });\n`;
+      }
+    },
+
     block(node) {
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;

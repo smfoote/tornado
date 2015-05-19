@@ -6,6 +6,11 @@ let tornado = {
   templateCache: {},
 
   /**
+   * All registered Helpers
+   */
+  helpers: {},
+
+  /**
    * Method for registering templates. This method is intended
    * to be called within a compiled template, but can be called
    * outside of that context as well.
@@ -19,6 +24,28 @@ let tornado = {
       name = `default${(new Date())}`;
     }
     this.templateCache[name] = template;
+  },
+
+  /**
+   * Register a helper, overwrite if a helper already exists
+   * @param {String} name The name of the helper
+   * @param {Function} method The function to be executed when the helper is found in a template
+   */
+  registerHelper(name, method) {
+    this.helpers[name] = method;
+  },
+
+  /**
+   * Register multiple helpers at once.
+   * @param {Object} helpers An object of helpers where the keys are helper names and the
+   * values are helper methods
+   */
+  registerHelpers(helpers) {
+    for (let name in helpers) {
+      if (helpers.hasOwnProperty(name)) {
+        this.registerHelper(name, helpers[name]);
+      }
+    }
   },
 
   /**
@@ -202,6 +229,31 @@ let tornado = {
   },
 
   /**
+   * Find and return a helper. If no helper of the given name is found, throw an error
+   * @param {String} name The name of the helper
+   * @param {Object} context The context at the point the helper was called
+   * @param {Object} params The params passed to the helper
+   * @return {DocumentFragment|Promise}
+   */
+  helper(name, context, params, bodies) {
+    let helper = this.helpers[name];
+    if (!helper) {
+      throw new Error(`Helper not registered: ${name}`);
+    } else {
+      return Promise.all(this.util.getValuesFromObject(params)).then(values => {
+        let resolvedParams = this.util.arraysToObject(Object.keys(params).sort(), values);
+        let returnVal = helper(context, resolvedParams, bodies);
+        if (!this.util.isPromise(returnVal)) {
+          returnVal = new Promise((resolve) => {
+            resolve(returnVal);
+          });
+        }
+        return returnVal;
+      });
+    }
+  },
+
+  /**
    * Render a block or inline partial based of a given name.
    * @param {String} name The name of the block
    * @param {Number} idx The index of the block (in case there are multiples)
@@ -291,33 +343,60 @@ let tornado = {
      * @param {*} val The value in question
      * @return {Boolean}
      */
-     isPromise(val) {
-       return this.isFunction(val.then);
-     },
+    isPromise(val) {
+      return this.isFunction(val.then);
+    },
 
-     /**
-      * Determine if a value is a Function
-      * @param {*} val The value in question
-      * @return {Boolean}
-      */
-     isFunction(val) {
-       return typeof val === 'function';
-     },
+    /**
+     * Determine if a value is a Function
+     * @param {*} val The value in question
+     * @return {Boolean}
+     */
+    isFunction(val) {
+      return typeof val === 'function';
+    },
 
-     /**
-      * Determine Tornado truthiness
-      * @param {*} val The value in question
-      * @return {Boolean}
-      */
-     isTruthy(val) {
-       if (val === 0) {
-         return true;
-       }
-       if (Array.isArray(val) && !val.length) {
-         return false;
-       }
-       return !!val;
-     }
+    /**
+     * Determine Tornado truthiness
+     * @param {*} val The value in question
+     * @return {Boolean}
+     */
+    isTruthy(val) {
+      if (val === 0) {
+        return true;
+      }
+      if (Array.isArray(val) && !val.length) {
+        return false;
+      }
+      return !!val;
+    },
+
+    /**
+     * Return the values of the object (sorted by key name) as an array
+     * @param {Object} obj The object from which the values are to be extracted
+     * @return {Array}
+     */
+    getValuesFromObject(obj) {
+      return Object.keys(obj).sort().map(key => obj[key]);
+    },
+
+    /**
+     * Given two arrays of equal length, the values in the first array become keys and the values of
+     * the second array become values of a new object.
+     * @param {Object} keys An array with the names of keys for the new object
+     * @param {Object} values An array with the values for the new object
+     * @return {Object}
+     */
+    arraysToObject(keys, values) {
+      let result = {};
+      if (!keys.length === values.length) {
+        return result;
+      }
+      for (let i = 0, len = keys.length; i < len; i++) {
+        result[keys[i]] = values[i];
+      }
+      return result;
+    }
   }
 };
 

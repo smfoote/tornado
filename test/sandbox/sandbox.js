@@ -2,16 +2,16 @@ var parser = require('../../dist/parser'),
     compiler = require('../../dist/compiler'),
     td = require('../../dist/runtime');
 
+window.td = td;
 var button = document.querySelector('#render');
 var templateTextArea = document.querySelector('#template');
 var contextTextArea = document.querySelector('#context');
-var outputOuter = document.querySelector('#output');
 var astContainer = document.querySelector('#output .ast');
 var compiledContainer = document.querySelector('#output .compiled');
 var outputContainer = document.querySelector('#output .output');
 var stringContainer = document.querySelector('#output .string');
 
-button.addEventListener('click', function(evt) {
+button.addEventListener('click', function() {
   var t = templateTextArea.value;
   var c = contextTextArea.value;
   var ast = parser.parse(t);
@@ -27,7 +27,7 @@ button.addEventListener('click', function(evt) {
   stringContainer.innerHTML = outputContainer.innerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 });
 
-output.addEventListener('click', function(evt) {
+outputContainer.addEventListener('click', function(evt) {
   var target = evt.target;
   target.classList.toggle('min');
 });

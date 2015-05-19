@@ -2408,7 +2408,23 @@ tornado_filters
   = ("|" type:key {return {type: type};})*
 
 tornado_params
-  = p:(ws+ key:key equals val:(key / number / string) {return {key: key, val: val}})*
+  = p:(ws+ p:tornado_param {return p;})* {
+    return p;
+  }
+
+tornado_param
+  = key:key equals val:(number / string) {
+    return {
+      key: key,
+      val: val
+    }
+  }
+  / key:key equals val:tornado_key {
+    return {
+      key: key,
+      val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
+    }
+  }
 
 tornado_tag
   = lbrace ws* [#?^><+%:@/~%] (!rbrace !eol .)+ ws* rbrace
