@@ -7,7 +7,6 @@ const STATES = {
   TORNADO_TAG: 'TORNADO_TAG',
   TORNADO_BODY: 'TORNADO_BODY'
 };
-let elIndex = -1;
 let compiler = {
   compile(ast, name) {
     this.context = {
@@ -39,7 +38,6 @@ let compiler = {
 
     if (node[0] && this[node[0]]) {
       let val = this[node[0]](node);
-      let indexes = this.context.htmlBodies[this.context.tornadoBodiesCurrentIndex];
       return val;
     }
   },
@@ -64,7 +62,6 @@ let compiler = {
   buildElementAttributes(elType, attributes = []) {
     let attrs = '';
     let previousState = this.context.state;
-    let refCount = this.context.refCount;
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexesClone = this.context.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
     indexesClone.pop();
@@ -167,8 +164,6 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     let indexHash = indexes.join('');
-    let refCount = this.context.refCount++;
-    let containerName = this.getElContainerName();
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
       this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
@@ -204,7 +199,6 @@ let compiler = {
   },
   PLAIN_TEXT(node) {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
-    let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
     } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
@@ -215,12 +209,10 @@ let compiler = {
   },
   tornadoBodies: {
     exists(node, reverse) {
-      let refCount = this.context.refCount;
       let tdIndex = this.context.tornadoBodiesCurrentIndex;
       let maxTdIndex = this.context.tornadoBodies.length - 1;
       let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
       let indexHash = indexes.join('');
-      let containerName = this.getElContainerName();
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         let primaryBody = reverse ? `.catch(function(err) {
@@ -290,7 +282,7 @@ let compiler = {
         elseBodyAction = `return td.nodeToString(this.r${maxTdIndex + 2}(c));`;
       } else {
         beforeLoop = 'let frag = document.createDocumentFragment();';
-        loopAction = `frag.appendChild(this.r${maxTdIndex+1}(item));`;
+        loopAction = `frag.appendChild(this.r${maxTdIndex + 1}(item));`;
         afterLoop = `td.replaceNode(oldNode${indexHash}, frag);`;
         notArrayAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(val))`;
         elseBodyAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c))`;
@@ -336,7 +328,7 @@ let compiler = {
       }
     },
 
-    inlinePartial(node) {},
+    inlinePartial() {},
 
     bodies() {}
   },
@@ -384,7 +376,7 @@ let compiler = {
     if (this.context.namespace) {
       attrName = this.svgAdjustAttrs[attrName] || attrName;
     }
-    return attrName
+    return attrName;
   },
 
   elTypes: {

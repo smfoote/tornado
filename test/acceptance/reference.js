@@ -166,7 +166,7 @@ let suite = {
       description: 'Reference is a promise',
       template: '<div>{now}</div>',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('and later');
         })
       },
@@ -198,7 +198,7 @@ let suite = {
       description: 'Reference in an attribute is a promise',
       template: '<div class="{now}"></div>',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('later');
         })
       },
@@ -237,7 +237,7 @@ let suite = {
       template: '<blockquote>The name is {lastName}, {fullName}.</blockquote>',
       context: {
         fullName: function() {
-          return new Promise(function(resolve, reject) {
+          return new Promise(function(resolve) {
             resolve(this.firstName + ' ' + this.lastName);
           }.bind(this));
         },
@@ -282,7 +282,7 @@ let suite = {
       template: '<blockquote>The name is {name.lastName}.</blockquote>',
       context: {
         name: function() {
-          return new Promise((resolve, reject) => {
+          return new Promise((resolve) => {
             resolve({
               firstName: 'James',
               lastName: 'Bond'

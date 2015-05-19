@@ -90,7 +90,7 @@ let suite = {
     {
       description: 'Not Exists where reference is empty string',
       template: 'Hello, {^name}world{/name}',
-      context: {name: ""},
+      context: {name: ''},
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createTextNode('Hello, '));
@@ -157,7 +157,7 @@ let suite = {
       description: 'Exists where reference is a promise',
       template: 'Hello, {^now}later{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('and later');
         })
       },
@@ -172,7 +172,7 @@ let suite = {
       description: 'Not Exists where reference is a promise that resolves to a falsy value',
       template: 'Hello, {^now}later{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('');
         })
       },
@@ -187,7 +187,7 @@ let suite = {
       description: 'Not Exists with an else where reference is a promise that resolves to a falsy value',
       template: 'Hello, {^now}later{:else}never{/now}',
       context: {
-        now: new Promise((resolve, reject) => {
+        now: new Promise((resolve) => {
           resolve('');
         })
       },
