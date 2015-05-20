@@ -52,7 +52,7 @@ grunt.initConfig({
   }
 });
 
-grunt.registerTask('acceptance', ['babel:acceptance', 'browserify:test']);
-grunt.registerTask('sandbox', ['browserify:sandbox']);
+grunt.registerTask('acceptance', ['babel', 'browserify:test']);
+grunt.registerTask('sandbox', ['babel:dist', 'browserify:sandbox']);
 
 grunt.registerTask('default', ['eslint', 'babel', 'browserify']);
