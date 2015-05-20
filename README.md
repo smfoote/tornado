@@ -36,7 +36,7 @@ Then open /test/sandbox/index.html in your browser.
 
 ### Tests
 
-Acceptance tests are found in [tests/acceptance/](tests/acceptance/). To run the tests:
+Acceptance tests are found in [test/acceptance/](test/acceptance/). To run the tests:
 
 ```
 grunt acceptance
