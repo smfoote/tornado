@@ -153,6 +153,28 @@ let suite = {
       })()
     },
     {
+      description: 'Reference with a dot separated path where last step does not exist',
+      template: 'Hello, {character.firstName}',
+      context: {character: {}},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello, '));
+        frag.appendChild(document.createTextNode(''));
+        return frag;
+      })()
+    },
+    {
+      description: 'Reference with a dot separated path where first step does not exist',
+      template: 'Hello, {character.firstName}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello, '));
+        frag.appendChild(document.createTextNode(''));
+        return frag;
+      })()
+    },
+    {
       description: 'Single dot reference',
       template: '{.}',
       context: 'Dorothy',
