@@ -48,16 +48,18 @@ let tornado = {
     }
     // There are still more steps in the array
     newContext = context[path.shift()];
-    if (this.util.isFunction(newContext)) {
-      newContext = newContext.bind(context)();
-    }
+    if (newContext) {
+      if (this.util.isFunction(newContext)) {
+        newContext = newContext.bind(context)();
+      }
 
-    if (this.util.isPromise(newContext)) {
-      return newContext.then(val => this.get(val, path));
-    }
+      if (this.util.isPromise(newContext)) {
+        return newContext.then(val => this.get(val, path));
+      }
 
-    if (this.util.isObject(newContext)) {
-      return this.get(newContext, path);
+      if (this.util.isObject(newContext)) {
+        return this.get(newContext, path);
+      }
     }
     return '';
   },
