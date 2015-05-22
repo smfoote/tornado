@@ -74,8 +74,9 @@ let compiler = {
       attr.attrName = this.adjustAttrName(elType, attr.attrName);
       if (hasRef) {
         this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        // this.renderers[tdIndex] += `      td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}).setAttribute('${attr.attrName}', td.getAttrValue('${elType}', '${attr.attrName}', ${this.walkAttrs(attr.value)}));\n`;
       } else {
-        this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', td.getAttrValue('${elType}', '${attr.attrName}', ${this.walkAttrs(attr.value)}));\n`;
       }
     });
     this.context.state = previousState;
