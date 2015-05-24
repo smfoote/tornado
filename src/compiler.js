@@ -7,7 +7,9 @@ const STATES = {
   TORNADO_TAG: 'TORNADO_TAG',
   TORNADO_BODY: 'TORNADO_BODY'
 };
+const PRODUCTION = 'production';
 let compiler = {
+  mode: 'dev',
   compile(ast, name) {
     this.context = {
       tornadoBodies: [{parentIndex: null}],
@@ -25,13 +27,13 @@ let compiler = {
     return `(function(){
   "use strict";
   var frags = {},
-  t = {
+  template = {
     ${this.fragments.join(',\n    ')},
     ${this.renderers.join(',\n    ')}
   };
-  t.render = t.r0;
-  td.register("${name}", t);
-  return t;
+  template.render = template.r0;
+  td.${this.getTdMethodName('register')}("${name}", template);
+  return template;
 })();`;
   },
   step(node) {
@@ -73,7 +75,7 @@ let compiler = {
       });
       attr.attrName = this.adjustAttrName(elType, attr.attrName);
       if (hasRef) {
-        this.renderers[tdIndex] += `      td.setAttribute(td.getNodeAtIdxPath(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        this.renderers[tdIndex] += `      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       } else {
         this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
       }
@@ -90,7 +92,7 @@ let compiler = {
     }
   },
   createPlaceholder() {
-    return `${this.getElContainerName()}.appendChild(document.createTextNode(''))`;
+    return `${this.getElContainerName()}.appendChild(td.${this.getTdMethodName('createTextNode')}(''))`;
   },
   TORNADO_PARTIAL(node) {
     let meta = node[1];
@@ -100,14 +102,14 @@ let compiler = {
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     let indexHash = indexes.join('');
     if (params.length === 1 && params[0].key === 'context') {
-      context = `td.get(c, ${params[0].val})`;
+      context = `td.${this.getTdMethodName('get')}(c, ${params[0].val})`;
     }
     if (this.context.state !== STATES.HTML_ATTRIBUTE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
-      td.replaceNode(oldNode${indexHash}, td.getPartial('${meta.name}', ${context}, this));\n`;
+      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('getPartial')}('${meta.name}', ${context}, this));\n`;
     } else {
-      return `td.getPartial('${meta.name}', ${context}, this).then(function(node){return td.nodeToString(node)})`;
+      return `td.${this.getTdMethodName('getPartial')}('${meta.name}', ${context}, this).then(function(node){return td.${this.getTdMethodName('nodeToString')}(node)})`;
     }
   },
   TORNADO_BODY(node) {
@@ -166,10 +168,10 @@ let compiler = {
     let indexHash = indexes.join('');
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
-      td.replaceNode(oldNode${indexHash}, td.createTextNode(td.get(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('createTextNode')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
-      return `td.get(c, ${JSON.stringify(node[1].key)})`;
+      return `td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})`;
     }
   },
   HTML_ELEMENT(node) {
@@ -182,7 +184,7 @@ let compiler = {
     let namespace = this.context.namespace ? `, '${this.context.namespace}'` : '';
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.push(0);
     let count = ++this.context.htmlBodies[tdIndex].count;
-    this.fragments[tdIndex] += `      var el${count} = td.createElement('${nodeInfo.key}'${namespace});\n`;
+    this.fragments[tdIndex] += `      var el${count} = td.${this.getTdMethodName('createElement')}('${nodeInfo.key}'${namespace});\n`;
     this.buildElementAttributes(nodeInfo.key, nodeInfo.attributes);
     this.walk(nodeContents);
     this.context.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
@@ -192,7 +194,7 @@ let compiler = {
       this.context.namespace = null;
     }
     if (this.context.state === STATES.ESCAPABLE_RAW) {
-      this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.nodeToString(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
+      this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.${this.getTdMethodName('nodeToString')}(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     } else {
       this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     }
@@ -202,7 +204,7 @@ let compiler = {
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
     } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(document.createTextNode('${node[1].replace(/'/g, "\\'")}'));\n`;
+      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(td.${this.getTdMethodName('createTextNode')}('${node[1].replace(/'/g, "\\'")}'));\n`;
     } else if (this.context.state === STATES.ESCAPABLE_RAW) {
       this.fragments[tdIndex] += `      ${this.getElContainerName()}.defaultValue += '${node[1].replace(/'/g, "\\'")}';\n`;
     }
@@ -216,21 +218,21 @@ let compiler = {
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         let primaryBody = reverse ? `.catch(function(err) {
-        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
+        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
         throw(err);
       }.bind(this))` :
         `.then(function() {
-        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
+        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
       }.bind(this))`;
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
-      td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('exists')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
-        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
+        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
       }.bind(this))` :
           `.catch(function(err) {
-        td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
+        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
         throw(err);
       }.bind(this))`;
           this.renderers[tdIndex] += `\n      ${elseBody};\n`;
@@ -239,19 +241,19 @@ let compiler = {
         }
       } else {
         let primaryBody = reverse ? `.catch(function() {
-      return td.nodeToString(this.r${maxTdIndex + 1}(c));
+      return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 1}(c));
     }.bind(this))` :
     `.then(function() {
-      return td.nodeToString(this.r${maxTdIndex + 1}(c));
+      return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 1}(c));
     }.bind(this))`;
 
-        let returnVal = `td.exists(td.get(c, ${JSON.stringify(node.key)}))${primaryBody}`;
+        let returnVal = `td.${this.getTdMethodName('exists')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
-      return td.nodeToString(this.r${maxTdIndex + 2}(c));
+      return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 2}(c));
     }.bind(this))` :
           `.catch(function() {
-      return td.nodeToString(this.r${maxTdIndex + 2}(c));
+      return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 2}(c));
     }.bind(this))`;
           returnVal += elseBody;
         }
@@ -274,21 +276,21 @@ let compiler = {
       let beforeLoop, loopAction, afterLoop, notArrayAction, elseBodyAction;
       if (isInHtmlAttribute) {
         beforeLoop = 'var attrs = [];';
-        loopAction = `attrs.push(td.nodeToString(this.r${maxTdIndex + tdBodyIncrease}(item)));`;
+        loopAction = `attrs.push(td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + tdBodyIncrease}(item)));`;
         afterLoop = `return Promise.all(attrs).then(function(vals) {
             return vals.join('');
           });`;
-        notArrayAction = `return td.nodeToString(this.r${maxTdIndex + 1}(val));`;
-        elseBodyAction = `return td.nodeToString(this.r${maxTdIndex + 2}(c));`;
+        notArrayAction = `return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 1}(val));`;
+        elseBodyAction = `return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 2}(c));`;
       } else {
-        beforeLoop = 'let frag = document.createDocumentFragment();';
+        beforeLoop = 'let frag = td.createDocumentFragment();';
         loopAction = `frag.appendChild(this.r${maxTdIndex + 1}(item));`;
-        afterLoop = `td.replaceNode(oldNode${indexHash}, frag);`;
-        notArrayAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 1}(val))`;
-        elseBodyAction = `td.replaceNode(oldNode${indexHash}, this.r${maxTdIndex + 2}(c))`;
+        afterLoop = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, frag);`;
+        notArrayAction = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(val))`;
+        elseBodyAction = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c))`;
       }
 
-      let output = `td.exists(td.get(c, ${JSON.stringify(node.key)})).then(function(val) {
+      let output = `td.${this.getTdMethodName('exists')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node.key)})).then(function(val) {
         if (Array.isArray(val)) {
           ${beforeLoop}
           for (var i=0, item; item=val[i]; i++) {
@@ -310,7 +312,7 @@ let compiler = {
         return output;
       } else {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
       ${output};\n`;
       }
     },
@@ -324,7 +326,7 @@ let compiler = {
       paramsHash = node.params.reduce((acc, param) => {
         let paramVal = param.val;
         if (Array.isArray(paramVal)) {
-          paramVal = `td.get(c, ${JSON.stringify(paramVal[1].key)})`;
+          paramVal = `td.${this.getTdMethodName('get')}(c, ${JSON.stringify(paramVal[1].key)})`;
         } else {
           paramVal = `'${paramVal}'`;
         }
@@ -343,9 +345,9 @@ let compiler = {
       bodiesHash = `{${bodiesHash.join(',')}}`;
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
-        td.helper('${node.key.join('')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
-          td.replaceNode(oldNode${indexHash}, val);
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+        td.${this.getTdMethodName('helper')}('${node.key.join('')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
+          td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, val);
         });\n`;
       }
     },
@@ -356,10 +358,10 @@ let compiler = {
       let indexHash = indexes.join('');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.getNodeAtIdxPath(root, ${JSON.stringify(indexes)});
-      td.replaceNode(oldNode${indexHash}, td.block('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this));\n`;
       } else {
-        return `td.nodeToString(td.block('${node.blockName}', ${node.blockIndex}, c, this))`;
+        return `td.${this.getTdMethodName('nodeToString')}(td.${this.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this))`;
       }
     },
 
@@ -385,7 +387,7 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     name = name || tdIndex;
     this.fragments[tdIndex] = `f${name}: function() {
-      var frag = document.createDocumentFragment();\n`;
+      var frag = td.createDocumentFragment();\n`;
     this.renderers[tdIndex] = `r${name}: function(c) {
       var root = frags.frag${name} || this.f${name}();
       root = root.cloneNode(true);\n`;
@@ -412,6 +414,34 @@ let compiler = {
       attrName = this.svgAdjustAttrs[attrName] || attrName;
     }
     return attrName;
+  },
+
+  /**
+   * Return a method name based on whether we are compiling for production or dev
+   * @param {String} fullName The full name of the method
+   * @return {String} Return the shortened alias name or the fullName
+   */
+  getTdMethodName(fullName) {
+    if (this.mode === PRODUCTION) {
+      return this.methodNameMap[fullName];
+    } else {
+      return fullName;
+    }
+  },
+
+  methodNameMap: {
+    register: 'r',
+    get: 'g',
+    createTextNode: 'c',
+    createElement: 'm',
+    setAttribute: 's',
+    getPartial: 'p',
+    replaceNode: 'n',
+    exists: 'e',
+    helper: 'h',
+    block: 'b',
+    getNodeAtIdxPath: 'i',
+    nodeToString: 't'
   },
 
   elTypes: {

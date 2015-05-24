@@ -107,6 +107,14 @@ let tornado = {
   },
 
   /**
+   * Create a document fragment (lives in runtime so it can be minified)
+   * @return {DocumentFragment}
+   */
+  createDocumentFragment() {
+    return document.createDocumentFragment();
+  },
+
+  /**
    * Create and return an element, possibly within an XML namespace (other than HTML).
    * @param {String} name The name of the element to be created
    * @param {String} [namespace] The optional XML namespace (e.g. 'http://www.w3.org/2000/svg')
@@ -293,7 +301,7 @@ let tornado = {
   },
 
   /**
-   * Within a given HTML node, find the node at the given index path. See replaceChildAtIdxPath
+   * Within a given HTML node, find the node at the given index path.
    * for more details.
    * @param {HTMLNode} root The parent node
    * @param {Array} indexPath The path of indexes to the node being searched for.
@@ -401,5 +409,22 @@ let tornado = {
     }
   }
 };
+
+/**
+ * Aliases for minification
+ */
+tornado.r = tornado.register;
+tornado.g = tornado.get;
+tornado.c = tornado.createTextNode;
+tornado.m = tornado.createElement;
+tornado.f = tornado.createDocumentFragment;
+tornado.s = tornado.setAttribute;
+tornado.p = tornado.getPartial;
+tornado.n = tornado.replaceNode;
+tornado.e = tornado.exists;
+tornado.h = tornado.helper;
+tornado.b = tornado.block;
+tornado.i = tornado.getNodeAtIdxPath;
+tornado.t = tornado.nodeToString;
 
 module.exports = tornado;
