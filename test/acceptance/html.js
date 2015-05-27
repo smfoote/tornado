@@ -145,6 +145,22 @@ let suite = {
         frag.appendChild(svg);
         return frag;
       })()
+    },
+    {
+      description: 'Pre with new lines',
+      template: `<pre>
+  {ref}
+</pre>`,
+      context: {ref: 'hello'},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let pre = document.createElement('pre');
+        pre.appendChild(document.createTextNode('\n  '));
+        pre.appendChild(document.createTextNode('hello'));
+        pre.appendChild(document.createTextNode('\n'));
+        frag.appendChild(pre);
+        return frag;
+      })()
     }
   ]
 };

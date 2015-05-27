@@ -129,6 +129,15 @@ let tornado = {
   },
 
   /**
+   * Append an element to another element (lives in runtime for minification)
+   * @param {Node} parent The parent node
+   * @param {Node} child The node to be appended to the parent
+   */
+  appendChild(parent, child) {
+    parent.appendChild(child);
+  },
+
+  /**
    * Set an attribute on a given node. To support references and promises, the value of the
    * attribute is an array of values
    * @param {HTMLElement} node The element whose attribute is to be set
@@ -417,6 +426,7 @@ tornado.r = tornado.register;
 tornado.g = tornado.get;
 tornado.c = tornado.createTextNode;
 tornado.m = tornado.createElement;
+tornado.a = tornado.appendChild;
 tornado.f = tornado.createDocumentFragment;
 tornado.s = tornado.setAttribute;
 tornado.p = tornado.getPartial;
