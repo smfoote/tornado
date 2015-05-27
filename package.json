@@ -12,20 +12,25 @@
   "author": "Steven Foote",
   "license": "Apache",
   "devDependencies": {
+    "bytesize": "^0.2.0",
+    "dustjs-linkedin": "^2.7.1",
     "grunt": "^0.4.5",
     "grunt-babel": "^4.0.0",
     "grunt-browserify": "^3.7.0",
-    "grunt-contrib-watch": "^0.6.1",
+    "grunt-bytesize": "^0.1.1",
     "grunt-contrib-concat": "^0.5.1",
+    "grunt-contrib-uglify": "^0.9.1",
+    "grunt-contrib-watch": "^0.6.1",
     "grunt-eslint": "^13.0.0",
+    "grunt-peg": "^1.5.0",
     "load-grunt-tasks": "^3.1.0",
-    "pegjs": "^0.8.0"
+    "pegjs": "^0.8.0",
+    "uglifyjs": "^2.4.10"
   },
   "directories": {
     "test": "test"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "repository": {
     "type": "git",
     "url": "https://github.com/smfoote/tornado.git"
