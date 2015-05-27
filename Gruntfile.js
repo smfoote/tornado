@@ -21,6 +21,11 @@ grunt.initConfig({
       ]
     }
   },
+  bytesize: {
+    all: {
+      src: ['dist/*.js']
+    }
+  },
   browserify: {
     test: {
       src: 'test/cacceptance/runner.js',
@@ -33,6 +38,12 @@ grunt.initConfig({
   },
   eslint: {
     target: ['src', 'test/acceptance/*.js']
+  },
+  peg: {
+    dist: {
+      src: 'src/grammar.pegjs',
+      dest: 'dist/parser.js'
+    }
   },
   watch: {
     scripts: {
@@ -49,10 +60,19 @@ grunt.initConfig({
         spawn: false
       }
     }
+  },
+  templateSize: {
+    benchmark: {
+      src: ['benchmark/templates/*.td']
+    }
   }
 });
 
-grunt.registerTask('acceptance', ['babel', 'browserify:test']);
-grunt.registerTask('sandbox', ['babel:dist', 'browserify:sandbox']);
+grunt.task.loadTasks('grunt-tasks/');
 
-grunt.registerTask('default', ['eslint', 'babel', 'browserify']);
+grunt.registerTask('dist', ['peg', 'eslint', 'babel:dist']);
+grunt.registerTask('acceptance', ['dist', 'babel:acceptance', 'browserify:test']);
+grunt.registerTask('sandbox', ['dist', 'browserify:sandbox']);
+grunt.registerTask('benchmark', ['dist', 'bytesize', 'templateSize']);
+
+grunt.registerTask('default', ['dist', 'browserify']);

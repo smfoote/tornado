@@ -25,7 +25,6 @@ let compiler = {
     this.walk(ast);
     this.createMethodFooters();
     return `(function(){
-  "use strict";
   var frags = {},
   template = {
     ${this.fragments.join(',\n    ')},
@@ -106,8 +105,8 @@ let compiler = {
     }
     if (this.context.state !== STATES.HTML_ATTRIBUTE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('getPartial')}('${meta.name}', ${context}, this));\n`;
+      this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(on${indexHash}, td.${this.getTdMethodName('getPartial')}('${meta.name}', ${context}, this));\n`;
     } else {
       return `td.${this.getTdMethodName('getPartial')}('${meta.name}', ${context}, this).then(function(node){return td.${this.getTdMethodName('nodeToString')}(node)})`;
     }
@@ -168,8 +167,8 @@ let compiler = {
     let indexHash = indexes.join('');
     if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-      this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('createTextNode')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})));\n`;
+      this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(on${indexHash}, td.${this.getTdMethodName('createTextNode')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})));\n`;
     } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return `td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})`;
     }
@@ -218,21 +217,21 @@ let compiler = {
       let hasElseBody = (node.bodies.length === 1 && node.bodies[0][1].name === 'else');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         let primaryBody = reverse ? `.catch(function(err) {
-        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
+        td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 1}(c));
         throw(err);
       }.bind(this))` :
         `.then(function() {
-        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(c));
+        td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 1}(c));
       }.bind(this))`;
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+        this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
       td.${this.getTdMethodName('exists')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node.key)}))${primaryBody}`;
         if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
-        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
+        td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c));
       }.bind(this))` :
           `.catch(function(err) {
-        td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c));
+        td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c));
         throw(err);
       }.bind(this))`;
           this.renderers[tdIndex] += `\n      ${elseBody};\n`;
@@ -283,11 +282,11 @@ let compiler = {
         notArrayAction = `return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 1}(val));`;
         elseBodyAction = `return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 2}(c));`;
       } else {
-        beforeLoop = 'let frag = td.createDocumentFragment();';
+        beforeLoop = `var frag = td.${this.getTdMethodName('createDocumentFragment')}();`;
         loopAction = `frag.appendChild(this.r${maxTdIndex + 1}(item));`;
-        afterLoop = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, frag);`;
-        notArrayAction = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 1}(val))`;
-        elseBodyAction = `td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, this.r${maxTdIndex + 2}(c))`;
+        afterLoop = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, frag);`;
+        notArrayAction = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 1}(val))`;
+        elseBodyAction = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c))`;
       }
 
       let output = `td.${this.getTdMethodName('exists')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node.key)})).then(function(val) {
@@ -312,7 +311,7 @@ let compiler = {
         return output;
       } else {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+        this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
       ${output};\n`;
       }
     },
@@ -345,9 +344,9 @@ let compiler = {
       bodiesHash = `{${bodiesHash.join(',')}}`;
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+        this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
         td.${this.getTdMethodName('helper')}('${node.key.join('')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
-          td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, val);
+          td.${this.getTdMethodName('replaceNode')}(on${indexHash}, val);
         });\n`;
       }
     },
@@ -358,8 +357,8 @@ let compiler = {
       let indexHash = indexes.join('');
       if (this.context.state !== STATES.HTML_ATTRIBUTE) {
         this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
-        this.renderers[tdIndex] += `      var oldNode${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${this.getTdMethodName('replaceNode')}(oldNode${indexHash}, td.${this.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+        this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${this.getTdMethodName('replaceNode')}(on${indexHash}, td.${this.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this));\n`;
       } else {
         return `td.${this.getTdMethodName('nodeToString')}(td.${this.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this))`;
       }
@@ -387,7 +386,7 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     name = name || tdIndex;
     this.fragments[tdIndex] = `f${name}: function() {
-      var frag = td.createDocumentFragment();\n`;
+      var frag = td.${this.getTdMethodName('createDocumentFragment')}();\n`;
     this.renderers[tdIndex] = `r${name}: function(c) {
       var root = frags.frag${name} || this.f${name}();
       root = root.cloneNode(true);\n`;
@@ -432,6 +431,7 @@ let compiler = {
   methodNameMap: {
     register: 'r',
     get: 'g',
+    createDocumentFragment: 'f',
     createTextNode: 'c',
     createElement: 'm',
     setAttribute: 's',
