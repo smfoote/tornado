@@ -1,5 +1,5 @@
-let compiler = require('../dist/compiler'),
-    parser = require('../dist/parser');
+import compiler from '../dist/compiler';
+import parser from '../dist/parser';
 
 
 // Compare the attributes of two nodes for equality
