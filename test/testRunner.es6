@@ -97,6 +97,4 @@ function runSuites(suites) {
   });
 }
 
-module.exports = {
-  runSuites: runSuites
-};
+export default {runSuites};

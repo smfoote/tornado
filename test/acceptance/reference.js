@@ -325,4 +325,4 @@ let suite = {
   ]
 };
 
-module.exports = suite;
+export default suite;
