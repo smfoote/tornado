@@ -1,9 +1,13 @@
 import visitor from '../visitor';
 
-let generateWalker = visitor.build({
-  start(node) {
+let generatedWalker = visitor.build({
+  start: function(node) {
     console.log(node);
   }
 });
 
-export default generateWalker;
+let preprocess = function(ast, options) {
+  generatedWalker(ast);
+};
+
+export default preprocess;
