@@ -1,6 +1,7 @@
 import util from '../utils/builder';
-let flush = function(results, context) {
-  results.code =  `(function(){
+
+let flush = function(results) {
+  results.code = `(function(){
 var frags = {},
   template = {
     ${results.fragments.join(',\n    ')},

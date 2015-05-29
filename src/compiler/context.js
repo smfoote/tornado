@@ -10,14 +10,14 @@ const STATES = {
 };
 
 let Context = function(results) {
-  let refCount;
+  // let refCount;
   let tornadoBodiesPointer;
   const defaultState = STATES.OUTER_SPACE;
 
 
 
   let init = function() {
-    refCount = 0;
+    // refCount = 0;
     this.htmlBodies = [];
     this.tdBodies = [];
     tornadoBodiesPointer = this.tdBodies.length;
@@ -40,14 +40,14 @@ let Context = function(results) {
   this.push = function(name, f, r) {
     let tdIndex = tornadoBodiesPointer;
     name = name || tdIndex;
-    if (f) { pushFragment(f);}
-    if (r) { pushRenderer(r);}
+    if (f) { pushFragment(f); }
+    if (r) { pushRenderer(r); }
   };
   this.append = function(name, f, r) {
     let tdIndex = tornadoBodiesPointer;
     name = name || tdIndex;
-    if (f) { pushFragment(f, true);}
-    if (r) { pushRenderer(r, true);}
+    if (f) { pushFragment(f, true); }
+    if (r) { pushRenderer(r, true); }
   };
   this.currentIdx = function() {
     return tornadoBodiesPointer;
@@ -192,7 +192,7 @@ let Context = function(results) {
       }
       bodiesHash = `{${bodiesHash.join(',')}}`;
       if (this.state !== STATES.HTML_ATTRIBUTE) {
-        this.append(null, `      ${util.createPlaceholder(this)};\n`, 
+        this.append(null, `      ${util.createPlaceholder(this)};\n`,
                           `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
         td.${util.getTdMethodName('helper')}('${node.key.join('')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
           td.${util.getTdMethodName('replaceNode')}(on${indexHash}, val);
