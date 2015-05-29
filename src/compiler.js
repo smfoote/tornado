@@ -3,7 +3,8 @@ const STATES = {
   HTML_TAG: 'HTML_TAG',
   HTML_BODY: 'HTML_BODY',
   HTML_ATTRIBUTE: 'HTML_ATTRIBUTE',
-  ESCAPABLE_RAW: 'ESCAPABLE_RAW',
+  HTML_RAW: 'HTML_RAW',
+  HTML_ESCAPABLE_RAW: 'HTML_ESCAPABLE_RAW',
   TORNADO_TAG: 'TORNADO_TAG',
   TORNADO_BODY: 'TORNADO_BODY'
 };
@@ -68,16 +69,8 @@ let compiler = {
     indexesClone.pop();
     this.context.state = STATES.HTML_ATTRIBUTE;
     attributes.forEach((attr) => {
-      let hasRef = attr.value && attr.value.some(function(val) {
-        let type = val[0];
-        return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
-      });
       attr.attrName = this.adjustAttrName(elType, attr.attrName);
-      if (hasRef) {
-        this.renderers[tdIndex] += `      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
-      } else {
-        this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
-      }
+      this.renderers[tdIndex] += `      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
     });
     this.context.state = previousState;
     return attrs;
@@ -91,7 +84,7 @@ let compiler = {
     }
   },
   createPlaceholder() {
-    return `${this.getElContainerName()}.appendChild(td.${this.getTdMethodName('createTextNode')}(''))`;
+    return `td.${this.getTdMethodName('appendChild')}(${this.getElContainerName()}, td.${this.getTdMethodName('createTextNode')}(''))`;
   },
   TORNADO_PARTIAL(node) {
     let meta = node[1];
@@ -165,11 +158,11 @@ let compiler = {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
     let indexes = this.context.htmlBodies[tdIndex].htmlBodiesIndexes;
     let indexHash = indexes.join('');
-    if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
+    if (this.context.state !== STATES.HTML_ATTRIBUTE) {
       this.fragments[tdIndex] += `      ${this.createPlaceholder()};\n`;
       this.renderers[tdIndex] += `      var on${indexHash} = td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
       td.${this.getTdMethodName('replaceNode')}(on${indexHash}, td.${this.getTdMethodName('createTextNode')}(td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})));\n`;
-    } else if (this.context.state === STATES.HTML_ATTRIBUTE) {
+    } else {
       return `td.${this.getTdMethodName('get')}(c, ${JSON.stringify(node[1].key)})`;
     }
   },
@@ -192,20 +185,25 @@ let compiler = {
     if (isNamespaceRoot) {
       this.context.namespace = null;
     }
-    if (this.context.state === STATES.ESCAPABLE_RAW) {
+    if (this.context.state === STATES.HTML_ESCAPABLE_RAW) {
       this.fragments[tdIndex] += `      el${this.context.htmlBodies[tdIndex].count}.defaultValue += td.${this.getTdMethodName('nodeToString')}(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     } else {
-      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(el${this.context.htmlBodies[tdIndex].count + 1});\n`;
+      this.fragments[tdIndex] += `      td.${this.getTdMethodName('appendChild')}(${this.getElContainerName()}, el${this.context.htmlBodies[tdIndex].count + 1});\n`;
     }
   },
   PLAIN_TEXT(node) {
     let tdIndex = this.context.tornadoBodiesCurrentIndex;
+    let onlySpace = /^[ \t]*(?:\n)+[ \t]*(?:\n)*$/;
+    let currentState = this.context.state;
+    if (currentState !== STATES.HTML_RAW && currentState !== STATES.HTML_ESCAPABLE_RAW && onlySpace.test(node[1])) {
+      return '';
+    }
     if (this.context.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
-    } else if (this.context.state === STATES.HTML_BODY || this.context.state === STATES.OUTER_SPACE) {
-      this.fragments[tdIndex] += `      ${this.getElContainerName()}.appendChild(td.${this.getTdMethodName('createTextNode')}('${node[1].replace(/'/g, "\\'")}'));\n`;
-    } else if (this.context.state === STATES.ESCAPABLE_RAW) {
+    } else if (this.context.state === STATES.HTML_ESCAPABLE_RAW) {
       this.fragments[tdIndex] += `      ${this.getElContainerName()}.defaultValue += '${node[1].replace(/'/g, "\\'")}';\n`;
+    } else {
+      this.fragments[tdIndex] += `      td.${this.getTdMethodName('appendChild')}(${this.getElContainerName()}, td.${this.getTdMethodName('createTextNode')}('${node[1].replace(/'/g, "\\'")}'));\n`;
     }
   },
   tornadoBodies: {
@@ -283,7 +281,7 @@ let compiler = {
         elseBodyAction = `return td.${this.getTdMethodName('nodeToString')}(this.r${maxTdIndex + 2}(c));`;
       } else {
         beforeLoop = `var frag = td.${this.getTdMethodName('createDocumentFragment')}();`;
-        loopAction = `frag.appendChild(this.r${maxTdIndex + 1}(item));`;
+        loopAction = `td.${this.getTdMethodName('appendChild')}(frag, this.r${maxTdIndex + 1}(item));`;
         afterLoop = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, frag);`;
         notArrayAction = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 1}(val))`;
         elseBodyAction = `td.${this.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c))`;
@@ -371,7 +369,9 @@ let compiler = {
 
   setHTMLElementState(nodeInfo) {
     if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
-      this.context.state = STATES.ESCAPABLE_RAW;
+      this.context.state = STATES.HTML_ESCAPABLE_RAW;
+    } else if (this.elTypes.raw.indexOf(nodeInfo.key) > -1) {
+      this.context.state = STATES.HTML_RAW;
     } else {
       this.context.state = STATES.HTML_BODY;
     }
@@ -434,6 +434,7 @@ let compiler = {
     createDocumentFragment: 'f',
     createTextNode: 'c',
     createElement: 'm',
+    appendChild: 'a',
     setAttribute: 's',
     getPartial: 'p',
     replaceNode: 'n',
@@ -445,7 +446,8 @@ let compiler = {
   },
 
   elTypes: {
-    escapableRaw: ['textarea', 'title']
+    escapableRaw: ['textarea', 'title'],
+    raw: ['pre', 'style']
   },
   svgAdjustAttrs: {
     'attributename': 'attributeName',
