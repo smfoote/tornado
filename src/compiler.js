@@ -1,3 +1,5 @@
+'use strict';
+let preprocess = require('./compiler/passes/preprocess');
 let generateJS = require('./compiler/passes/generate');
 
 const STATES = {
@@ -10,32 +12,50 @@ const STATES = {
   TORNADO_BODY: 'TORNADO_BODY'
 };
 const PRODUCTION = 'production';
-let compiler = {
-  mode: 'dev',
-  compile(ast, name) {
-    this.context = {
-      tornadoBodies: [{parentIndex: null}],
-      tornadoBodiesCurrentIndex: 0,
-      htmlBodies: [{count: -1, htmlBodiesIndexes: [0]}],
-      refCount: 0,
-      blocks: {},
-      state: STATES.OUTER_SPACE
-    };
-    this.fragments = [];
-    this.renderers = [];
-    this.createMethodHeaders();
-    generateJS(ast);
-    this.createMethodFooters();
-    return `(function(){
-  var frags = {},
+
+let flush = function(results) {
+  return `(function(){
+var frags = {},
   template = {
-    ${this.fragments.join(',\n    ')},
-    ${this.renderers.join(',\n    ')}
+    ${results.fragments.join(',\n    ')},
+    ${results.renderers.join(',\n    ')}
   };
   template.render = template.r0;
   td.${this.getTdMethodName('register')}("${name}", template);
   return template;
 })();`;
+};
+
+const defaultPasses = [
+  [], // checks
+  [], // transforms
+  [preprocess] // generates
+];
+let compiler = {
+  mode: 'dev',
+  compile(ast, name, options) {
+    let passes = options && options.passes || defaultPasses;
+    var results = {
+      fragments: [],
+      renderers: []
+    };
+    var context = {};
+    // this.context = {
+      // tornadoBodies: [{parentIndex: null}],
+      // tornadoBodiesCurrentIndex: 0,
+      // htmlBodies: [{count: -1, htmlBodiesIndexes: [0]}],
+      // refCount: 0,
+      // blocks: {},
+      // state: STATES.OUTER_SPACE
+    // };
+    // this.createMethodHeaders();
+    passes.forEach(stage => {
+      stage.forEach(pass =>{
+        pass({ast, results, context});
+      });
+    });
+    // this.createMethodFooters();
+    return flush(results);
   },
   /**
    * Walk through the attributes of an HTML element
