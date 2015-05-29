@@ -21,4 +21,4 @@ let visitor = {
     return walk;
   }
 };
-module.exports = visitor;
+export default visitor;

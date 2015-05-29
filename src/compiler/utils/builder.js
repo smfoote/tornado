@@ -176,4 +176,4 @@ export default {
     'ychannelselector': 'yChannelSelector',
     'zoomandpan': 'zoomAndPan'
   }
-}
+};

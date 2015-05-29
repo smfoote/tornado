@@ -6,7 +6,7 @@ import {STATES} from '../utils/builder';
 import {createMethodHeaders} from './preprocess';
 import {createMethodFooters} from './postprocess';
 
-let visitor = require('../visitor');
+import visitor from '../visitor';
 
 let generateWalker = visitor.build({
   TORNADO_PARTIAL(node, ctx) {
@@ -116,7 +116,6 @@ let generateWalker = visitor.build({
     }
   },
   PLAIN_TEXT(node, ctx) {
-    let tdIndex = ctx.currentIdx();
     if (ctx.state === STATES.HTML_ATTRIBUTE) {
       return '\'' + node[1] + '\'';
     } else if (ctx.state === STATES.HTML_BODY || ctx.state === STATES.OUTER_SPACE) {
@@ -131,4 +130,4 @@ let generateJavascript = function (ast, options) {
   return generateWalker(ast, options.context);
 };
 
-module.exports = generateJavascript;
+export default generateJavascript;
