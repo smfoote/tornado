@@ -1,3 +1,4 @@
+import util from '../utils/builder';
 let flush = function(results, context) {
   results.code =  `(function(){
 var frags = {},
@@ -6,11 +7,11 @@ var frags = {},
     ${results.renderers.join(',\n    ')}
   };
   template.render = template.r0;
-  td.${context.getTdMethodName('register')}("${name}", template);
+  td.${util.getTdMethodName('register')}("${name}", template);
   return template;
 })();`;
 };
-let createMethodFooters = function(name, context) {
+export let createMethodFooters = function(name, context) {
   let f = `      frags.frag${name} = frag;
     return frag;
   }`;
