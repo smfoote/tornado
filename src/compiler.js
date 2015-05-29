@@ -2,6 +2,7 @@
 import Context from './compiler/context';
 let preprocess = require('./compiler/passes/preprocess');
 let generateJS = require('./compiler/passes/generate');
+let postprocess = require('./compiler/passes/postprocess');
 
 const STATES = {
   OUTER_SPACE: 'OUTER_SPACE',
@@ -13,23 +14,11 @@ const STATES = {
   TORNADO_BODY: 'TORNADO_BODY'
 };
 
-let flush = function(results, context) {
-  return `(function(){
-var frags = {},
-  template = {
-    ${results.fragments.join(',\n    ')},
-    ${results.renderers.join(',\n    ')}
-  };
-  template.render = template.r0;
-  td.${context.getTdMethodName('register')}("${name}", template);
-  return template;
-})();`;
-};
 
 const defaultPasses = [
   [], // checks
   [], // transforms
-  [preprocess] // generates
+  [preprocess, postprocess] // generates
 ];
 let compiler = {
   compile(ast, name, options) {
@@ -39,22 +28,12 @@ let compiler = {
       renderers: []
     };
     let context = new Context(results);
-    // this.context = {
-      // tornadoBodies: [{parentIndex: null}],
-      // tornadoBodiesCurrentIndex: 0,
-      // htmlBodies: [{count: -1, htmlBodiesIndexes: [0]}],
-      // refCount: 0,
-      // blocks: {},
-      // state: STATES.OUTER_SPACE
-    // };
-    this.createMethodHeaders(null, context);
     passes.forEach(stage => {
       stage.forEach(pass =>{
         pass(ast, {results, context});
       });
     });
-    this.createMethodFooters(null, context);
-    return flush(results, context);
+    return results.code;
   },
   /**
    * Walk through the attributes of an HTML element
@@ -113,23 +92,6 @@ let compiler = {
     if (namespace.length) {
       this.context.namespace = namespace[0].value[0][1];
     }
-  },
-  createMethodHeaders(name, context) {
-    name = name || context.currentIdx();
-    let f = `f${name}: function() {
-      var frag = td.${context.getTdMethodName('createDocumentFragment')}();\n`;
-    let r = `r${name}: function(c) {
-      var root = frags.frag${name} || this.f${name}();
-      root = root.cloneNode(true);\n`;
-    context.push(name, f, r);
-  },
-  createMethodFooters(name, context) {
-    let f = `      frags.frag${name} = frag;
-      return frag;
-    }`;
-    let r = `      return root;
-    }`;
-    context.append(name, f, r);
   },
 
   /**
