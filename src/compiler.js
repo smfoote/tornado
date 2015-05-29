@@ -1,4 +1,5 @@
 'use strict';
+import Context from './compiler/context';
 let preprocess = require('./compiler/passes/preprocess');
 let generateJS = require('./compiler/passes/generate');
 
@@ -11,9 +12,8 @@ const STATES = {
   TORNADO_TAG: 'TORNADO_TAG',
   TORNADO_BODY: 'TORNADO_BODY'
 };
-const PRODUCTION = 'production';
 
-let flush = function(results) {
+let flush = function(results, context) {
   return `(function(){
 var frags = {},
   template = {
@@ -21,7 +21,7 @@ var frags = {},
     ${results.renderers.join(',\n    ')}
   };
   template.render = template.r0;
-  td.${this.getTdMethodName('register')}("${name}", template);
+  td.${context.getTdMethodName('register')}("${name}", template);
   return template;
 })();`;
 };
@@ -32,14 +32,13 @@ const defaultPasses = [
   [preprocess] // generates
 ];
 let compiler = {
-  mode: 'dev',
   compile(ast, name, options) {
     let passes = options && options.passes || defaultPasses;
-    var results = {
+    let results = {
       fragments: [],
       renderers: []
     };
-    var context = {};
+    let context = new Context(results);
     // this.context = {
       // tornadoBodies: [{parentIndex: null}],
       // tornadoBodiesCurrentIndex: 0,
@@ -48,14 +47,14 @@ let compiler = {
       // blocks: {},
       // state: STATES.OUTER_SPACE
     // };
-    // this.createMethodHeaders();
+    this.createMethodHeaders(null, context);
     passes.forEach(stage => {
       stage.forEach(pass =>{
-        pass({ast, results, context});
+        pass(ast, {results, context});
       });
     });
-    // this.createMethodFooters();
-    return flush(results);
+    this.createMethodFooters(null, context);
+    return flush(results, context);
   },
   /**
    * Walk through the attributes of an HTML element
@@ -115,23 +114,22 @@ let compiler = {
       this.context.namespace = namespace[0].value[0][1];
     }
   },
-  createMethodHeaders(name) {
-    let tdIndex = this.context.tornadoBodiesCurrentIndex;
-    name = name || tdIndex;
-    this.fragments[tdIndex] = `f${name}: function() {
-      var frag = td.${this.getTdMethodName('createDocumentFragment')}();\n`;
-    this.renderers[tdIndex] = `r${name}: function(c) {
+  createMethodHeaders(name, context) {
+    name = name || context.currentIdx();
+    let f = `f${name}: function() {
+      var frag = td.${context.getTdMethodName('createDocumentFragment')}();\n`;
+    let r = `r${name}: function(c) {
       var root = frags.frag${name} || this.f${name}();
       root = root.cloneNode(true);\n`;
+    context.push(name, f, r);
   },
-  createMethodFooters(name) {
-    let tdIndex = this.context.tornadoBodiesCurrentIndex;
-    name = name || tdIndex;
-    this.fragments[tdIndex] += `      frags.frag${name} = frag;
+  createMethodFooters(name, context) {
+    let f = `      frags.frag${name} = frag;
       return frag;
     }`;
-    this.renderers[tdIndex] += `      return root;
+    let r = `      return root;
     }`;
+    context.append(name, f, r);
   },
 
   /**
@@ -148,34 +146,6 @@ let compiler = {
     return attrName;
   },
 
-  /**
-   * Return a method name based on whether we are compiling for production or dev
-   * @param {String} fullName The full name of the method
-   * @return {String} Return the shortened alias name or the fullName
-   */
-  getTdMethodName(fullName) {
-    if (this.mode === PRODUCTION) {
-      return this.methodNameMap[fullName];
-    } else {
-      return fullName;
-    }
-  },
-
-  methodNameMap: {
-    register: 'r',
-    get: 'g',
-    createDocumentFragment: 'f',
-    createTextNode: 'c',
-    createElement: 'm',
-    setAttribute: 's',
-    getPartial: 'p',
-    replaceNode: 'n',
-    exists: 'e',
-    helper: 'h',
-    block: 'b',
-    getNodeAtIdxPath: 'i',
-    nodeToString: 't'
-  },
 
   elTypes: {
     escapableRaw: ['textarea', 'title']
