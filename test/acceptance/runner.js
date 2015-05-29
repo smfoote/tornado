@@ -1,17 +1,17 @@
-var testRunner = require('../testRunner.js');
-var helperTests = require('./helper');
-var htmlTests = require('./html');
-var referenceTests = require('./reference');
-var existsTests = require('./exists');
-var notExistsTests = require('./notExists');
-var sectionTests = require('./section');
-var blockTests = require('./block');
-var partialTests = require('./partial');
-var td = require('../../dist/runtime');
+import {runSuites} from '../testRunner.js';
+import helperTests from './helper';
+import htmlTests from './html';
+import referenceTests from './reference';
+import existsTests from './exists';
+import notExistsTests from './notExists';
+import sectionTests from './section';
+import blockTests from './block';
+import partialTests from './partial';
+import td from '../../dist/runtime';
 
 window.td = td;
 
-testRunner.runSuites([
+runSuites([
   helperTests,
   htmlTests,
   referenceTests,

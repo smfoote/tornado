@@ -427,4 +427,4 @@ tornado.b = tornado.block;
 tornado.i = tornado.getNodeAtIdxPath;
 tornado.t = tornado.nodeToString;
 
-module.exports = tornado;
+export default tornado;

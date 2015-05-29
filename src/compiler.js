@@ -509,4 +509,4 @@ let compiler = {
   }
 };
 
-module.exports = compiler;
+export default compiler;
