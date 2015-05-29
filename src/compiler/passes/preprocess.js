@@ -1,8 +1,9 @@
+import util from '../utils/builder';
 
-let createMethodHeaders = function(name, context) {
+export let createMethodHeaders = function(name, context) {
   name = name || context.currentIdx();
   let f = `f${name}: function() {
-    var frag = td.${context.getTdMethodName('createDocumentFragment')}();\n`;
+    var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
   let r = `r${name}: function(c) {
     var root = frags.frag${name} || this.f${name}();
     root = root.cloneNode(true);\n`;
@@ -11,6 +12,9 @@ let createMethodHeaders = function(name, context) {
 let preprocess = function(ast, options) {
   let context = options.context;
   if (context) {
+    // do some initialization stuff
+    context.tdBodies.push({parentIndex: null});
+    context.htmlBodies.push({count: -1, htmlBodiesIndexes: [0]});
     createMethodHeaders(null, context);
   }
 };
