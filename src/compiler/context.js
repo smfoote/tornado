@@ -20,6 +20,7 @@ let Context = function(results) {
     // refCount = 0;
     this.htmlBodies = [];
     this.tdBodies = [];
+    this.blocks = {};
     tornadoBodiesPointer = this.tdBodies.length;
     this.state = defaultState;
   };
@@ -72,9 +73,9 @@ let Context = function(results) {
         `.then(function() {
         td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 1}(c));
       }.bind(this))`;
-        this.fragments[tdIndex] += `      ${util.createPlaceholder(this)};\n`;
-        this.renderers[tdIndex] += `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${util.getTdMethodName('exists')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(node.key)}))${primaryBody}`;
+        this.append(null, `      ${util.createPlaceholder(this)};\n`, null);
+        this.append(null, null, `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${util.getTdMethodName('exists')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(node.key)}))${primaryBody}`);
         if (hasElseBody) {
           let elseBody = reverse ? `.then(function() {
         td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c));
@@ -83,9 +84,9 @@ let Context = function(results) {
         td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${maxTdIndex + 2}(c));
         throw(err);
       }.bind(this))`;
-          this.renderers[tdIndex] += `\n      ${elseBody};\n`;
+          this.append(null, null, `\n      ${elseBody};\n`);
         } else {
-          this.renderers[tdIndex] += ';\n';
+          this.append(null, null, ';\n');
         }
       } else {
         let primaryBody = reverse ? `.catch(function() {
@@ -159,9 +160,9 @@ let Context = function(results) {
       if (isInHtmlAttribute) {
         return output;
       } else {
-        this.fragments[tdIndex] += `      ${util.createPlaceholder(this)};\n`;
-        this.renderers[tdIndex] += `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      ${output};\n`;
+        this.append(null, `      ${util.createPlaceholder(this)};\n`, null);
+        this.append(null, null, `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      ${output};\n`);
       }
     },
 
@@ -205,9 +206,9 @@ let Context = function(results) {
       let indexes = this.htmlBodies[tdIndex].htmlBodiesIndexes;
       let indexHash = indexes.join('');
       if (this.state !== STATES.HTML_ATTRIBUTE) {
-        this.fragments[tdIndex] += `      ${util.createPlaceholder(this)};\n`;
-        this.renderers[tdIndex] += `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this));\n`;
+        this.append(null, `      ${util.createPlaceholder(this)};\n`, null);
+        this.append(null, null, `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
+      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this));\n`);
       } else {
         return `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${node.blockName}', ${node.blockIndex}, c, this))`;
       }

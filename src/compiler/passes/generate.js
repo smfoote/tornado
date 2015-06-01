@@ -20,7 +20,7 @@ let generateWalker = visitor.build({
       context = `td.${util.getTdMethodName('get')}(c, ${params[0].val})`;
     }
     if (context.state !== STATES.HTML_ATTRIBUTE) {
-      ctx.appendFragment(`      ${util.createPlaceholder(ctx)};\n`);
+      ctx.append(null, `      ${util.createPlaceholder(ctx)};\n`, null);
       ctx.append(null, null, `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
       td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('getPartial')}('${meta.name}', ${context}, this));\n`);
     } else {
