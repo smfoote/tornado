@@ -44,8 +44,11 @@ export default {
    */
   walkAttrs(items = []) {
     let res = [];
+    // TODO: fix this
     items.forEach((item) => {
-      res.push(this.step(item));
+      if (item[0] === 'PLAIN_TEXT') {
+        res.push('\'' + item[1] + '\'');
+      }
     });
     res = res.length ? res : ['\'\''];
     return `[${res.join(',')}]`;
@@ -62,11 +65,11 @@ export default {
         let type = val[0];
         return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
       });
-      attr.attrName = this.adjustAttrName(elType, attr.attrName);
+      attr.attrName = this.adjustAttrName(elType, attr.attrName, ctx);
       if (hasRef) {
-        this.renderers[tdIndex] += `      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        ctx.append(null, null,`      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`);
       } else {
-        this.fragments[tdIndex] += `      el${ctx.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`;
+        ctx.append(null, `      el${ctx.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`, null);
       }
     });
     ctx.state = previousState;
