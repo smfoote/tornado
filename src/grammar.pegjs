@@ -2245,9 +2245,9 @@
 }
 
 start
-  = html
+  = nodes
 
-html
+nodes
   = p:(part / plain_text)* {
     return p;
   }
@@ -2262,10 +2262,10 @@ single_quote_attr_part
   = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / single_quote_attr_text
 
 element
-  = e:start_tag h:html end_tag {
+  = e:start_tag contents:nodes end_tag {
     return ['HTML_ELEMENT',{
       tag_info: e,
-      tag_contents: h
+      tag_contents: contents
     }];
   }
   / e:(self_closing_tag / start_tag) {
@@ -2338,33 +2338,35 @@ tornado_comment
   }
 
 tornado_body
-  = start:tornado_body_tag_start ws* rbrace h:html bodies:tornado_bodies end:tornado_body_tag_end &{
+  = start:tornado_body_tag_start ws* rbrace contents:nodes bodies:tornado_bodies end:tornado_body_tag_end &{
     if(!end || start.key !== end.key) {
       error('Expected end tag for "' + start.key + '" ' + start.type + ' body, start tag was "' + start.key + '" and end tag was "' + end.key + '"');
     }
     return true;
   }
   {
+    // combine the default body into bodies
     start.bodies = bodies;
-    start.body = h;
+    start.bodies.unshift(['TORNADO_BODY', {name: null, type: 'bodies', body: contents}]);
     start.key = start.key.split('.');
     return ['TORNADO_BODY', start];
   }
   / start:tornado_body_tag_start ws* "/" rbrace {
     start.bodies = [];
-    start.body = [];
     start.key = start.key.split('.');
     return ['TORNADO_BODY', start];
   }
 
 tornado_bodies
-  = b:(lbrace ":" type:key rbrace h:html{return ['TORNADO_BODY', {name: type, type: 'bodies', body: h}];})* {
+  = b:(lbrace ":" type:key rbrace contents:nodes{return ['TORNADO_BODY', {name: type, type: 'bodies', body: contents}];})* {
     return b;
   }
 
 tornado_body_type
   = [#?^<+@%]
 
+
+// TODO: tornado body key can be a reference e.g. {#"foo"/}
 tornado_body_tag_start
   = lbrace type:tornado_body_type ws* id:tornado_key p:tornado_params {
     return {

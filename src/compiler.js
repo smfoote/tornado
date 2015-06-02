@@ -1,14 +1,15 @@
 'use strict';
 import Context from './compiler/context';
 import preprocess from './compiler/passes/preprocess';
-import generateJS from './compiler/passes/generate';
+// import generateJS from './compiler/passes/generate';
 import postprocess from './compiler/passes/postprocess';
+import visualize from './compiler/passes/visualize';
 
 
 const defaultPasses = [
-  [], // checks
+  [visualize], // checks
   [], // transforms
-  [preprocess, generateJS, postprocess] // generates
+  [preprocess, postprocess] // generates
 ];
 let compiler = {
   compile(ast, name, options) {
@@ -23,6 +24,7 @@ let compiler = {
         pass(ast, {results, context});
       });
     });
+    console.log('code:   ' + results.code);
     return results.code;
   }
 };
