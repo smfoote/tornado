@@ -13,7 +13,19 @@ const defaultPasses = [
 ];
 let compiler = {
   compile(ast, name, options) {
-    let passes = options && options.passes || defaultPasses;
+    let passes;
+
+    if (options && options.passes) {
+      passes = options.passes;
+      // merge defaults into passes
+      for (let key in defaultPasses) {
+        if (defaultPasses.hasOwnProperty(key) && !passes.hasOwnProperty(key)) {
+          passes[key] = defaultPasses[key];
+        }
+      }
+    } else {
+      passes = defaultPasses;
+    }
     let results = {
       fragments: [],
       renderers: []
