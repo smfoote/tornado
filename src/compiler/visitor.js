@@ -9,16 +9,21 @@ let visitor = {
   build(fns) {
     let step = function(node, index, context) {
       let type = node[0];
-      let output;
-      let enterMethod = fns[type].enter || fns[type];
-      let leaveMethod = fns[type].leave || noop;
+      let output, enterMethod, leaveMethod;
+      if (fns[type]){
+        enterMethod = fns[type].enter || fns[type];
+        leaveMethod = fns[type].leave || noop;
+      } else {
+        enterMethod = noop;
+        leaveMethod = noop;
+      }
       context.stack.push(node, index, enterMethod);
 
       // also walk the child nodes for those nodes with children
       switch (type) {
         case 'HTML_ELEMENT':
           if (node[1].tag_info.attributes) {
-            walkAttrs.apply(null, [node[1].tag_info.attributes]);
+            walk.apply(null, [node[1].tag_info.attributes, context]);
           }
           if (node[1].tag_contents) {
             walk.apply(null, [node[1].tag_contents, context]);
@@ -40,24 +45,14 @@ let visitor = {
             walk.apply(null, [node[1].params, context]);
           }
           break;
+        case 'HTML_ATTRIBUTE':
+          if (node[1].value) {
+            walk.apply(null, [node[1].value, context]);
+          }
       }
 
       context.stack.pop(leaveMethod);
       return output;
-    };
-
-    /**
-     * Walk through the attributes of an HTML element
-     */
-    let walkAttrs = function walkAttrs(items = []) {
-      let res = [];
-      items.forEach((item) => {
-        if (item[0] === 'PLAIN_TEXT') {
-          res.push('\'' + item[1] + '\'');
-        }
-      });
-      res = res.length ? res : ['\'\''];
-      return `[${res.join(',')}]`;
     };
 
     let walk = function(nodes=[], context) {
