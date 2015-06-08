@@ -5,23 +5,8 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here"><h3>What's on reddit:</h3>
-<ul>
-  {#reddit.data.children}
-    <li>
-      {#data.thumbnail}
-        <img src="{.}">
-      {/data.thumbnail}
-      <p>{data.author}</p>
-      <a href="{data.url}">{data.title}</a>
-    </li>
-  {/reddit.data.children}
-</ul></textarea>
-      <textarea id="context" placeholder="Context goes here">{
-  reddit: fetch('http://www.reddit.com/.json?limit=10').then(function(res) {
-  return res.json();
-  })
-}</textarea>
+      <textarea id="template" placeholder="Template goes here">hi</textarea>
+      <textarea id="context" placeholder="Context goes here">{}</textarea>
       <button id="render">Render</button>
     </div>
     <div id="output">

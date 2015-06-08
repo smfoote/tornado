@@ -20,7 +20,7 @@ let generatedWalker = visitor.build({
   TORNADO_BODY(node) {
     console.log('entering: ' + node[0]);
   },
-  TORNADO_PARITAL(node) {
+  TORNADO_PARTIAL(node) {
     console.log('entering: ' + node[0]);
   },
   TORNADO_REFERENCE(node) {
