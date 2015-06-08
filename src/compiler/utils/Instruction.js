@@ -1,24 +1,21 @@
-const IS_TORNADO = /TORNADO_/;
-
-let Instruction = function(action, item, ctx) {
-  let [nodeType, nodeInfo] = item.node;
-  let key, indexPath, contents;
-  if (IS_TORNADO.test(nodeType)) {
-    key = nodeInfo.key;
-    indexPath = item.indexPath;
-  }
-  if (nodeType === 'PLAIN_TEXT') {
-    contents = nodeInfo;
-  }
-  return {
+let Instruction = function(action, config) {
+  let {item, ctx, key, indexPath} = config;
+  let {state, node, namespace} = item;
+  let [nodeType] = node;
+  indexPath = item.indexPath;
+  let instr = {
     action,
     nodeType,
     tdBody: ctx.getCurrentTdBody(),
-    parentNodeName: ctx.stack.peak('parentNodeName'),
+    parentNodeName: ctx.stack.peek('parentNodeName'),
     indexPath,
     key,
-    contents
+    state,
+    node,
+    namespace,
+    elCount: item.elCount
   };
+  return instr;
 };
 
 export default Instruction;

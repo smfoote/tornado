@@ -29,7 +29,6 @@ let generatedWalker = visitor.build({
 });
 
 let generateVisualizer = function (ast, options) {
-  console.log('ast' + JSON.stringify(ast));
   return generatedWalker(ast, options.context);
 };
 

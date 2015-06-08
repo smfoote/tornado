@@ -2245,7 +2245,9 @@
 }
 
 start
-  = nodes
+  = n:nodes {
+    return [['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}])];
+  }
 
 nodes
   = p:(part / plain_text)* {
@@ -2294,27 +2296,27 @@ key
 
 attribute
   = name:attribute_name ws* equals ws* quote val:attr_part* quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
    }
   / name:attribute_name ws* equals ws* single_quote val:single_quote_attr_part* single_quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name ws* equals ws* val:(tornado_reference / no_quote_attr_text) {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name
-    };
+    }];
   }
 
 attributes

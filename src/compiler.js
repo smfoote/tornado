@@ -37,7 +37,6 @@ let compiler = {
         pass(ast, {results, context});
       });
     });
-    console.log('code:   ' + JSON.stringify(results.instructions, null, 2));
     return results.code;
   }
 };

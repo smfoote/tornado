@@ -40,22 +40,53 @@ let Context = function(results) {
     pushInstruction(instruction) {
       results.instructions.push(instruction);
     },
+    getCurrentState() {
+      let state = this.stack.peek('state');
+      if (!state) {
+        return STATES.OUTER_SPACE;
+      } else {
+        return state;
+      }
+    },
+    getNamespaceFromNode(node) {
+      let nodeInfo = node[1].tag_info;
+      let namespace = nodeInfo.attributes.filter(attr => attr[1].attrName === 'xmlns');
+      if (namespace.length) {
+        return namespace[0][1].value[0][1];
+      }
+      return '';
+    },
+    getCurrentNamespace(namespace) {
+      return namespace ? namespace : this.stack.peek('namespace') || '';
+    },
     stack: {
       push(node, index, method) {
         let nodeType = node[0];
-        let parentIndexPath = this.stack.peak('indexPath');
+        let parentIndexPath = this.stack.peek('indexPath');
         let isTornadoBody = (nodeType === 'TORNADO_BODY');
+        let isAttr = (nodeType === 'HTML_ATTRIBUTE');
+        let namespace = '';
+        if (nodeType === 'HTML_ELEMENT') {
+          namespace = this.getNamespaceFromNode(node);
+          namespace = this.getCurrentNamespace(namespace);
+        }
         let indexPath = parentIndexPath.slice(0);
+        let state = this.getCurrentState();
         if (isTornadoBody) {
           indexPath = [];
           this.incrementCurrentTdBody();
-        } else {
+        } else if (!isAttr) {
           indexPath.push(index);
+        } else {
+          state = STATES.HTML_ATTRIBUTE;
         }
         let stackItem = {
           node,
           nodeType,
           indexPath,
+          state,
+          namespace,
+          elCount: htmlElementPointer + 1,
           tdBody: this.getCurrentTdBody(),
           parentNodeName: this.getElContainerName()
         };
@@ -66,16 +97,17 @@ let Context = function(results) {
         }
       },
       pop(method) {
-        let stackItem = stack.pop();
+        let stackItem = this.stack.peek();
         let nodeType = stackItem.nodeType;
         method(stackItem, this);
+        stack.pop();
         if (nodeType === 'TORNADO_BODY') {
           this.decrementCurrentTdBody();
         } else if (nodeType === 'HTML_ELEMENT') {
           this.decrementHtmlEl();
         }
       },
-      peak(prop) {
+      peek(prop) {
         let len = stack.length;
         let topItem = stack[len - 1];
         if (!prop) {
