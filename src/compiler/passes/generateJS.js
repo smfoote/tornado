@@ -1,35 +1,55 @@
+/* eslint camelcase: 0 */
 'use strict';
+import generator from '../codeGenerator';
+
 import util from '../utils/builder';
-
-// TODO: Figure out where these should actually live
 import {STATES} from '../utils/builder';
-import {createMethodHeaders} from './preprocess';
-import {createMethodFooters} from './postprocess';
 
-import visitor from '../visitor';
-
-let generateWalker = visitor.build({
-  TORNADO_PARTIAL(node, ctx) {
-    let meta = node[1];
-    let params = meta.params;
+let codeGenerator = generator.build({
+  insert_TORNADO_PARTIAL(instruction, code) {
+    let {indexPath, tdBody} = instruction;
     let context = 'c';
-    let tdIndex = ctx.currentIdx();
-    let indexes = ctx.htmlBodies[tdIndex].htmlBodiesIndexes;
-    let indexHash = indexes.join('');
-    if (params.length === 1 && params[0].key === 'context') {
-      context = `td.${util.getTdMethodName('get')}(c, ${params[0].val})`;
-    }
-    if (context.state !== STATES.HTML_ATTRIBUTE) {
-      ctx.append(null, `      ${util.createPlaceholder(ctx)};\n`, null);
-      ctx.append(null, null, `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexes)});
-      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('getPartial')}('${meta.name}', ${context}, this));\n`);
+    let indexHash = indexPath.join('');
+    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('getPartial')}('${instruction.key}', ${context}, this));\n`;
+      code.push(tdBody, {fragment, renderer});
     } else {
-      return `td.${util.getTdMethodName('getPartial')}('${meta.name}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)})`;
+      // return `td.${util.getTdMethodName('getPartial')}('${meta.name}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)})`;
     }
   },
+  open_TORNADO_BODY(instruction, code) {
+    let {tdBody} = instruction;
+    let fragment = `f${tdBody}: function() {
+      var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
+    let renderer = `r${tdBody}: function(c) {
+      var root = frags.frag${tdBody} || this.f${tdBody}();
+      root = root.cloneNode(true);\n`;
+    code.push(tdBody, {fragment, renderer});
+  },
+  close_TORNADO_BODY(instruction, code) {
+    let {tdBody} = instruction;
+    let fragment = `      frags.frag${name} = frag;
+      return frag;
+    }`;
+    let renderer = `      return root;
+    }`;
+    code.push(tdBody, {fragment, renderer});
+  },
+
+  insert_PLAIN_TEXT(instruction, code) {
+    let {tdBody, parentNodeName, contents} = instruction;
+    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents.replace(/'/g, "\\'")}'));\n`;
+      code.push(tdBody, {fragment});
+    }
+  },
+
+
+
   TORNADO_BODY(node, ctx) {
     let bodyInfo = node[1];
-    let previousState = ctx.state;
     let createMethods = !!bodyInfo.body.length;
     let methodName, blockName, blockIndex;
 
@@ -59,21 +79,6 @@ let generateWalker = visitor.build({
       let tdIndex = ctx.setIdx(ctx.tdBodies.length - 1);
       ctx.refCount++;
       ctx.htmlBodies.push({count: -1, htmlBodiesIndexes: [0]});
-
-      // Open the functions
-      createMethodHeaders(methodName, ctx);
-
-      ctx.state = STATES.OUTER_SPACE;
-      /// TODO: recursive??
-      generateWalker(bodyInfo.body, ctx);
-      ctx.state = previousState;
-
-      if (bodyInfo.bodies && bodyInfo.bodies.length) {
-        generateWalker(bodyInfo.bodies, ctx);
-      }
-
-      // Close the functions
-      createMethodFooters(null, ctx);
       ctx.setIdx(ctx.tdBodies[tdIndex].parentIndex);
     }
     return renderVal;
@@ -92,7 +97,6 @@ let generateWalker = visitor.build({
   },
   HTML_ELEMENT(node, ctx) {
     let nodeInfo = node[1].tag_info;
-    let nodeContents = node[1].tag_contents;
     let tdIndex = ctx.currentIdx();
     let previousState = ctx.state;
     util.setHTMLElementState(nodeInfo, ctx);
@@ -102,7 +106,6 @@ let generateWalker = visitor.build({
     let count = ++ctx.htmlBodies[tdIndex].count;
     ctx.append(null, `      var el${count} = td.${util.getTdMethodName('createElement')}('${nodeInfo.key}'${namespace});\n`, null);
     util.buildElementAttributes(nodeInfo.key, nodeInfo.attributes, ctx);
-    generateWalker(nodeContents, ctx);
     ctx.htmlBodies[tdIndex].htmlBodiesIndexes.pop();
     ctx.htmlBodies[tdIndex].count--;
     ctx.state = previousState;
@@ -127,7 +130,21 @@ let generateWalker = visitor.build({
 });
 
 let generateJavascript = function (ast, options) {
-  return generateWalker(ast, options.context);
+  options.results.code = {
+    fragments: [],
+    renderers: [],
+    push(idx, strings) {
+      let {fragment, renderer} = strings;
+      if (idx >= this.fragments.length) {
+        if (fragment) this.fragments.push(fragment);
+        if (renderer) this.renderers.push(renderer);
+      } else {
+        if (fragment) this.fragments[idx] += fragment;
+        if (renderer) this.renderers[idx] += renderer;
+      }
+    }
+  };
+  return codeGenerator(options.results.instructions, options.results.code);
 };
 
 export default generateJavascript;
