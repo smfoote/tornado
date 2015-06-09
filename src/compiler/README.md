@@ -12,7 +12,7 @@ The Tornado grammar accepts anything that appears to be valid Tornado/HTML (whic
 
 ## Generates
 
-The transformed AST is fed to the generates stage. The generate passes are used to create a series of code generation instructions. This willy probably happen in a single pass, but multiple passes are possible.
+The transformed AST is fed to the generates stage. The generate passes are used to create a series of code generation instructions. This will probably happen in a single pass, but multiple passes are possible.
 
 ## Code generation
 
