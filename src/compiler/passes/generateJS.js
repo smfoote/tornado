@@ -22,12 +22,6 @@ let codeGenerator = generator.build({
   open_TORNADO_BODY(instruction, code) {
     let {tdBody} = instruction;
     this.createMethodHeaders(tdBody, code);
-    let fragment = `f${tdBody}: function() {
-      var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
-    let renderer = `r${tdBody}: function(c) {
-      var root = frags.frag${tdBody} || this.f${tdBody}();
-      root = root.cloneNode(true);\n`;
-    code.push(tdBody, {fragment, renderer});
   },
   close_TORNADO_BODY(instruction, code) {
     let {tdBody} = instruction;
@@ -37,6 +31,19 @@ let codeGenerator = generator.build({
     let renderer = `      return root;
     }`;
     code.push(tdBody, {fragment, renderer});
+  },
+  insert_TORNADO_REFERENCE(instruction, code) {
+    let {tdBody, key, indexPath, state} = instruction;
+    let indexHash = indexPath.join('');
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+        td.${util.getTdMethodName('replaceNode')}(p${indexHash}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
+      code.push(tdBody, {fragment, renderer});
+    } else {
+      let renderer = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})`;
+      code.push(tdBody, {renderer});
+    }
   },
 
   open_HTML_ELEMENT(instruction, code) {
@@ -71,10 +78,14 @@ let codeGenerator = generator.build({
     code.push(tdBody, {renderer});
   },
   insert_PLAIN_TEXT(instruction, code) {
-    let {tdBody, parentNodeName, contents} = instruction;
+    let {tdBody, parentNodeName, node} = instruction;
+    let contents = node[1].replace(/'/g, "\\'");
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents.replace(/'/g, "\\'")}'));\n`;
+      let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents}'));\n`;
       code.push(tdBody, {fragment});
+    } else {
+      let renderer = `'${contents}',`;
+      code.push(tdBody, {renderer});
     }
   },
 
@@ -182,6 +193,11 @@ let generateJavascript = function (ast, options) {
       } else {
         if (fragment) this.fragments[idx] += fragment;
         if (renderer) this.renderers[idx] += renderer;
+      }
+    },
+    slice(type, idx, start, end) {
+      if (this[type] && this[type][idx]) {
+        this[type][idx].slice(start, end);
       }
     }
   };
