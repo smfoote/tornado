@@ -21,6 +21,7 @@ let codeGenerator = generator.build({
   },
   open_TORNADO_BODY(instruction, code) {
     let {tdBody} = instruction;
+    this.createMethodHeaders(tdBody, code);
     let fragment = `f${tdBody}: function() {
       var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
     let renderer = `r${tdBody}: function(c) {
@@ -38,12 +39,52 @@ let codeGenerator = generator.build({
     code.push(tdBody, {fragment, renderer});
   },
 
+  open_HTML_ELEMENT(instruction, code) {
+    let {state, tdBody, elCount, key, namespace} = instruction;
+    namespace = namespace ? `, '${namespace}'` : '';
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      var el${elCount} = td.${util.getTdMethodName('createElement')}('${key}'${namespace});\n`;
+      code.push(tdBody, {fragment});
+    }
+  },
+  close_HTML_ELEMENT(instruction, code) {
+    let {state, parentNodeName, elCount, tdBody} = instruction;
+    if (state === STATES.ESCAPABLE_RAW) {
+      let fragment = `      el${elCount - 1}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
+      code.push(tdBody, {fragment});
+    } else if (state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${parentNodeName}.appendChild(el${elCount});\n`;
+      code.push(tdBody, {fragment});
+    }
+  },
+  open_HTML_ATTRIBUTE(instruction, code) {
+    let {tdBody, indexPath, node} = instruction;
+    let attrInfo = node[1];
+    let renderer = `      td.${util.getTdMethodName('setAttribute')}`;
+    renderer += `(td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)}), '${attrInfo.attrName}', [`;
+    code.push(tdBody, {renderer});
+  },
+  close_HTML_ATTRIBUTE(instruction, code) {
+    let {tdBody,} = instruction;
+    let renderer = `]);\n`;
+    code.slice('renderers', tdBody, 0, -1);
+    code.push(tdBody, {renderer});
+  },
   insert_PLAIN_TEXT(instruction, code) {
     let {tdBody, parentNodeName, contents} = instruction;
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents.replace(/'/g, "\\'")}'));\n`;
       code.push(tdBody, {fragment});
     }
+  },
+
+  createMethodHeaders(tdBody, code) {
+    let fragment = `f${tdBody}: function() {
+      var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
+    let renderer = `r${tdBody}: function(c) {
+      var root = frags.frag${tdBody} || this.f${tdBody}();
+      root = root.cloneNode(true);\n`;
+    code.push(tdBody, {fragment, renderer});
   },
 
 

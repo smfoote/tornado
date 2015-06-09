@@ -1,13 +1,13 @@
 let Instruction = function(action, config) {
   let {item, ctx, key, indexPath} = config;
-  let {state, node, namespace} = item;
+  let {state, node, namespace, parentNodeName} = item;
   let [nodeType] = node;
   indexPath = item.indexPath;
   let instr = {
     action,
     nodeType,
     tdBody: ctx.getCurrentTdBody(),
-    parentNodeName: ctx.stack.peek('parentNodeName'),
+    parentNodeName: parentNodeName,
     indexPath,
     key,
     state,
