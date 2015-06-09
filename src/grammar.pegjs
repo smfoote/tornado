@@ -5149,9 +5149,7 @@ start
   }
 
 nodes
-  = p:(part / plain_text)* {
-    return [['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: p}])];
-  }
+  = (part / plain_text)*
 
 part
   = element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
