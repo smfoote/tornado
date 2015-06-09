@@ -30,6 +30,7 @@ let compiler = {
       passes = defaultPasses;
     }
     let results = {
+      name,
       instructions: []
     };
     passes.forEach(stage => {

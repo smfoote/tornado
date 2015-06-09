@@ -5,7 +5,7 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here">{?hi}hello{/hi}</textarea>
+      <textarea id="template" placeholder="Template goes here">{+block/}{<block}Hello!{/block}</textarea>
       <textarea id="context" placeholder="Context goes here">{}</textarea>
       <button id="render">Render</button>
     </div>

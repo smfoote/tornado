@@ -5,32 +5,41 @@ import generator from '../codeGenerator';
 import util from '../utils/builder';
 import {STATES} from '../utils/builder';
 
+let noop = function() {};
+
 let codeGenerator = generator.build({
   insert_TORNADO_PARTIAL(instruction, code) {
-    let {indexPath, tdBody} = instruction;
+    let {indexPath, tdBody, key} = instruction;
     let context = 'c';
     let indexHash = indexPath.join('');
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${util.createPlaceholder(instruction)};\n`;
       let renderer = `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('getPartial')}('${instruction.key}', ${context}, this));\n`;
+      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
       code.push(tdBody, {fragment, renderer});
     } else {
-      // return `td.${util.getTdMethodName('getPartial')}('${meta.name}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)})`;
+      let renderer = `td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)}),`;
+      code.push(tdBody, {renderer});
     }
   },
   open_TORNADO_BODY(instruction, code) {
-    let {tdBody} = instruction;
-    this.createMethodHeaders(tdBody, code);
+    let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
+    if (needsOwnMethod) {
+      this.createMethodHeaders(tdBody, code, tdMethodName);
+    }
+    let buildTdBodyCode = (this[`tdBody_${bodyType}`] || noop).bind(this);
+    buildTdBodyCode(instruction, code);
   },
   close_TORNADO_BODY(instruction, code) {
-    let {tdBody} = instruction;
-    let fragment = `      frags.frag${name} = frag;
+    let {tdBody, needsOwnMethod} = instruction;
+    if (needsOwnMethod) {
+      let fragment = `      frags.frag${name} = frag;
       return frag;
     }`;
-    let renderer = `      return root;
+      let renderer = `      return root;
     }`;
-    code.push(tdBody, {fragment, renderer});
+      code.push(tdBody, {fragment, renderer});
+    }
   },
   insert_TORNADO_REFERENCE(instruction, code) {
     let {tdBody, key, indexPath, state} = instruction;
@@ -89,15 +98,168 @@ let codeGenerator = generator.build({
     }
   },
 
-  createMethodHeaders(tdBody, code) {
-    let fragment = `f${tdBody}: function() {
+  createMethodHeaders(tdBody, code, methodName) {
+    let suffix = methodName ? methodName : tdBody;
+    let fragment = `f${suffix}: function() {
       var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
-    let renderer = `r${tdBody}: function(c) {
-      var root = frags.frag${tdBody} || this.f${tdBody}();
+    let renderer = `r${suffix}: function(c) {
+      var root = frags.frag${suffix} || this.f${suffix}();
       root = root.cloneNode(true);\n`;
     code.push(tdBody, {fragment, renderer});
   },
 
+  tdBody_exists(instruction, code) {
+    let {parentTdBody, tdBody, indexPath, hasElseBody, state, key, bodyType} = instruction;
+    let reverse = (bodyType === 'notExists');
+    let indexHash = indexPath.join('');
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      let primaryBody = reverse ? `.catch(function(err) {
+        td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${tdBody}(c));
+        throw(err);
+      }.bind(this))` :
+      `.then(function() {
+        td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${tdBody}(c));
+      }.bind(this))`;
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+      td.${util.getTdMethodName('exists')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}))${primaryBody}`;
+      if (hasElseBody) {
+        renderer += reverse ? `.then(function() {
+        td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${tdBody + 1}(c));
+      }.bind(this))` :
+      `      .catch(function(err) {
+        td.${util.getTdMethodName('replaceNode')}(on${indexHash}, this.r${tdBody + 1}(c));
+        throw(err);
+      }.bind(this))`;
+      }
+      renderer += ';\n';
+      code.push((parentTdBody), {renderer, fragment});
+    } else {
+      let primaryBody = reverse ? `.catch(function() {
+      return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody}(c));
+    }.bind(this))` :
+    `.then(function() {
+        return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody}(c));
+      }.bind(this))`;
+      let renderer = `td.${util.getTdMethodName('exists')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}))${primaryBody}`;
+      if (hasElseBody) {
+        renderer += reverse ? `.then(function() {
+      return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody + 1}(c));
+    }.bind(this))` :
+    `.catch(function() {
+        return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody + 1}(c));
+      }.bind(this))`;
+      }
+      renderer += ',';
+      code.push((parentTdBody), {renderer});
+    }
+  },
+
+  tdBody_notExists(instruction, code) {
+    this.tdBody_exists(instruction, code);
+  },
+
+  tdBody_section(instruction, code) {
+    let {parentTdBody, tdBody, hasElseBody, indexPath, state, key} = instruction;
+    let indexHash = indexPath.join('');
+    let isInHtmlAttribute = (state === STATES.HTML_ATTRIBUTE);
+    let beforeLoop, loopAction, afterLoop, notArrayAction, elseBodyAction;
+    if (isInHtmlAttribute) {
+      beforeLoop = 'var attrs = [];';
+      loopAction = `attrs.push(td.${util.getTdMethodName('nodeToString')}(this.r${tdBody}(item)));`;
+      afterLoop = `return Promise.all(attrs).then(function(vals) {
+          return vals.join('');
+        });`;
+      notArrayAction = `return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody}(val));`;
+      elseBodyAction = `return td.${util.getTdMethodName('nodeToString')}(this.r${tdBody + 1}(c));`;
+    } else {
+      beforeLoop = `var frag = td.${util.getTdMethodName('createDocumentFragment')}();`;
+      loopAction = `frag.appendChild(this.r${tdBody}(item));`;
+      afterLoop = `td.${util.getTdMethodName('replaceNode')}(p${indexHash}, frag);`;
+      notArrayAction = `td.${util.getTdMethodName('replaceNode')}(p${indexHash}, this.r${tdBody}(val))`;
+      elseBodyAction = `td.${util.getTdMethodName('replaceNode')}(p${indexHash}, this.r${tdBody + 1}(c))`;
+    }
+
+    let output = `td.${util.getTdMethodName('exists')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})).then(function(val) {
+        if (Array.isArray(val)) {
+          ${beforeLoop}
+          for (var i=0, item; item=val[i]; i++) {
+            ${loopAction}
+          }
+          ${afterLoop}
+        } else {
+          ${notArrayAction}
+        }
+      }.bind(this))`;
+
+    if (hasElseBody) {
+      output += `.catch(function(err) {
+        ${elseBodyAction};
+      }.bind(this))`;
+    }
+
+    if (isInHtmlAttribute) {
+      let renderer = output + ',';
+      code.push(parentTdBody, {renderer});
+    } else {
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+      ${output};\n`;
+      code.push(parentTdBody, {fragment, renderer});
+    }
+  },
+
+  tdBody_block(instruction, code) {
+    let {parentTdBody, indexPath, state, key, blockIndex} = instruction;
+    let indexHash = indexPath.join('');
+    let blockName = key.join('.');
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var on${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+      td.${util.getTdMethodName('replaceNode')}(on${indexHash}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
+      code.push(parentTdBody, {fragment, renderer});
+    } else {
+      let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this)),`;
+      code.push(parentTdBody, {renderer});
+    }
+  },
+
+  tdBody_helper(instruction, code) {
+    let {parentTdBody, tdBody, indexPath, state, key, node} = instruction;
+    let indexHash = indexPath.join('');
+    let params = node[1].params;
+    let bodies = node[1].bodies;
+    let paramsHash, bodiesHash;
+    paramsHash = params.reduce((acc, param) => {
+      let paramVal = param[1].val;
+      let paramKey = param[1].key;
+      if (Array.isArray(paramVal)) {
+        paramVal = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(paramVal[1].key)})`;
+      } else {
+        paramVal = `'${paramVal}'`;
+      }
+      acc.push(`${paramKey}: ${paramVal}`);
+      return acc;
+    }, []);
+    paramsHash = `{${paramsHash.join(',')}}`;
+    bodiesHash = bodies.reduce((acc, body, idx) => {
+      let bodyName = body[1].name;
+      acc.push(`${bodyName}: this.r${tdBody + idx + 1}.bind(this)`);
+      return acc;
+    }, []);
+    if (node[1].body && node[1].body.length) {
+      bodiesHash.push(`main: this.r${tdBody}.bind(this)`);
+    }
+    bodiesHash = `{${bodiesHash.join(',')}}`;
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      let fragment = `      ${util.createPlaceholder(instruction)};\n`;
+      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
+      td.${util.getTdMethodName('helper')}('${key.join('.')}', c, ${paramsHash}, ${bodiesHash}).then(function(val) {
+        td.${util.getTdMethodName('replaceNode')}(p${indexHash}, val);
+      });\n`;
+      code.push(parentTdBody, {fragment, renderer});
+    }
+  },
 
 
   TORNADO_BODY(node, ctx) {

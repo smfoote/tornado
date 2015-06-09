@@ -5315,16 +5315,16 @@ tornado_params
 
 tornado_param
   = key:key equals val:(number / string) {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: val
-    }
+    }]
   }
   / key:key equals val:tornado_key {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
-    }
+    }]
   }
 
 tornado_tag

@@ -8,7 +8,7 @@ var frags = {},
     ${results.code.renderers.join(',\n    ')}
   };
   template.render = template.r0;
-  td.${util.getTdMethodName('register')}("${name}", template);
+  td.${util.getTdMethodName('register')}("${results.name}", template);
   return template;
 })();`;
 };
