@@ -45,11 +45,11 @@ window.td = td;
 
 runSuites([
   htmlTests,
-  helperTests,
   referenceTests,
   existsTests,
   notExistsTests,
   sectionTests,
   blockTests,
-  partialTests
+  partialTests,
+  helperTests
 ]);

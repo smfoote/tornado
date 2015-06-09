@@ -37,6 +37,7 @@ let generateWalker = visitor.build({
       ctx.pushInstruction(new Instruction('open', {key: item.node[1].tag_info.key, item, ctx}));
     },
     leave(item, ctx){
+      item.state = item.previousState;
       ctx.pushInstruction(new Instruction('close', {item, ctx}));
     }
   },

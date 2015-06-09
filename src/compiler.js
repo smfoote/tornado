@@ -1,6 +1,7 @@
 'use strict';
 import Context from './compiler/context';
 // import preprocess from './compiler/passes/preprocess';
+import escapableRaw from './compiler/passes/escapableRaw';
 import buildInstructions from './compiler/passes/buildInstructions';
 import generateJS from './compiler/passes/generateJS';
 import postprocess from './compiler/passes/postprocess';
@@ -9,7 +10,7 @@ import visualize from './compiler/passes/visualize';
 
 const defaultPasses = [
   [visualize], // checks
-  [], // transforms
+  [escapableRaw], // transforms
   [buildInstructions], // generates
   [generateJS, postprocess] // codegen
 ];

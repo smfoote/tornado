@@ -40,8 +40,8 @@ let Context = function(results) {
     pushInstruction(instruction) {
       results.instructions.push(instruction);
     },
-    getCurrentState() {
-      let state = this.stack.peek('state');
+    getCurrentState(nodeType) {
+      let state = STATES[nodeType] || this.stack.peek('state');
       if (!state) {
         return STATES.OUTER_SPACE;
       } else {
@@ -71,20 +71,22 @@ let Context = function(results) {
           namespace = this.getCurrentNamespace(namespace);
         }
         let indexPath = parentIndexPath.slice(0);
-        let state = this.getCurrentState();
+        let state = this.getCurrentState(nodeType);
         if (isTornadoBody) {
           indexPath = [];
           this.incrementCurrentTdBody();
         } else if (!isAttr) {
           indexPath.push(index);
-        } else {
-          state = STATES.HTML_ATTRIBUTE;
+        }
+        if (node[1].escapableRaw) {
+          state = STATES.ESCAPABLE_RAW;
         }
         let stackItem = {
           node,
           nodeType,
           indexPath,
           state,
+          previousState: this.stack.peek('state'),
           namespace,
           elCount: htmlElementPointer + 1,
           tdBody: this.getCurrentTdBody(),
@@ -99,8 +101,8 @@ let Context = function(results) {
       pop(method) {
         let stackItem = this.stack.peek();
         let nodeType = stackItem.nodeType;
-        method(stackItem, this);
         stack.pop();
+        method(stackItem, this);
         if (nodeType === 'TORNADO_BODY') {
           this.decrementCurrentTdBody();
         } else if (nodeType === 'HTML_ELEMENT') {
