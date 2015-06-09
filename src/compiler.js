@@ -1,15 +1,18 @@
 'use strict';
 import Context from './compiler/context';
-import preprocess from './compiler/passes/preprocess';
-// import generateJS from './compiler/passes/generate';
+// import preprocess from './compiler/passes/preprocess';
+import escapableRaw from './compiler/passes/escapableRaw';
+import buildInstructions from './compiler/passes/buildInstructions';
+import generateJS from './compiler/passes/generateJS';
 import postprocess from './compiler/passes/postprocess';
 import visualize from './compiler/passes/visualize';
 
 
 const defaultPasses = [
   [visualize], // checks
-  [], // transforms
-  [preprocess, postprocess] // generates
+  [escapableRaw], // transforms
+  [buildInstructions], // generates
+  [generateJS, postprocess] // codegen
 ];
 let compiler = {
   compile(ast, name, options) {
@@ -27,16 +30,15 @@ let compiler = {
       passes = defaultPasses;
     }
     let results = {
-      fragments: [],
-      renderers: []
+      name,
+      instructions: []
     };
-    let context = new Context(results);
     passes.forEach(stage => {
       stage.forEach(pass =>{
+        let context = new Context(results);
         pass(ast, {results, context});
       });
     });
-    console.log('code:   ' + results.code);
     return results.code;
   }
 };

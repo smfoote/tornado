@@ -3,6 +3,7 @@ export const STATES = {
   OUTER_SPACE: 'OUTER_SPACE',
   HTML_TAG: 'HTML_TAG',
   HTML_BODY: 'HTML_BODY',
+  HTML_ELEMENT: 'HTML_BODY',
   HTML_ATTRIBUTE: 'HTML_ATTRIBUTE',
   ESCAPABLE_RAW: 'ESCAPABLE_RAW',
   TORNADO_TAG: 'TORNADO_TAG',
@@ -39,20 +40,6 @@ export default {
       return fullName;
     }
   },
-  /**
-   * Walk through the attributes of an HTML element
-   */
-  walkAttrs(items = []) {
-    let res = [];
-    // TODO: fix this
-    items.forEach((item) => {
-      if (item[0] === 'PLAIN_TEXT') {
-        res.push('\'' + item[1] + '\'');
-      }
-    });
-    res = res.length ? res : ['\'\''];
-    return `[${res.join(',')}]`;
-  },
   buildElementAttributes(elType, attributes = [], ctx) {
     let attrs = '';
     let previousState = ctx.state;
@@ -83,8 +70,8 @@ export default {
       return `el${count}`;
     }
   },
-  createPlaceholder(ctx) {
-    return `${this.getElContainerName(ctx)}.appendChild(td.${this.getTdMethodName('createTextNode')}(''))`;
+  createPlaceholder(instruction) {
+    return `${instruction.parentNodeName}.appendChild(td.${this.getTdMethodName('createTextNode')}(''))`;
   },
 
   setHTMLElementState(nodeInfo, ctx) {

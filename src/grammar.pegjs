@@ -2245,12 +2245,12 @@
 }
 
 start
-  = nodes
+  = n:nodes {
+    return [['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}])];
+  }
 
 nodes
-  = p:(part / plain_text)* {
-    return p;
-  }
+  = (part / plain_text)*
 
 part
   = element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
@@ -2294,27 +2294,27 @@ key
 
 attribute
   = name:attribute_name ws* equals ws* quote val:attr_part* quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
    }
   / name:attribute_name ws* equals ws* single_quote val:single_quote_attr_part* single_quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name ws* equals ws* val:(tornado_reference / no_quote_attr_text) {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name
-    };
+    }];
   }
 
 attributes
@@ -2347,7 +2347,7 @@ tornado_body
   {
     // combine the default body into bodies
     start.bodies = bodies;
-    start.bodies.unshift(['TORNADO_BODY', {name: null, type: 'bodies', body: contents}]);
+    start.body = contents;
     start.key = start.key.split('.');
     return ['TORNADO_BODY', start];
   }
@@ -2393,7 +2393,7 @@ tornado_reference
 tornado_partial
   = lbrace rangle ws* key:(tornado_key / string) params:tornado_params "/"rbrace {
     return ['TORNADO_PARTIAL', {
-      name: key,
+      key: key,
       params: params
     }];
   }
@@ -2416,16 +2416,16 @@ tornado_params
 
 tornado_param
   = key:key equals val:(number / string) {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: val
-    }
+    }]
   }
   / key:key equals val:tornado_key {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
-    }
+    }]
   }
 
 tornado_tag

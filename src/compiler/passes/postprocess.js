@@ -4,11 +4,11 @@ let flush = function(results) {
   results.code = `(function(){
 var frags = {},
   template = {
-    ${results.fragments.join(',\n    ')},
-    ${results.renderers.join(',\n    ')}
+    ${results.code.fragments.join(',\n    ')},
+    ${results.code.renderers.join(',\n    ')}
   };
   template.render = template.r0;
-  td.${util.getTdMethodName('register')}("${name}", template);
+  td.${util.getTdMethodName('register')}("${results.name}", template);
   return template;
 })();`;
 };
@@ -22,13 +22,9 @@ export let createMethodFooters = function(name, context) {
 };
 
 let postprocess = function(ast, options) {
-  let context = options.context;
   let results = options.results;
-  if (context) {
-    createMethodFooters(null, context);
-  }
-  if (context && results) {
-    flush(results, context);
+  if (results) {
+    flush(results);
   }
 };
 
