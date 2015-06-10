@@ -2245,12 +2245,12 @@
 }
 
 start
-  = html
-
-html
-  = p:(part / plain_text)* {
-    return p;
+  = n:nodes {
+    return [['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}])];
   }
+
+nodes
+  = (part / plain_text)*
 
 part
   = element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
@@ -2262,10 +2262,10 @@ single_quote_attr_part
   = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / single_quote_attr_text
 
 element
-  = e:start_tag h:html end_tag {
+  = e:start_tag contents:nodes end_tag {
     return ['HTML_ELEMENT',{
       tag_info: e,
-      tag_contents: h
+      tag_contents: contents
     }];
   }
   / e:(self_closing_tag / start_tag) {
@@ -2294,27 +2294,27 @@ key
 
 attribute
   = name:attribute_name ws* equals ws* quote val:attr_part* quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
    }
   / name:attribute_name ws* equals ws* single_quote val:single_quote_attr_part* single_quote {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name ws* equals ws* val:(tornado_reference / no_quote_attr_text) {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name,
       value: val
-    };
+    }];
   }
   / name:attribute_name {
-    return {
+    return ['HTML_ATTRIBUTE', {
       attrName: name
-    };
+    }];
   }
 
 attributes
@@ -2338,33 +2338,35 @@ tornado_comment
   }
 
 tornado_body
-  = start:tornado_body_tag_start ws* rbrace h:html bodies:tornado_bodies end:tornado_body_tag_end &{
+  = start:tornado_body_tag_start ws* rbrace contents:nodes bodies:tornado_bodies end:tornado_body_tag_end &{
     if(!end || start.key !== end.key) {
       error('Expected end tag for "' + start.key + '" ' + start.type + ' body, start tag was "' + start.key + '" and end tag was "' + end.key + '"');
     }
     return true;
   }
   {
+    // combine the default body into bodies
     start.bodies = bodies;
-    start.body = h;
+    start.body = contents;
     start.key = start.key.split('.');
     return ['TORNADO_BODY', start];
   }
   / start:tornado_body_tag_start ws* "/" rbrace {
     start.bodies = [];
-    start.body = [];
     start.key = start.key.split('.');
     return ['TORNADO_BODY', start];
   }
 
 tornado_bodies
-  = b:(lbrace ":" type:key rbrace h:html{return ['TORNADO_BODY', {name: type, type: 'bodies', body: h}];})* {
+  = b:(lbrace ":" type:key rbrace contents:nodes{return ['TORNADO_BODY', {name: type, type: 'bodies', body: contents}];})* {
     return b;
   }
 
 tornado_body_type
   = [#?^<+@%]
 
+
+// TODO: tornado body key can be a reference e.g. {#"{foo}"/}
 tornado_body_tag_start
   = lbrace type:tornado_body_type ws* id:tornado_key p:tornado_params {
     return {
@@ -2388,10 +2390,11 @@ tornado_reference
     return ['TORNADO_REFERENCE', {key: key, filters: filters}]
   }
 
+// TODO: tornado partial key can be a reference e.g. {#"{foo}"/}
 tornado_partial
   = lbrace rangle ws* key:(tornado_key / string) params:tornado_params "/"rbrace {
     return ['TORNADO_PARTIAL', {
-      name: key,
+      key: key,
       params: params
     }];
   }
@@ -2414,16 +2417,16 @@ tornado_params
 
 tornado_param
   = key:key equals val:(number / string) {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: val
-    }
+    }]
   }
   / key:key equals val:tornado_key {
-    return {
+    return ['TORNADO_PARAM', {
       key: key,
       val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
-    }
+    }]
   }
 
 tornado_tag
