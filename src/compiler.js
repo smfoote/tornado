@@ -1,6 +1,5 @@
 'use strict';
 import Context from './compiler/context';
-// import preprocess from './compiler/passes/preprocess';
 import escapableRaw from './compiler/passes/escapableRaw';
 import buildInstructions from './compiler/passes/buildInstructions';
 import generateJS from './compiler/passes/generateJS';
