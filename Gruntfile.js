@@ -8,7 +8,8 @@ grunt.initConfig({
           sourceMap: true
       },
       files: [
-        {expand: true, cwd: 'src/', dest: 'dist/', ext: '.js', src: '**/*.js'}
+        {expand: true, cwd: 'src/', dest: 'dist/', ext: '.js', src: '**/*.js'},
+        {src: 'bin/tornado.es6', dest: 'bin/tornado'}
       ]
     },
     acceptance: {

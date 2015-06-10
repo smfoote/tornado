@@ -6,8 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "bin": {
+    "twister": "./bin/tornado"
+  },
   "keywords": [
-    "HTML"
+    "HTML", "templating", "Dust", "asynchronous", "JavaScript", "ES6"
   ],
   "author": "Steven Foote",
   "license": "Apache",
@@ -30,7 +33,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "cli": "^0.8.0"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/smfoote/tornado.git"
