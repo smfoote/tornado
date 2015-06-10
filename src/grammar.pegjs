@@ -2366,7 +2366,7 @@ tornado_body_type
   = [#?^<+@%]
 
 
-// TODO: tornado body key can be a reference e.g. {#"foo"/}
+// TODO: tornado body key can be a reference e.g. {#"{foo}"/}
 tornado_body_tag_start
   = lbrace type:tornado_body_type ws* id:tornado_key p:tornado_params {
     return {
@@ -2390,6 +2390,7 @@ tornado_reference
     return ['TORNADO_REFERENCE', {key: key, filters: filters}]
   }
 
+// TODO: tornado partial key can be a reference e.g. {#"{foo}"/}
 tornado_partial
   = lbrace rangle ws* key:(tornado_key / string) params:tornado_params "/"rbrace {
     return ['TORNADO_PARTIAL', {
