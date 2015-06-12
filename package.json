@@ -15,6 +15,7 @@
   "author": "Steven Foote",
   "license": "Apache",
   "devDependencies": {
+    "brfs": "^0.2.0",
     "bytesize": "^0.2.0",
     "dustjs-linkedin": "^2.7.1",
     "grunt": "^0.4.5",
