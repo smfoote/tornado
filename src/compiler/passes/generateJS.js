@@ -31,14 +31,9 @@ let codeGenerator = generator.build({
     buildTdBodyCode(instruction, code);
   },
   close_TORNADO_BODY(instruction, code) {
-    let {tdBody, needsOwnMethod} = instruction;
+    let {tdBody, needsOwnMethod, tdMethodName} = instruction;
     if (needsOwnMethod) {
-      let fragment = `      frags.frag${name} = frag;
-      return frag;
-    }`;
-      let renderer = `      return root;
-    }`;
-      code.push(tdBody, {fragment, renderer});
+      this.createMethodFooters(tdBody, code, tdMethodName);
     }
   },
   insert_TORNADO_REFERENCE(instruction, code) {
@@ -105,6 +100,16 @@ let codeGenerator = generator.build({
     let renderer = `r${suffix}: function(c) {
       var root = frags.frag${suffix} || this.f${suffix}();
       root = root.cloneNode(true);\n`;
+    code.push(tdBody, {fragment, renderer});
+  },
+
+  createMethodFooters(tdBody, code, methodName) {
+    let suffix = methodName ? methodName : tdBody;
+    let fragment = `      frags.frag${suffix} = frag;
+      return frag;
+    }`;
+    let renderer = `      return root;
+    }`;
     code.push(tdBody, {fragment, renderer});
   },
 

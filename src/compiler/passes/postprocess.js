@@ -12,14 +12,6 @@ var frags = {},
   return template;
 })();`;
 };
-export let createMethodFooters = function(name, context) {
-  let f = `      frags.frag${name} = frag;
-    return frag;
-  }`;
-  let r = `      return root;
-  }`;
-  context.append(name, f, r);
-};
 
 let postprocess = function(ast, options) {
   let results = options.results;
