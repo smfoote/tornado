@@ -1,6 +1,6 @@
 {
   "name": "tornado.js",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "\"Asynchronous HTML templating\"",
   "main": "tornado.js",
   "scripts": {
