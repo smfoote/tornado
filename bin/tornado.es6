@@ -9,7 +9,7 @@ import compiler from '../dist/compiler';
 
 cli.enable('glob', 'version');
 
-cli.setApp('twister', version);
+cli.setApp('tornado', version);
 
 cli.setUsage(`${cli.app} [options] [path1 [path2 path3]]
 

@@ -15,7 +15,7 @@ var compiler = _interopRequire(require("../dist/compiler"));
 
 cli.enable("glob", "version");
 
-cli.setApp("twister", version);
+cli.setApp("tornado", version);
 
 cli.setUsage("" + cli.app + " [options] [path1 [path2 path3]]\n\n  Compile all .td files in a directory:\n" + cli.app + " --output=compiled.js templates/**/*.td");
 
