@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "bin": {
-    "twister": "./bin/tornado"
+    "tornado": "./bin/tornado"
   },
   "keywords": [
     "HTML", "templating", "Dust", "asynchronous", "JavaScript", "ES6"
