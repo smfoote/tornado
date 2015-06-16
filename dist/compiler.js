@@ -16,9 +16,9 @@ var generateJS = _interopRequire(require("./compiler/passes/generateJS"));
 
 var postprocess = _interopRequire(require("./compiler/passes/postprocess"));
 
-// import visualize from './compiler/passes/visualize';
+var visualize = _interopRequire(require("./compiler/passes/visualize"));
 
-var defaultPasses = [[], // checks
+var defaultPasses = [[visualize], // checks
 [escapableRaw, htmlEntities, adjustAttrs], // transforms
 [buildInstructions], // generates
 [generateJS, postprocess] // codegen

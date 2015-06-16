@@ -22,8 +22,8 @@ var codeGenerator = generator.build({
     var context = "c";
     var indexHash = indexPath.join("");
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
-      var renderer = "      var on" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this));\n";
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
+      var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this));\n";
       code.push(tdBody, { fragment: fragment, renderer: renderer });
     } else {
       var renderer = "td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this).then(function(node){return td." + util.getTdMethodName("nodeToString") + "(node)}),";
@@ -59,11 +59,11 @@ var codeGenerator = generator.build({
 
     var indexHash = indexPath.join("");
     if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n        td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", td." + util.getTdMethodName("createTextNode") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + ")));\n";
       code.push(tdBody, { fragment: fragment, renderer: renderer });
     } else {
-      var renderer = "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + ")";
+      var renderer = "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "),";
       code.push(tdBody, { renderer: renderer });
     }
   },
@@ -99,16 +99,29 @@ var codeGenerator = generator.build({
     var tdBody = instruction.tdBody;
     var indexPath = instruction.indexPath;
     var node = instruction.node;
+    var hasTornadoRef = instruction.hasTornadoRef;
 
     var attrInfo = node[1];
     var renderer = "      td." + util.getTdMethodName("setAttribute");
-    renderer += "(td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + "), '" + attrInfo.attrName + "', [";
+    renderer += "(td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + "), '" + attrInfo.attrName + "', ";
+    if (hasTornadoRef) {
+      renderer += "[";
+    } else {
+      renderer += "";
+    }
     code.push(tdBody, { renderer: renderer });
   },
   close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE(instruction, code) {
     var tdBody = instruction.tdBody;
+    var hasTornadoRef = instruction.hasTornadoRef;
 
-    var renderer = "]);\n";
+    var renderer = undefined;
+    if (hasTornadoRef) {
+      renderer = "]);\n";
+    } else {
+      renderer = ");\n";
+    }
+    // Remove the trailing comma from the last item in the array
     code.slice("renderers", tdBody, 0, -1);
     code.push(tdBody, { renderer: renderer });
   },
@@ -141,33 +154,28 @@ var codeGenerator = generator.build({
     code.push(tdBody, { fragment: fragment, renderer: renderer });
   },
 
+  createPlaceholder: function createPlaceholder(instruction) {
+    return "" + instruction.parentNodeName + ".appendChild(td." + util.getTdMethodName("createTextNode") + "(''))";
+  },
+
   tdBody_exists: function tdBody_exists(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
     var indexPath = instruction.indexPath;
-    var hasElseBody = instruction.hasElseBody;
     var state = instruction.state;
     var key = instruction.key;
+    var node = instruction.node;
     var bodyType = instruction.bodyType;
 
-    var reverse = bodyType === "notExists";
     var indexHash = indexPath.join("");
+    var bodies = node[1].bodies;
+    var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
     if (state !== STATES.HTML_ATTRIBUTE) {
-      var primaryBody = reverse ? ".catch(function(err) {\n        td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", this.r" + tdBody + "(c));\n        throw(err);\n      }.bind(this))" : ".then(function() {\n        td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", this.r" + tdBody + "(c));\n      }.bind(this))";
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
-      var renderer = "      var on" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("exists") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "))" + primaryBody;
-      if (hasElseBody) {
-        renderer += reverse ? ".then(function() {\n        td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", this.r" + (tdBody + 1) + "(c));\n      }.bind(this))" : "      .catch(function(err) {\n        td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", this.r" + (tdBody + 1) + "(c));\n        throw(err);\n      }.bind(this))";
-      }
-      renderer += ";\n";
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
+      var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName(bodyType) + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "), p" + indexHash + ", " + bodiesHash + ", c);\n";
       code.push(parentTdBody, { renderer: renderer, fragment: fragment });
     } else {
-      var primaryBody = reverse ? ".catch(function() {\n      return td." + util.getTdMethodName("nodeToString") + "(this.r" + tdBody + "(c));\n    }.bind(this))" : ".then(function() {\n        return td." + util.getTdMethodName("nodeToString") + "(this.r" + tdBody + "(c));\n      }.bind(this))";
-      var renderer = "td." + util.getTdMethodName("exists") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "))" + primaryBody;
-      if (hasElseBody) {
-        renderer += reverse ? ".then(function() {\n      return td." + util.getTdMethodName("nodeToString") + "(this.r" + (tdBody + 1) + "(c));\n    }.bind(this))" : ".catch(function() {\n        return td." + util.getTdMethodName("nodeToString") + "(this.r" + (tdBody + 1) + "(c));\n      }.bind(this))";
-      }
-      renderer += ",";
+      var renderer = "td." + util.getTdMethodName(bodyType) + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "), null, " + bodiesHash + ", c),";
       code.push(parentTdBody, { renderer: renderer });
     }
   },
@@ -179,43 +187,24 @@ var codeGenerator = generator.build({
   tdBody_section: function tdBody_section(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
-    var hasElseBody = instruction.hasElseBody;
     var indexPath = instruction.indexPath;
     var state = instruction.state;
     var key = instruction.key;
+    var node = instruction.node;
 
     var indexHash = indexPath.join("");
+    var bodies = node[1].bodies;
+    var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
     var isInHtmlAttribute = state === STATES.HTML_ATTRIBUTE;
-    var beforeLoop = undefined,
-        loopAction = undefined,
-        afterLoop = undefined,
-        notArrayAction = undefined,
-        elseBodyAction = undefined;
-    if (isInHtmlAttribute) {
-      beforeLoop = "var attrs = [];";
-      loopAction = "attrs.push(td." + util.getTdMethodName("nodeToString") + "(this.r" + tdBody + "(item)));";
-      afterLoop = "return Promise.all(attrs).then(function(vals) {\n          return vals.join('');\n        });";
-      notArrayAction = "return td." + util.getTdMethodName("nodeToString") + "(this.r" + tdBody + "(val));";
-      elseBodyAction = "return td." + util.getTdMethodName("nodeToString") + "(this.r" + (tdBody + 1) + "(c));";
-    } else {
-      beforeLoop = "var frag = td." + util.getTdMethodName("createDocumentFragment") + "();";
-      loopAction = "frag.appendChild(this.r" + tdBody + "(item));";
-      afterLoop = "td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", frag);";
-      notArrayAction = "td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", this.r" + tdBody + "(val))";
-      elseBodyAction = "td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", this.r" + (tdBody + 1) + "(c))";
-    }
+    var placeholderNode = isInHtmlAttribute ? "null" : "p" + indexHash;
 
-    var output = "td." + util.getTdMethodName("exists") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + ")).then(function(val) {\n        if (Array.isArray(val)) {\n          " + beforeLoop + "\n          for (var i=0, item; item=val[i]; i++) {\n            " + loopAction + "\n          }\n          " + afterLoop + "\n        } else {\n          " + notArrayAction + "\n        }\n      }.bind(this))";
-
-    if (hasElseBody) {
-      output += ".catch(function(err) {\n        " + elseBodyAction + ";\n      }.bind(this))";
-    }
+    var output = "td." + util.getTdMethodName("section") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "), " + placeholderNode + ", " + bodiesHash + ", c)";
 
     if (isInHtmlAttribute) {
       var renderer = output + ",";
       code.push(parentTdBody, { renderer: renderer });
     } else {
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      " + output + ";\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
     }
@@ -231,8 +220,8 @@ var codeGenerator = generator.build({
     var indexHash = indexPath.join("");
     var blockName = key.join(".");
     if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
-      var renderer = "      var on" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("replaceNode") + "(on" + indexHash + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this));\n";
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
+      var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this));\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
     } else {
       var renderer = "td." + util.getTdMethodName("nodeToString") + "(td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this)),";
@@ -251,9 +240,29 @@ var codeGenerator = generator.build({
     var indexHash = indexPath.join("");
     var params = node[1].params;
     var bodies = node[1].bodies;
-    var paramsHash = undefined,
-        bodiesHash = undefined;
-    paramsHash = params.reduce(function (acc, param) {
+    var paramsHash = this.createParamsHash(params);
+    var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
+    if (state !== STATES.HTML_ATTRIBUTE) {
+      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
+      var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', p" + indexHash + ", c, " + paramsHash + ", " + bodiesHash + ");\n";
+      code.push(parentTdBody, { fragment: fragment, renderer: renderer });
+    }
+  },
+
+  createBodiesHash: function createBodiesHash(tdBody, bodies, mainBody) {
+    var bodiesHash = bodies.reduce(function (acc, body, idx) {
+      var bodyName = body[1].name;
+      acc.push("" + bodyName + ": this.r" + (tdBody + idx + 1) + ".bind(this)");
+      return acc;
+    }, []);
+    if (mainBody && mainBody.length) {
+      bodiesHash.push("main: this.r" + tdBody + ".bind(this)");
+    }
+    return "{" + bodiesHash.join(",") + "}";
+  },
+
+  createParamsHash: function createParamsHash(params) {
+    var paramsHash = params.reduce(function (acc, param) {
       var paramVal = param[1].val;
       var paramKey = param[1].key;
       if (Array.isArray(paramVal)) {
@@ -264,21 +273,7 @@ var codeGenerator = generator.build({
       acc.push("" + paramKey + ": " + paramVal);
       return acc;
     }, []);
-    paramsHash = "{" + paramsHash.join(",") + "}";
-    bodiesHash = bodies.reduce(function (acc, body, idx) {
-      var bodyName = body[1].name;
-      acc.push("" + bodyName + ": this.r" + (tdBody + idx + 1) + ".bind(this)");
-      return acc;
-    }, []);
-    if (node[1].body && node[1].body.length) {
-      bodiesHash.push("main: this.r" + tdBody + ".bind(this)");
-    }
-    bodiesHash = "{" + bodiesHash.join(",") + "}";
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + util.createPlaceholder(instruction) + ";\n";
-      var renderer = "      var p" + indexHash + " = td." + util.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexPath) + ");\n      td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', c, " + paramsHash + ", " + bodiesHash + ").then(function(val) {\n        td." + util.getTdMethodName("replaceNode") + "(p" + indexHash + ", val);\n      });\n";
-      code.push(parentTdBody, { fragment: fragment, renderer: renderer });
-    }
+    return "{" + paramsHash.join(",") + "}";
   }
 });
 
@@ -300,7 +295,7 @@ var generateJavascript = function generateJavascript(ast, options) {
     },
     slice: function slice(type, idx, start, end) {
       if (this[type] && this[type][idx]) {
-        this[type][idx].slice(start, end);
+        this[type][idx] = this[type][idx].slice(start, end);
       }
     }
   };

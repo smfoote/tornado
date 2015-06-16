@@ -154,7 +154,7 @@ let suite = {
       })()
     },
     {
-      description: 'Exists where reference is a promise',
+      description: 'Not Exists where reference is a promise',
       template: 'Hello, {^now}later{/now}',
       context: {
         now: new Promise((resolve) => {

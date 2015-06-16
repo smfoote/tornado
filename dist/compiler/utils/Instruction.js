@@ -21,12 +21,11 @@ var Instruction = function Instruction(action, config) {
 
   var parentNodeName = parentNodeIdx === -1 ? "frag" : "el" + parentNodeIdx;
   var bodyType = undefined,
-      hasElseBody = undefined,
       tdMethodName = undefined,
-      needsOwnMethod = undefined;
+      needsOwnMethod = undefined,
+      hasTornadoRef = undefined;
   if (nodeType === "TORNADO_BODY") {
     bodyType = node[1].type || "";
-    hasElseBody = node[1].bodies && node[1].bodies.length === 1 && node[1].bodies[0][1].name === "else";
     needsOwnMethod = !!(node[1].body && node[1].body.length);
 
     if (blockName) {
@@ -36,6 +35,12 @@ var Instruction = function Instruction(action, config) {
         tdMethodName += blockIndex;
       }
     }
+  } else if (nodeType === "HTML_ATTRIBUTE") {
+    var attrVal = node[1].value;
+    hasTornadoRef = attrVal && attrVal.some(function (val) {
+      var type = val[0];
+      return type === "TORNADO_REFERENCE" || type === "TORNADO_BODY" || type === "TORNADO_PARTIAL";
+    });
   }
   indexPath = item.indexPath;
   var instr = {
@@ -44,7 +49,7 @@ var Instruction = function Instruction(action, config) {
     bodyType: bodyType,
     blockIndex: blockIndex,
     needsOwnMethod: needsOwnMethod,
-    hasElseBody: hasElseBody,
+    hasTornadoRef: hasTornadoRef,
     tdMethodName: tdMethodName,
     parentTdBody: parentTdBody,
     tdBody: tdBody,
