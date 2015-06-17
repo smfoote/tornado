@@ -101,6 +101,8 @@ let Context = function(results) {
         let parentTdBody, blockName, blockIndex;
         if (nodeType === 'HTML_ELEMENT') {
           namespace = this.getNamespaceFromNode(node);
+        }
+        if (nodeType === 'HTML_ELEMENT' || nodeType === 'HTML_ATTRIBUTE') {
           namespace = this.getCurrentNamespace(namespace);
         }
         let indexPath = parentIndexPath.slice(0);
