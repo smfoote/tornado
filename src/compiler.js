@@ -2,6 +2,7 @@
 import Context from './compiler/context';
 import escapableRaw from './compiler/passes/escapableRaw';
 import htmlEntities from './compiler/passes/htmlEntities';
+import adjustAttrs from './compiler/passes/adjustAttrs';
 import buildInstructions from './compiler/passes/buildInstructions';
 import generateJS from './compiler/passes/generateJS';
 import postprocess from './compiler/passes/postprocess';
@@ -10,7 +11,7 @@ import visualize from './compiler/passes/visualize';
 
 const defaultPasses = [
   [visualize], // checks
-  [escapableRaw, htmlEntities], // transforms
+  [escapableRaw, htmlEntities, adjustAttrs], // transforms
   [buildInstructions], // generates
   [generateJS, postprocess] // codegen
 ];

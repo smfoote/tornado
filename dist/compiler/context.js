@@ -107,6 +107,8 @@ var Context = function Context(results) {
             blockIndex = undefined;
         if (nodeType === "HTML_ELEMENT") {
           namespace = this.getNamespaceFromNode(node);
+        }
+        if (nodeType === "HTML_ELEMENT" || nodeType === "HTML_ATTRIBUTE") {
           namespace = this.getCurrentNamespace(namespace);
         }
         var indexPath = parentIndexPath.slice(0);

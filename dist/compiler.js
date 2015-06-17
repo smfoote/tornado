@@ -6,16 +6,20 @@ var Context = _interopRequire(require("./compiler/context"));
 
 var escapableRaw = _interopRequire(require("./compiler/passes/escapableRaw"));
 
+var htmlEntities = _interopRequire(require("./compiler/passes/htmlEntities"));
+
+var adjustAttrs = _interopRequire(require("./compiler/passes/adjustAttrs"));
+
 var buildInstructions = _interopRequire(require("./compiler/passes/buildInstructions"));
 
 var generateJS = _interopRequire(require("./compiler/passes/generateJS"));
 
 var postprocess = _interopRequire(require("./compiler/passes/postprocess"));
 
-var visualize = _interopRequire(require("./compiler/passes/visualize"));
+// import visualize from './compiler/passes/visualize';
 
-var defaultPasses = [[visualize], // checks
-[escapableRaw], // transforms
+var defaultPasses = [[], // checks
+[escapableRaw, htmlEntities, adjustAttrs], // transforms
 [buildInstructions], // generates
 [generateJS, postprocess] // codegen
 ];
