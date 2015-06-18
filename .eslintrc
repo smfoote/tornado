@@ -28,6 +28,7 @@
     "comma-spacing" : false,
     "quotes"        : [1, "single", "avoid-escape"],
     "no-loop-func"  : false,
+    "no-cond-assign": false,
 
     "asi"           : false,
     "boss"          : false,

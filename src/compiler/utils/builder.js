@@ -40,53 +40,6 @@ export default {
       return fullName;
     }
   },
-  buildElementAttributes(elType, attributes = [], ctx) {
-    let attrs = '';
-    let previousState = ctx.state;
-    let tdIndex = ctx.currentIdx();
-    let indexesClone = ctx.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
-    indexesClone.pop();
-    ctx.state = STATES.HTML_ATTRIBUTE;
-    attributes.forEach((attr) => {
-      let hasRef = attr.value && attr.value.some(function(val) {
-        let type = val[0];
-        return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
-      });
-      attr.attrName = this.adjustAttrName(elType, attr.attrName, ctx);
-      if (hasRef) {
-        ctx.append(null, null,`      td.${this.getTdMethodName('setAttribute')}(td.${this.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexesClone)}), '${attr.attrName}', ${this.walkAttrs(attr.value)});\n`);
-      } else {
-        ctx.append(null, `      el${ctx.htmlBodies[tdIndex].count}.setAttribute('${attr.attrName}', ${this.walkAttrs(attr.value)});\n`, null);
-      }
-    });
-    ctx.state = previousState;
-    return attrs;
-  },
-  getElContainerName(ctx) {
-    let count = ctx.htmlBodies[ctx.currentIdx()].count;
-    if (ctx.state === STATES.OUTER_SPACE || count === -1) {
-      return 'frag';
-    } else {
-      return `el${count}`;
-    }
-  },
-  createPlaceholder(instruction) {
-    return `${instruction.parentNodeName}.appendChild(td.${this.getTdMethodName('createTextNode')}(''))`;
-  },
-
-  setHTMLElementState(nodeInfo, ctx) {
-    if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
-      ctx.state = STATES.ESCAPABLE_RAW;
-    } else {
-      ctx.state = STATES.HTML_BODY;
-    }
-    let namespace = nodeInfo.attributes.filter(attr => attr.attrName === 'xmlns');
-
-    // namespace values cannot be dynamic.
-    if (namespace.length) {
-      ctx.namespace = namespace[0].value[0][1];
-    }
-  },
 
   /**
    * Adjust an attribute's name as necessary (e.g. SVG cares about case)

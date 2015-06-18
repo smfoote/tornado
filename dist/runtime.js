@@ -98,60 +98,6 @@ var tornado = {
   },
 
   /**
-   * Create a text node (like document.createTextNode), possibly asynchronously if the value is a
-   * Promise
-   * @param {String|Promise} val The value to be text noded
-   * @return {TextNode}
-   */
-  createTextNode: function createTextNode(val) {
-    if (this.util.isPromise(val)) {
-      return val.then(function (data) {
-        return document.createTextNode(data);
-      })["catch"](function () {
-        return document.createTextNode("");
-      });
-    } else {
-      return document.createTextNode(val);
-    }
-  },
-
-  /**
-   * Create a document fragment (lives in runtime so it can be minified)
-   * @return {DocumentFragment}
-   */
-  createDocumentFragment: function createDocumentFragment() {
-    return document.createDocumentFragment();
-  },
-
-  /**
-   * Create and return an element, possibly within an XML namespace (other than HTML).
-   * @param {String} name The name of the element to be created
-   * @param {String} [namespace] The optional XML namespace (e.g. 'http://www.w3.org/2000/svg')
-   * @return {HTMLElement}
-   */
-  createElement: function createElement(name, namespace) {
-    if (namespace) {
-      return document.createElementNS(namespace, name);
-    } else {
-      return document.createElement(name);
-    }
-  },
-
-  /**
-   * Set an attribute on a given node. To support references and promises, the value of the
-   * attribute is an array of values
-   * @param {HTMLElement} node The element whose attribute is to be set
-   * @param {String} attrName The name of the attribute to be set
-   * @param {Array} vals An array of strings and Promises. When all of the promises resolve, the
-   * attribute will be set.
-   */
-  setAttribute: function setAttribute(node, attrName, vals) {
-    Promise.all(vals).then(function (values) {
-      node.setAttribute(attrName, values.join(""));
-    });
-  },
-
-  /**
    * Get and render a partial. First look in the cache. If the partial is not found there,
    * call td.fetchPartial (which can be user defined), and render the partial that is returned
    * when the Promise returned by td.fetchPartial resolves.
@@ -201,56 +147,147 @@ var tornado = {
   },
 
   /**
-   * Replace a given node with a new node. Nothing will happen if the oldNode
-   * does not have a parent node
-   * @param {Node} oldNode The node to be replaced
-   * @param {Node} newNode The new node to be inserted
+   * Check if a value is truthy. If the value is a promise, wait until the promise resolves,
+   * then check if the resolved value is truthy.
+   * @param {*} val The value to be checked for existence.
+   * @param {[Node]} placeholderNode The node which will be replaced with the appropriate body,
+   * depending on the results of the exists check.
+   * @param {Object} bodies The Tornado bodies that will be inserted depending on the results of the
+   * exists check.
+   * @param {*} The context in which the exists was created.
+   * @return {[String]} If the section is within an HTML attribute, return a string
    */
-  replaceNode: function replaceNode(oldNode, newNode) {
-    if (!oldNode) {
-      return;
-    }
-    var parentNode = oldNode.parentNode;
-    var isPromise = this.util.isPromise(newNode);
-    if (isPromise) {
-      newNode.then(function (node) {
-        return parentNode.replaceChild(node, oldNode);
+  exists: function exists(val, placeholderNode, bodies, context) {
+    var _this = this;
+
+    if (this.util.isPromise(val)) {
+      val.then(function (data) {
+        if (_this.util.isTruthy(data)) {
+          if (bodies.main) {
+            return _this.existsResult(placeholderNode, bodies.main, context);
+          }
+        } else if (bodies["else"]) {
+          return _this.existsResult(placeholderNode, bodies["else"], context);
+        }
+      })["catch"](function () {
+        if (bodies["else"]) {
+          return _this.existsResult(placeholderNode, bodies["else"], context);
+        }
       });
     } else {
-      parentNode.replaceChild(newNode, oldNode);
+      if (this.util.isTruthy(val)) {
+        if (bodies.main) {
+          return this.existsResult(placeholderNode, bodies.main, context);
+        }
+      } else if (bodies["else"]) {
+        return this.existsResult(placeholderNode, bodies["else"], context);
+      }
     }
   },
 
   /**
-   * Check if a value is truthy. If the value is a promise, wait until the promise resolves,
-   * then check if the resolved value is truthy. Returns a promise which resolves with the value if
-   * truthy (based on Tornado's version of truthiness, inspired by Dust), or rejects if the value is
-   * not truthy.
-   * @param {*} val The value to be checked for existence.
-   * @return {Promise}
+   * The notExists is a proxy for the exists method, but first the main and else bodies are switched
    */
-  exists: function exists(val) {
+  notExists: function notExists(val, placeholderNode, bodies, context) {
+    var mainBody = bodies.main;
+    var elseBody = bodies["else"];
+    bodies.main = elseBody;
+    bodies["else"] = mainBody;
+    return this.exists(val, placeholderNode, bodies, context);
+  },
+
+  /**
+   * Simplify the logic of the this.exists by pulling out the logic that determines if the exists is
+   * within an HTML attribute.
+   * @param {Node} placeholderNode  If the exists is not in an HTML Attribute, the placeholderNode
+   * is the node that will be replaced by the exists body
+   * @param {Function} body The appropriate exists body function (e.g. bodies.main and bodies.else)
+   * @param {Object} context The context to be used to render the body
+   */
+  existsResult: function existsResult(placeholderNode, body, context) {
+    if (placeholderNode) {
+      this.replaceNode(placeholderNode, body(context));
+    } else {
+      return this.nodeToString(body(context));
+    }
+  },
+
+  /**
+   * Check for truthiness in the same way this.exists checks. If `val` is truthy, render the main
+   * body with using `val` as the context (if `val` is an array, loop through the array and render
+   * the main body for each value in the array). If `val` is falsy, optionally render the else body
+   * using `context`. Handle promises the way this.exists does.
+   * @param {*} val The val to be checked.
+   * @param {[Node]} placeholderNode The node that will be replaced with the rendered body(ies).
+   * @param {Object} bodies The Tornado bodies that will be inserted depending on the results of the
+   * truthiness tests.
+   * @param {*} context The context in which the section was called.
+   * @return {[String]} If within an HTML attribute, return a string.
+   */
+  section: function section(val, placeholderNode, bodies, context) {
     var _this = this;
 
-    return new Promise(function (resolve, reject) {
-      if (_this.util.isPromise(val)) {
-        val.then(function (data) {
-          if (_this.util.isTruthy(data)) {
-            resolve(data);
-          } else {
-            reject("Falsy reference");
-          }
-        })["catch"](function () {
-          return reject();
-        });
-      } else {
-        if (_this.util.isTruthy(val)) {
-          resolve(val);
+    var body = undefined,
+        ctx = undefined;
+    if (this.util.isPromise(val)) {
+      val.then(function (data) {
+        if (_this.util.isTruthy(data)) {
+          body = bodies.main;
+          ctx = data;
         } else {
-          reject("Falsy reference");
+          body = bodies["else"];
+          ctx = context;
         }
+        return _this.sectionResult(ctx, placeholderNode, body);
+      })["catch"](function () {
+        return _this.sectionResult(context, placeholderNode, bodies["else"]);
+      });
+    } else {
+      if (this.util.isTruthy(val)) {
+        body = bodies.main;
+        ctx = val;
+      } else {
+        body = bodies["else"];
+        ctx = context;
       }
-    });
+      return this.sectionResult(ctx, placeholderNode, body);
+    }
+  },
+
+  /**
+   * Break out the logic of whether the value is an Array and whether the section was called within
+   * an HTML attribute.
+   * @param {*} val The value to be used to render the body
+   * @param {[Node]} placeholderNode The node to be replaced by the results of the body. If the
+   * section was called within an HTML attribute, placeholderNode will be null.
+   * @param {Function} body The appropriate body rendering function to be rendered with `val`.
+   * @return {[String]} Return a string if in an HTML attribute
+   */
+  sectionResult: function sectionResult(val, placeholderNode, body) {
+    if (!body) {
+      return "";
+    }
+    if (Array.isArray(val)) {
+      if (placeholderNode) {
+        var frag = document.createDocumentFragment();
+        for (var i = 0, item = undefined; item = val[i]; i++) {
+          frag.appendChild(body(item));
+        }
+        this.replaceNode(placeholderNode, frag);
+      } else {
+        var attrs = [];
+        for (var i = 0, item = undefined; item = val[i]; i++) {
+          attrs.push(this.nodeToString(body(item)));
+        }
+        return attrs.join("");
+      }
+    } else {
+      if (placeholderNode) {
+        this.replaceNode(placeholderNode, body(val));
+      } else {
+        return this.nodeToString(body(val));
+      }
+    }
   },
 
   /**
@@ -261,7 +298,7 @@ var tornado = {
    * @return {DocumentFragment|Promise}
    */
   helper: (function (_helper) {
-    var _helperWrapper = function helper(_x, _x2, _x3, _x4) {
+    var _helperWrapper = function helper(_x, _x2, _x3, _x4, _x5) {
       return _helper.apply(this, arguments);
     };
 
@@ -270,25 +307,46 @@ var tornado = {
     };
 
     return _helperWrapper;
-  })(function (name, context, params, bodies) {
+  })(function (name, placeholderNode, context, params, bodies) {
     var _this = this;
 
     var helper = this.helpers[name];
     if (!helper) {
       throw new Error("Helper not registered: " + name);
     } else {
-      return Promise.all(this.util.getValuesFromObject(params)).then(function (values) {
-        var resolvedParams = _this.util.arraysToObject(Object.keys(params).sort(), values);
-        var returnVal = helper(context, resolvedParams, bodies);
-        if (!_this.util.isPromise(returnVal)) {
-          returnVal = new Promise(function (resolve) {
-            resolve(returnVal);
-          });
-        }
-        return returnVal;
-      });
+      var paramVals = this.util.getValuesFromObject(params);
+      if (this.util.hasPromises(paramVals)) {
+        Promise.all(paramVals).then(function (values) {
+          var resolvedParams = _this.util.arraysToObject(Object.keys(params).sort(), values);
+          var returnVal = helper(context, resolvedParams, bodies);
+          return _this.helperResult(placeholderNode, returnVal);
+        });
+      } else {
+        var returnVal = helper(context, params, bodies);
+        return this.helperResult(placeholderNode, returnVal);
+      }
     }
   }),
+
+  helperResult: function helperResult(placeholderNode, returnVal) {
+    var _this = this;
+
+    if (this.util.isPromise(returnVal)) {
+      returnVal.then(function (frag) {
+        if (placeholderNode) {
+          _this.replaceNode(placeholderNode, frag);
+        } else {
+          return _this.nodeToString(frag);
+        }
+      });
+    } else {
+      if (placeholderNode) {
+        this.replaceNode(placeholderNode, returnVal);
+      } else {
+        return this.nodeToString(returnVal);
+      }
+    }
+  },
 
   /**
    * Render a block or inline partial based of a given name.
@@ -365,6 +423,85 @@ var tornado = {
     return div.innerHTML;
   },
 
+  /**
+   * Replace a given node with a new node. Nothing will happen if the oldNode
+   * does not have a parent node
+   * @param {Node} oldNode The node to be replaced
+   * @param {Node} newNode The new node to be inserted
+   */
+  replaceNode: function replaceNode(oldNode, newNode) {
+    if (!oldNode) {
+      return;
+    }
+    var parentNode = oldNode.parentNode;
+    var isPromise = this.util.isPromise(newNode);
+    if (isPromise) {
+      newNode.then(function (node) {
+        return parentNode.replaceChild(node, oldNode);
+      });
+    } else {
+      parentNode.replaceChild(newNode, oldNode);
+    }
+  },
+
+  /**
+   * Create a text node (like document.createTextNode), possibly asynchronously if the value is a
+   * Promise
+   * @param {String|Promise} val The value to be text noded
+   * @return {TextNode}
+   */
+  createTextNode: function createTextNode(val) {
+    if (this.util.isPromise(val)) {
+      return val.then(function (data) {
+        return document.createTextNode(data);
+      })["catch"](function () {
+        return document.createTextNode("");
+      });
+    } else {
+      return document.createTextNode(val);
+    }
+  },
+
+  /**
+   * Create a document fragment (lives in runtime so it can be minified)
+   * @return {DocumentFragment}
+   */
+  createDocumentFragment: function createDocumentFragment() {
+    return document.createDocumentFragment();
+  },
+
+  /**
+   * Create and return an element, possibly within an XML namespace (other than HTML).
+   * @param {String} name The name of the element to be created
+   * @param {String} [namespace] The optional XML namespace (e.g. 'http://www.w3.org/2000/svg')
+   * @return {HTMLElement}
+   */
+  createElement: function createElement(name, namespace) {
+    if (namespace) {
+      return document.createElementNS(namespace, name);
+    } else {
+      return document.createElement(name);
+    }
+  },
+
+  /**
+   * Set an attribute on a given node. To support references and promises, the value of the
+   * attribute is an array of values
+   * @param {HTMLElement} node The element whose attribute is to be set
+   * @param {String} attrName The name of the attribute to be set
+   * @param {Array|String} vals An array of strings and Promises. When all of the promises resolve,
+   * the attribute will be set. If vals is a String, the attribute will be set immediately.
+   */
+  setAttribute: function setAttribute(node, attrName, vals) {
+    if (Array.isArray(vals)) {
+      Promise.all(vals).then(function (values) {
+        node.setAttribute(attrName, values.join(""));
+      });
+    } else {
+      node.setAttribute(attrName, vals);
+    }
+  },
+
   util: {
     /**
      * Determine if a value is an object
@@ -382,6 +519,19 @@ var tornado = {
      */
     isPromise: function isPromise(val) {
       return this.isFunction(val.then);
+    },
+
+    /**
+     * Check if an Array cotains any promises
+     * @param {Array} arr The Array whose values are in question
+     * @return {Boolean}
+     */
+    hasPromises: function hasPromises(arr) {
+      var _this = this;
+
+      return arr.some(function (val) {
+        return _this.isPromise(val);
+      });
     },
 
     /**

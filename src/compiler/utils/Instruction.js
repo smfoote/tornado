@@ -3,10 +3,9 @@ let Instruction = function(action, config) {
   let {state, node, namespace, blockName, blockIndex, parentNodeIdx, parentTdBody, tdBody} = item;
   let [nodeType] = node;
   let parentNodeName = (parentNodeIdx === -1) ? 'frag' : `el${parentNodeIdx}`;
-  let bodyType, hasElseBody, tdMethodName, needsOwnMethod;
+  let bodyType, tdMethodName, needsOwnMethod, hasTornadoRef;
   if (nodeType === 'TORNADO_BODY') {
     bodyType = node[1].type || '';
-    hasElseBody = (node[1].bodies && node[1].bodies.length === 1 && node[1].bodies[0][1].name === 'else');
     needsOwnMethod = !!(node[1].body && node[1].body.length);
 
     if (blockName) {
@@ -16,6 +15,12 @@ let Instruction = function(action, config) {
         tdMethodName += blockIndex;
       }
     }
+  } else if (nodeType === 'HTML_ATTRIBUTE') {
+    let attrVal = node[1].value;
+    hasTornadoRef = attrVal && attrVal.some(val => {
+      let type = val[0];
+      return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
+    });
   }
   indexPath = item.indexPath;
   let instr = {
@@ -24,7 +29,7 @@ let Instruction = function(action, config) {
     bodyType,
     blockIndex,
     needsOwnMethod,
-    hasElseBody,
+    hasTornadoRef,
     tdMethodName,
     parentTdBody,
     tdBody,

@@ -46,59 +46,6 @@ exports["default"] = {
       return fullName;
     }
   },
-  buildElementAttributes: function buildElementAttributes(elType, _x, ctx) {
-    var _this = this;
-
-    var attributes = arguments[1] === undefined ? [] : arguments[1];
-
-    var attrs = "";
-    var previousState = ctx.state;
-    var tdIndex = ctx.currentIdx();
-    var indexesClone = ctx.htmlBodies[tdIndex].htmlBodiesIndexes.slice(0);
-    indexesClone.pop();
-    ctx.state = STATES.HTML_ATTRIBUTE;
-    attributes.forEach(function (attr) {
-      var hasRef = attr.value && attr.value.some(function (val) {
-        var type = val[0];
-        return type === "TORNADO_REFERENCE" || type === "TORNADO_BODY" || type === "TORNADO_PARTIAL";
-      });
-      attr.attrName = _this.adjustAttrName(elType, attr.attrName, ctx);
-      if (hasRef) {
-        ctx.append(null, null, "      td." + _this.getTdMethodName("setAttribute") + "(td." + _this.getTdMethodName("getNodeAtIdxPath") + "(root, " + JSON.stringify(indexesClone) + "), '" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n");
-      } else {
-        ctx.append(null, "      el" + ctx.htmlBodies[tdIndex].count + ".setAttribute('" + attr.attrName + "', " + _this.walkAttrs(attr.value) + ");\n", null);
-      }
-    });
-    ctx.state = previousState;
-    return attrs;
-  },
-  getElContainerName: function getElContainerName(ctx) {
-    var count = ctx.htmlBodies[ctx.currentIdx()].count;
-    if (ctx.state === STATES.OUTER_SPACE || count === -1) {
-      return "frag";
-    } else {
-      return "el" + count;
-    }
-  },
-  createPlaceholder: function createPlaceholder(instruction) {
-    return "" + instruction.parentNodeName + ".appendChild(td." + this.getTdMethodName("createTextNode") + "(''))";
-  },
-
-  setHTMLElementState: function setHTMLElementState(nodeInfo, ctx) {
-    if (this.elTypes.escapableRaw.indexOf(nodeInfo.key) > -1) {
-      ctx.state = STATES.ESCAPABLE_RAW;
-    } else {
-      ctx.state = STATES.HTML_BODY;
-    }
-    var namespace = nodeInfo.attributes.filter(function (attr) {
-      return attr.attrName === "xmlns";
-    });
-
-    // namespace values cannot be dynamic.
-    if (namespace.length) {
-      ctx.namespace = namespace[0].value[0][1];
-    }
-  },
 
   /**
    * Adjust an attribute's name as necessary (e.g. SVG cares about case)
