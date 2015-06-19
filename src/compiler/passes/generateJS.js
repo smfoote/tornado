@@ -9,13 +9,11 @@ let noop = function() {};
 
 let codeGenerator = generator.build({
   insert_TORNADO_PARTIAL(instruction, code) {
-    let {indexPath, tdBody, key} = instruction;
+    let {tdBody, key} = instruction;
     let context = 'c';
-    let indexHash = indexPath.join('');
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      td.${util.getTdMethodName('replaceNode')}(p${indexHash}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
+      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
       code.push(tdBody, {fragment, renderer});
     } else {
       let renderer = `td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)}),`;
@@ -37,12 +35,10 @@ let codeGenerator = generator.build({
     }
   },
   insert_TORNADO_REFERENCE(instruction, code) {
-    let {tdBody, key, indexPath, state} = instruction;
-    let indexHash = indexPath.join('');
+    let {tdBody, key, state} = instruction;
     if (state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-        td.${util.getTdMethodName('replaceNode')}(p${indexHash}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
+      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
       code.push(tdBody, {fragment, renderer});
     } else {
       let renderer = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}),`;
@@ -69,16 +65,18 @@ let codeGenerator = generator.build({
     }
   },
   open_HTML_ATTRIBUTE(instruction, code) {
-    let {tdBody, indexPath, node, hasTornadoRef} = instruction;
+    let {tdBody, node, hasTornadoRef, parentNodeName} = instruction;
     let attrInfo = node[1];
+    let placeholderName = this.getPlaceholderName(instruction);
+    let fragment = `      res.${placeholderName} = ${parentNodeName};\n`;
     let renderer = `      td.${util.getTdMethodName('setAttribute')}`;
-    renderer += `(td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)}), '${attrInfo.attrName}', `;
+    renderer += `(root.${placeholderName}, '${attrInfo.attrName}', `;
     if (hasTornadoRef) {
       renderer += '[';
     } else {
       renderer += '';
     }
-    code.push(tdBody, {renderer});
+    code.push(tdBody, {fragment, renderer});
   },
   close_HTML_ATTRIBUTE(instruction, code) {
     let {tdBody, hasTornadoRef} = instruction;
@@ -107,36 +105,41 @@ let codeGenerator = generator.build({
   createMethodHeaders(tdBody, code, methodName) {
     let suffix = methodName ? methodName : tdBody;
     let fragment = `f${suffix}: function() {
-      var frag = td.${util.getTdMethodName('createDocumentFragment')}();\n`;
+      var res = {};
+      var frag = td.${util.getTdMethodName('createDocumentFragment')}();
+      res.frag = frag;\n`;
     let renderer = `r${suffix}: function(c) {
-      var root = frags.frag${suffix} || this.f${suffix}();
-      root = root.cloneNode(true);\n`;
+      var root = this.f${suffix}();\n`;
     code.push(tdBody, {fragment, renderer});
   },
 
-  createMethodFooters(tdBody, code, methodName) {
-    let suffix = methodName ? methodName : tdBody;
-    let fragment = `      frags.frag${suffix} = frag;
-      return frag;
+  createMethodFooters(tdBody, code) {
+    let fragment = `      return res;
     }`;
-    let renderer = `      return root;
+    let renderer = `      return root.frag;
     }`;
     code.push(tdBody, {fragment, renderer});
   },
 
   createPlaceholder(instruction) {
-    return `${instruction.parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}(''))`;
+    let placeholderName = this.getPlaceholderName(instruction);
+    return `var ${placeholderName} = td.${util.getTdMethodName('createTextNode')}('');
+      ${instruction.parentNodeName}.appendChild(${placeholderName});
+      res.${placeholderName} = ${placeholderName};`;
+  },
+
+  getPlaceholderName(instruction) {
+    let {indexPath} = instruction;
+    return `p${indexPath.join('')}`;
   },
 
   tdBody_exists(instruction, code) {
-    let {parentTdBody, tdBody, indexPath, state, key, node, bodyType} = instruction;
-    let indexHash = indexPath.join('');
+    let {parentTdBody, tdBody, state, key, node, bodyType} = instruction;
     let bodies = node[1].bodies;
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
     if (state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), p${indexHash}, ${bodiesHash}, c);\n`;
+      let renderer = `      td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), root.${this.getPlaceholderName(instruction)}, ${bodiesHash}, c);\n`;
       code.push((parentTdBody), {renderer, fragment});
     } else {
       let renderer = `td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), null, ${bodiesHash}, c),`;
@@ -149,12 +152,11 @@ let codeGenerator = generator.build({
   },
 
   tdBody_section(instruction, code) {
-    let {parentTdBody, tdBody, indexPath, state, key, node} = instruction;
-    let indexHash = indexPath.join('');
+    let {parentTdBody, tdBody, state, key, node} = instruction;
     let bodies = node[1].bodies;
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
     let isInHtmlAttribute = (state === STATES.HTML_ATTRIBUTE);
-    let placeholderNode = isInHtmlAttribute ? 'null' : `p${indexHash}`;
+    let placeholderNode = isInHtmlAttribute ? 'null' : `root.${this.getPlaceholderName(instruction)}`;
 
     let output = `td.${util.getTdMethodName('section')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), ${placeholderNode}, ${bodiesHash}, c)`;
 
@@ -163,20 +165,17 @@ let codeGenerator = generator.build({
       code.push(parentTdBody, {renderer});
     } else {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      ${output};\n`;
+      let renderer = `      ${output};\n`;
       code.push(parentTdBody, {fragment, renderer});
     }
   },
 
   tdBody_block(instruction, code) {
-    let {parentTdBody, indexPath, state, key, blockIndex} = instruction;
-    let indexHash = indexPath.join('');
+    let {parentTdBody, state, key, blockIndex} = instruction;
     let blockName = key.join('.');
     if (state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      td.${util.getTdMethodName('replaceNode')}(p${indexHash}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
+      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
       code.push(parentTdBody, {fragment, renderer});
     } else {
       let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this)),`;
@@ -185,16 +184,14 @@ let codeGenerator = generator.build({
   },
 
   tdBody_helper(instruction, code) {
-    let {parentTdBody, tdBody, indexPath, state, key, node} = instruction;
-    let indexHash = indexPath.join('');
+    let {parentTdBody, tdBody, state, key, node} = instruction;
     let params = node[1].params;
     let bodies = node[1].bodies;
     let paramsHash = this.createParamsHash(params);
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
     if (state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      var p${indexHash} = td.${util.getTdMethodName('getNodeAtIdxPath')}(root, ${JSON.stringify(indexPath)});
-      td.${util.getTdMethodName('helper')}('${key.join('.')}', p${indexHash}, c, ${paramsHash}, ${bodiesHash});\n`;
+      let renderer = `      td.${util.getTdMethodName('helper')}('${key.join('.')}', root.${this.getPlaceholderName(instruction)}, c, ${paramsHash}, ${bodiesHash});\n`;
       code.push(parentTdBody, {fragment, renderer});
     }
   },

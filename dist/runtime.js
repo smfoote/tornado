@@ -362,7 +362,7 @@ var tornado = {
       frag.appendChild(document.createTextNode(""));
       return frag;
     }
-    return renderer(context);
+    return renderer(context).frag;
   },
 
   getBlockRenderer: function getBlockRenderer(name, idx, template) {
@@ -383,33 +383,6 @@ var tornado = {
       template = template.parentTemplate;
     }
     // If no renderer is found, undefined will be returned.
-  },
-
-  /**
-   * Within a given HTML node, find the node at the given index path.
-   * for more details.
-   * @param {HTMLNode} root The parent node
-   * @param {Array} indexPath The path of indexes to the node being searched for.
-   * @param {HTMLNode|Boolean} The HTML Node if it is found, or `false`
-   */
-  getNodeAtIdxPath: function getNodeAtIdxPath(root, indexPath) {
-    var nextIdx = undefined;
-
-    if (indexPath.length === 0) {
-      return root;
-    }
-
-    // Make sure we are dealing with an HTML element
-    var intermediateNode = root.childNodes ? root : false;
-    while (intermediateNode && indexPath.length) {
-      if (intermediateNode.childNodes) {
-        nextIdx = indexPath.shift();
-        intermediateNode = intermediateNode.childNodes[nextIdx];
-      } else {
-        return false;
-      }
-    }
-    return intermediateNode || false;
   },
 
   /**
@@ -603,7 +576,6 @@ tornado.n = tornado.replaceNode;
 tornado.e = tornado.exists;
 tornado.h = tornado.helper;
 tornado.b = tornado.block;
-tornado.i = tornado.getNodeAtIdxPath;
 tornado.t = tornado.nodeToString;
 
 module.exports = tornado;
