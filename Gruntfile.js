@@ -35,6 +35,13 @@ grunt.initConfig({
     sandbox: {
       src: 'test/sandbox/sandbox.js',
       dest: 'test/sandbox/bundle.js'
+    },
+    benchmark: {
+      options: {
+        transform: ['brfs']
+      },
+      src: 'benchmark/benchmark.js',
+      dest: 'benchmark/bundle.js'
     }
   },
   eslint: {

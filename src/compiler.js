@@ -6,11 +6,11 @@ import adjustAttrs from './compiler/passes/adjustAttrs';
 import buildInstructions from './compiler/passes/buildInstructions';
 import generateJS from './compiler/passes/generateJS';
 import postprocess from './compiler/passes/postprocess';
-import visualize from './compiler/passes/visualize';
+// import visualize from './compiler/passes/visualize';
 
 
 const defaultPasses = [
-  [visualize], // checks
+  [], // checks
   [escapableRaw, htmlEntities, adjustAttrs], // transforms
   [buildInstructions], // generates
   [generateJS, postprocess] // codegen
