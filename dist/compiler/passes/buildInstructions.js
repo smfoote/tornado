@@ -52,6 +52,11 @@ var generateWalker = visitor.build({
       ctx.pushInstruction(new Instruction("close", { item: item, ctx: ctx }));
     }
   },
+  HTML_COMMENT: {
+    enter: function enter(item, ctx) {
+      ctx.pushInstruction(new Instruction("insert", { item: item, ctx: ctx }));
+    }
+  },
   PLAIN_TEXT: {
     enter: function enter(item, ctx) {
       ctx.pushInstruction(new Instruction("insert", { item: item, ctx: ctx }));

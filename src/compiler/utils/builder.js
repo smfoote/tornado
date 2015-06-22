@@ -13,16 +13,17 @@ const methodNameMap = {
   register: 'r',
   get: 'g',
   createDocumentFragment: 'f',
-  createTextNode: 'c',
+  createTextNode: 't',
+  createHTMLComment: 'c',
   createElement: 'm',
-  setAttribute: 's',
+  setAttribute: 'a',
   getPartial: 'p',
   replaceNode: 'n',
   exists: 'e',
   helper: 'h',
   block: 'b',
   getNodeAtIdxPath: 'i',
-  nodeToString: 't'
+  nodeToString: 's'
 };
 const PRODUCTION = 'production';
 let mode = 'dev'; //TODO: this should be an option in the compiler

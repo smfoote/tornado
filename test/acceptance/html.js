@@ -24,6 +24,40 @@ let suite = {
       })()
     },
     {
+      description: 'HTML comment with text inside',
+      template: '<!-- hi there -->',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let comment = document.createComment(' hi there ');
+        frag.appendChild(comment);
+        return frag;
+      })()
+    },
+    {
+      description: 'HTML comment with HTML inside',
+      template: '<!-- <script>alert(\'bad stuff!\');</script> -->',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let comment = document.createComment(' <script>alert(\'bad stuff!\');</script> ');
+        frag.appendChild(comment);
+        return frag;
+      })()
+    },
+    {
+      description: 'HTML comment within HTML attribute',
+      template: '<div class="<!-- comment -->"></div>',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', '<!-- comment -->');
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
       description: 'Empty element with one attribute',
       template: '<div id="test"></div>',
       context: {},
