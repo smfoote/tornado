@@ -12,7 +12,7 @@ textarea {
   border: 1px solid #CCC;
   background-color: #DDD;
   max-height: 2000px;
-  overflow: hidden;
+  overflow: auto;
   transition: max-height 400ms ease;
 }
 
