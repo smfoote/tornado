@@ -7,8 +7,7 @@
     <div id="input">
       <textarea id="template" placeholder="Template goes here"><h3>What's on reddit:</h3>
 <ul>
-  {#reddit}
-    {#data.children}
+  {#reddit.data.children}
     <li>
       {#data.thumbnail}
         <img src="{.}">
@@ -16,8 +15,7 @@
       <p>{data.author}</p>
       <a href="{data.url}">{data.title}</a>
     </li>
-    {/data.children}
-  {/reddit}
+  {/reddit.data.children}
 </ul></textarea>
       <textarea id="context" placeholder="Context goes here">{
   reddit: fetch('http://www.reddit.com/.json?limit=10').then(function(res) {
