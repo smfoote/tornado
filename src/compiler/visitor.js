@@ -33,11 +33,11 @@ let visitor = {
           if (node[1].params) {
             walk.apply(null, [node[1].params, context]);
           }
-          if (node[1].body) {
-            walk.apply(null, [node[1].body, context]);
-          }
           if (node[1].bodies) {
             walk.apply(null, [node[1].bodies, context]);
+          }
+          if (node[1].body) {
+            walk.apply(null, [node[1].body, context]);
           }
           break;
         case 'TORNADO_PARTIAL':
