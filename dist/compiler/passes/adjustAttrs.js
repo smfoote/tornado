@@ -72,12 +72,10 @@ var generatedWalker = visitor.build({
 
     var attrName = node[1].attrName;
     var adjustedAttr = undefined;
-    console.log(namespace);
     if (namespace) {
       adjustedAttr = svgAdjustAttrs[attrName];
     }
     node[1].attrName = adjustedAttr || attrName;
-    console.log(node[1].attrName);
   }
 });
 

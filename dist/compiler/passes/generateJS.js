@@ -271,7 +271,7 @@ var codeGenerator = generator.build({
       if (Array.isArray(paramVal)) {
         paramVal = "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(paramVal[1].key) + ")";
       } else {
-        paramVal = "'" + paramVal + "'";
+        paramVal = typeof paramVal === "number" ? paramVal : "'" + paramVal + "'";
       }
       acc.push("" + paramKey + ": " + paramVal);
       return acc;

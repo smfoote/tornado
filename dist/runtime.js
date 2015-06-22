@@ -1,5 +1,9 @@
 "use strict";
 
+var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+
+var helpers = _interopRequire(require("./helpers"));
+
 var tornado = {
 
   /**
@@ -588,6 +592,8 @@ tornado.e = tornado.exists;
 tornado.h = tornado.helper;
 tornado.b = tornado.block;
 tornado.s = tornado.nodeToString;
+
+tornado.registerHelpers(helpers);
 
 module.exports = tornado;
 /*name*/ /*c*/
