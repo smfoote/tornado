@@ -132,6 +132,23 @@ let suite = {
       })()
     },
     {
+      description: 'Exists containing multiple HTML elements, followd by refernece',
+      template: 'Hello, {?name}<span>world</span>.{/name} My name is {name}.',
+      context: {name: 'Dorothy'},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello, '));
+        let span = document.createElement('span');
+        span.appendChild(document.createTextNode('world'));
+        frag.appendChild(span);
+        frag.appendChild(document.createTextNode('.'));
+        frag.appendChild(document.createTextNode(' My name is '));
+        frag.appendChild(document.createTextNode('Dorothy'));
+        frag.appendChild(document.createTextNode('.'));
+        return frag;
+      })()
+    },
+    {
       description: 'Exists with else where reference is falsy',
       template: 'Hello, {?name}world{:else}abyss{/name}',
       context: {name: false},
