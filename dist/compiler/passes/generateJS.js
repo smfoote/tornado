@@ -123,12 +123,19 @@ var codeGenerator = generator.build({
     code.slice("renderers", tdBody, 0, -1);
     code.push(tdBody, { renderer: renderer });
   },
+  insert_HTML_COMMENT: function insert_HTML_COMMENT(instruction, code) {
+    var tdBody = instruction.tdBody;
+    var parentNodeName = instruction.parentNodeName;
+    var contents = instruction.contents;
+
+    var fragment = "      " + parentNodeName + ".appendChild(td." + util.getTdMethodName("createHTMLComment") + "('" + contents + "'));\n";
+    code.push(tdBody, { fragment: fragment });
+  },
   insert_PLAIN_TEXT: function insert_PLAIN_TEXT(instruction, code) {
     var tdBody = instruction.tdBody;
     var parentNodeName = instruction.parentNodeName;
-    var node = instruction.node;
+    var contents = instruction.contents;
 
-    var contents = node[1].replace(/'/g, "\\'");
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
       var fragment = "      " + parentNodeName + ".appendChild(td." + util.getTdMethodName("createTextNode") + "('" + contents + "'));\n";
       code.push(tdBody, { fragment: fragment });

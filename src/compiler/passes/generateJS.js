@@ -90,9 +90,13 @@ let codeGenerator = generator.build({
     code.slice('renderers', tdBody, 0, -1);
     code.push(tdBody, {renderer});
   },
+  insert_HTML_COMMENT(instruction, code) {
+    let {tdBody, parentNodeName, contents} = instruction;
+    let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createHTMLComment')}('${contents}'));\n`;
+    code.push(tdBody, {fragment});
+  },
   insert_PLAIN_TEXT(instruction, code) {
-    let {tdBody, parentNodeName, node} = instruction;
-    let contents = node[1].replace(/'/g, "\\'");
+    let {tdBody, parentNodeName, contents} = instruction;
     if (instruction.state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents}'));\n`;
       code.push(tdBody, {fragment});

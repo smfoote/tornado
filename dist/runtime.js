@@ -436,6 +436,15 @@ var tornado = {
   },
 
   /**
+   * Create an HTML comment with the given contents
+   * @param {String} contents The contents of the comment
+   * @return {HTMLComment}
+   */
+  createHTMLComment: function createHTMLComment(contents) {
+    return document.createComment(contents);
+  },
+
+  /**
    * Create a document fragment (lives in runtime so it can be minified)
    * @return {DocumentFragment}
    */
@@ -567,16 +576,17 @@ var tornado = {
  */
 tornado.r = tornado.register;
 tornado.g = tornado.get;
-tornado.c = tornado.createTextNode;
+tornado.t = tornado.createTextNode;
+tornado.c = tornado.createHTMLComment;
 tornado.m = tornado.createElement;
 tornado.f = tornado.createDocumentFragment;
-tornado.s = tornado.setAttribute;
+tornado.a = tornado.setAttribute;
 tornado.p = tornado.getPartial;
 tornado.n = tornado.replaceNode;
 tornado.e = tornado.exists;
 tornado.h = tornado.helper;
 tornado.b = tornado.block;
-tornado.t = tornado.nodeToString;
+tornado.s = tornado.nodeToString;
 
 module.exports = tornado;
 /*name*/ /*c*/

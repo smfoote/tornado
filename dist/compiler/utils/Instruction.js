@@ -19,6 +19,7 @@ var Instruction = function Instruction(action, config) {
 
   var nodeType = _node[0];
 
+  var contents = undefined;
   var parentNodeName = parentNodeIdx === -1 ? "frag" : "el" + parentNodeIdx;
   var bodyType = undefined,
       tdMethodName = undefined,
@@ -41,6 +42,8 @@ var Instruction = function Instruction(action, config) {
       var type = val[0];
       return type === "TORNADO_REFERENCE" || type === "TORNADO_BODY" || type === "TORNADO_PARTIAL";
     });
+  } else if (nodeType === "HTML_COMMENT" || nodeType === "PLAIN_TEXT") {
+    contents = node[1].replace(/'/g, "\\'");
   }
   indexPath = item.indexPath;
   var instr = {
@@ -53,6 +56,7 @@ var Instruction = function Instruction(action, config) {
     tdMethodName: tdMethodName,
     parentTdBody: parentTdBody,
     tdBody: tdBody,
+    contents: contents,
     parentNodeName: parentNodeName,
     indexPath: indexPath,
     key: key,

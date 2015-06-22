@@ -2,6 +2,7 @@ let Instruction = function(action, config) {
   let {item, key, indexPath} = config;
   let {state, node, namespace, blockName, blockIndex, parentNodeIdx, parentTdBody, tdBody} = item;
   let [nodeType] = node;
+  let contents;
   let parentNodeName = (parentNodeIdx === -1) ? 'frag' : `el${parentNodeIdx}`;
   let bodyType, tdMethodName, needsOwnMethod, hasTornadoRef;
   if (nodeType === 'TORNADO_BODY') {
@@ -21,6 +22,8 @@ let Instruction = function(action, config) {
       let type = val[0];
       return type === 'TORNADO_REFERENCE' || type === 'TORNADO_BODY' || type === 'TORNADO_PARTIAL';
     });
+  } else if (nodeType === 'HTML_COMMENT' || nodeType === 'PLAIN_TEXT') {
+    contents = node[1].replace(/'/g, "\\'");
   }
   indexPath = item.indexPath;
   let instr = {
@@ -33,6 +36,7 @@ let Instruction = function(action, config) {
     tdMethodName,
     parentTdBody,
     tdBody,
+    contents,
     parentNodeName: parentNodeName,
     indexPath,
     key,
