@@ -410,7 +410,8 @@ var tornado = {
     var isPromise = this.util.isPromise(newNode);
     if (isPromise) {
       newNode.then(function (node) {
-        return parentNode.replaceChild(node, oldNode);
+        parentNode = oldNode.parentNode;
+        parentNode.replaceChild(node, oldNode);
       });
     } else {
       parentNode.replaceChild(newNode, oldNode);

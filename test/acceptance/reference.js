@@ -80,7 +80,7 @@ let suite = {
       })()
     },
     {
-      description: 'Reference in an element should render in the element',
+      description: 'Reference in an element',
       template: '<div>{name}</div>',
       context: {name: 'Dorothy'},
       expectedDom: (() => {
@@ -119,7 +119,7 @@ let suite = {
       })()
     },
     {
-      description: 'Reference in an attribute should render in the attribute',
+      description: 'Reference in an attribute',
       template: '<div class="{name}"></div>',
       context: {name: 'Dorothy'},
       expectedDom: (() => {
@@ -197,6 +197,20 @@ let suite = {
         let div = document.createElement('div');
         div.appendChild(document.createTextNode('and later'));
         frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Reference at fragment root is a promise',
+      template: '{now}',
+      context: {
+        now: new Promise((resolve) => {
+          resolve('and later');
+        })
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('and later'));
         return frag;
       })()
     },
