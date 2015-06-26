@@ -1,4 +1,5 @@
 import util from '../utils/builder';
+import generator from '../codeGenerator';
 
 let flush = function(results) {
   results.code = `(function(){
@@ -13,8 +14,13 @@ var frags = {},
 })();`;
 };
 
+
 let postprocess = function(ast, options) {
   let results = options.results;
+  let symbolsMap = options.results.instructions.symbolsMap;
+  let codeGenerator = generator.build(symbolsMap);
+  codeGenerator(options.results.instructions, options.results.code);
+
   if (results) {
     flush(results);
   }

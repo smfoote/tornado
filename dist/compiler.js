@@ -42,6 +42,7 @@ var compiler = {
       name: name,
       instructions: []
     };
+    results.instructions.symbolsMap = {};
     passes.forEach(function (stage) {
       stage.forEach(function (pass) {
         var context = new Context(results);

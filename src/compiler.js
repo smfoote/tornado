@@ -34,6 +34,7 @@ let compiler = {
       name,
       instructions: []
     };
+    results.instructions.symbolsMap = {};
     passes.forEach(stage => {
       stage.forEach(pass =>{
         let context = new Context(results);

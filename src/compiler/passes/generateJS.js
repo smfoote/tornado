@@ -1,51 +1,174 @@
 /* eslint camelcase: 0 */
 'use strict';
-import generator from '../codeGenerator';
 
 import util from '../utils/builder';
 import {STATES} from '../utils/builder';
 
 let noop = function() {};
 
-let codeGenerator = generator.build({
-  insert_TORNADO_PARTIAL(instruction, code) {
-    let {tdBody, key} = instruction;
-    let context = 'c';
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
-      code.push(tdBody, {fragment, renderer});
-    } else {
-      let renderer = `td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)}),`;
-      code.push(tdBody, {renderer});
-    }
-  },
-  open_TORNADO_BODY(instruction, code) {
-    let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
-    if (needsOwnMethod) {
-      this.createMethodHeaders(tdBody, code, tdMethodName);
-    }
-    let buildTdBodyCode = (this[`tdBody_${bodyType}`] || noop).bind(this);
-    buildTdBodyCode(instruction, code);
-  },
-  close_TORNADO_BODY(instruction, code) {
-    let {tdBody, needsOwnMethod, tdMethodName} = instruction;
-    if (needsOwnMethod) {
-      this.createMethodFooters(tdBody, code, tdMethodName);
-    }
-  },
-  insert_TORNADO_REFERENCE(instruction, code) {
-    let {tdBody, key, state} = instruction;
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
-      code.push(tdBody, {fragment, renderer});
-    } else {
-      let renderer = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}),`;
-      code.push(tdBody, {renderer});
-    }
-  },
+function getPlaceholderName(instruction) {
+  let {indexPath} = instruction;
+  return `p${indexPath.join('')}`;
+}
 
+function createPlaceholder(instruction) {
+  let placeholderName = getPlaceholderName(instruction);
+  return `var ${placeholderName} = td.${util.getTdMethodName('createTextNode')}('');
+    ${instruction.parentNodeName}.appendChild(${placeholderName});
+    res.${placeholderName} = ${placeholderName};`;
+}
+function createMethodHeaders(tdBody, code, methodName) {
+  let suffix = methodName ? methodName : tdBody;
+  let fragment = `f${suffix}: function() {
+    var res = {};
+    var frag = td.${util.getTdMethodName('createDocumentFragment')}();
+    res.frag = frag;\n`;
+  let renderer = `r${suffix}: function(c) {
+    var root = this.f${suffix}();\n`;
+  code.push(tdBody, {fragment, renderer});
+}
+function createMethodFooters(tdBody, code) {
+  let fragment = `      return res;
+  }`;
+  let renderer = `      return root.frag;
+  }`;
+  code.push(tdBody, {fragment, renderer});
+}
+
+
+let tornadoLeafSymbols = (function() {
+  return {
+    insert_TORNADO_PARTIAL(instruction, code) {
+      let {tdBody, key} = instruction;
+      let context = 'c';
+      if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${getPlaceholderName(instruction)}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
+        code.push(tdBody, {fragment, renderer});
+      } else {
+        let renderer = `td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)}),`;
+        code.push(tdBody, {renderer});
+      }
+    },
+    insert_TORNADO_REFERENCE(instruction, code) {
+      let {tdBody, key, state} = instruction;
+      if (state !== STATES.HTML_ATTRIBUTE) {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${getPlaceholderName(instruction)}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
+        code.push(tdBody, {fragment, renderer});
+      } else {
+        let renderer = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}),`;
+        code.push(tdBody, {renderer});
+      }
+    }
+  };
+}());
+let tornadoBodySymbols = (function() {
+  function createParamsHash(params) {
+    let paramsHash = params.reduce((acc, param) => {
+      let paramVal = param[1].val;
+      let paramKey = param[1].key;
+      if (Array.isArray(paramVal)) {
+        paramVal = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(paramVal[1].key)})`;
+      } else {
+        paramVal = typeof paramVal === 'number' ? paramVal : `'${paramVal}'`;
+      }
+      acc.push(`${paramKey}: ${paramVal}`);
+      return acc;
+    }, []);
+    return `{${paramsHash.join(',')}}`;
+  }
+  function createBodiesHash(tdBody, bodies, mainBody) {
+    let bodiesHash = bodies.reduce((acc, body, idx) => {
+      let bodyName = body[1].name;
+      acc.push(`${bodyName}: this.r${tdBody + idx + 1}.bind(this)`);
+      return acc;
+    }, []);
+    if (mainBody && mainBody.length) {
+      bodiesHash.push(`main: this.r${tdBody}.bind(this)`);
+    }
+    return `{${bodiesHash.join(',')}}`;
+  }
+  return {
+    open_TORNADO_BODY(instruction, code) {
+      let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
+      if (needsOwnMethod) {
+        createMethodHeaders(tdBody, code, tdMethodName);
+      }
+      let buildTdBodyCode = (this[`tdBody_${bodyType}`] || noop).bind(this);
+      buildTdBodyCode(instruction, code);
+    },
+    close_TORNADO_BODY(instruction, code) {
+      let {tdBody, needsOwnMethod, tdMethodName} = instruction;
+      if (needsOwnMethod) {
+        createMethodFooters(tdBody, code, tdMethodName);
+      }
+    },
+    tdBody_exists(instruction, code) {
+      let {parentTdBody, tdBody, state, key, node, bodyType} = instruction;
+      let bodies = node[1].bodies;
+      let bodiesHash = createBodiesHash(tdBody, bodies, node[1].body);
+      if (state !== STATES.HTML_ATTRIBUTE) {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), root.${getPlaceholderName(instruction)}, ${bodiesHash}, c);\n`;
+        code.push((parentTdBody), {renderer, fragment});
+      } else {
+        let renderer = `td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), null, ${bodiesHash}, c),`;
+        code.push((parentTdBody), {renderer});
+      }
+    },
+
+    tdBody_notExists(instruction, code) {
+      this.tdBody_exists(instruction, code);
+    },
+
+    tdBody_section(instruction, code) {
+      let {parentTdBody, tdBody, state, key, node} = instruction;
+      let bodies = node[1].bodies;
+      let bodiesHash = createBodiesHash(tdBody, bodies, node[1].body);
+      let isInHtmlAttribute = (state === STATES.HTML_ATTRIBUTE);
+      let placeholderNode = isInHtmlAttribute ? 'null' : `root.${getPlaceholderName(instruction)}`;
+
+      let output = `td.${util.getTdMethodName('section')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), ${placeholderNode}, ${bodiesHash}, c)`;
+
+      if (isInHtmlAttribute) {
+        let renderer = output + ',';
+        code.push(parentTdBody, {renderer});
+      } else {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      ${output};\n`;
+        code.push(parentTdBody, {fragment, renderer});
+      }
+    },
+
+    tdBody_block(instruction, code) {
+      let {parentTdBody, state, key, blockIndex} = instruction;
+      let blockName = key.join('.');
+      if (state !== STATES.HTML_ATTRIBUTE) {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
+        code.push(parentTdBody, {fragment, renderer});
+      } else {
+        let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this)),`;
+        code.push(parentTdBody, {renderer});
+      }
+    },
+
+    tdBody_helper(instruction, code) {
+      let {parentTdBody, tdBody, state, key, node} = instruction;
+      let params = node[1].params;
+      let bodies = node[1].bodies;
+      let paramsHash = createParamsHash(params);
+      let bodiesHash = createBodiesHash(tdBody, bodies, node[1].body);
+      if (state !== STATES.HTML_ATTRIBUTE) {
+        let fragment = `      ${createPlaceholder(instruction)};\n`;
+        let renderer = `      td.${util.getTdMethodName('helper')}('${key.join('.')}', root.${getPlaceholderName(instruction)}, c, ${paramsHash}, ${bodiesHash});\n`;
+        code.push(parentTdBody, {fragment, renderer});
+      }
+    }
+  };
+}());
+let htmlSymbols = {
   open_HTML_ELEMENT(instruction, code) {
     let {state, tdBody, elCount, key, namespace} = instruction;
     namespace = namespace ? `, '${namespace}'` : '';
@@ -67,7 +190,7 @@ let codeGenerator = generator.build({
   open_HTML_ATTRIBUTE(instruction, code) {
     let {tdBody, node, hasTornadoRef, parentNodeName} = instruction;
     let attrInfo = node[1];
-    let placeholderName = this.getPlaceholderName(instruction);
+    let placeholderName = getPlaceholderName(instruction);
     let fragment = `      res.${placeholderName} = ${parentNodeName};\n`;
     let renderer = `      td.${util.getTdMethodName('setAttribute')}`;
     renderer += `(root.${placeholderName}, '${attrInfo.attrName}', `;
@@ -104,129 +227,8 @@ let codeGenerator = generator.build({
       let renderer = `'${contents}',`;
       code.push(tdBody, {renderer});
     }
-  },
-
-  createMethodHeaders(tdBody, code, methodName) {
-    let suffix = methodName ? methodName : tdBody;
-    let fragment = `f${suffix}: function() {
-      var res = {};
-      var frag = td.${util.getTdMethodName('createDocumentFragment')}();
-      res.frag = frag;\n`;
-    let renderer = `r${suffix}: function(c) {
-      var root = this.f${suffix}();\n`;
-    code.push(tdBody, {fragment, renderer});
-  },
-
-  createMethodFooters(tdBody, code) {
-    let fragment = `      return res;
-    }`;
-    let renderer = `      return root.frag;
-    }`;
-    code.push(tdBody, {fragment, renderer});
-  },
-
-  createPlaceholder(instruction) {
-    let placeholderName = this.getPlaceholderName(instruction);
-    return `var ${placeholderName} = td.${util.getTdMethodName('createTextNode')}('');
-      ${instruction.parentNodeName}.appendChild(${placeholderName});
-      res.${placeholderName} = ${placeholderName};`;
-  },
-
-  getPlaceholderName(instruction) {
-    let {indexPath} = instruction;
-    return `p${indexPath.join('')}`;
-  },
-
-  tdBody_exists(instruction, code) {
-    let {parentTdBody, tdBody, state, key, node, bodyType} = instruction;
-    let bodies = node[1].bodies;
-    let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), root.${this.getPlaceholderName(instruction)}, ${bodiesHash}, c);\n`;
-      code.push((parentTdBody), {renderer, fragment});
-    } else {
-      let renderer = `td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), null, ${bodiesHash}, c),`;
-      code.push((parentTdBody), {renderer});
-    }
-  },
-
-  tdBody_notExists(instruction, code) {
-    this.tdBody_exists(instruction, code);
-  },
-
-  tdBody_section(instruction, code) {
-    let {parentTdBody, tdBody, state, key, node} = instruction;
-    let bodies = node[1].bodies;
-    let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    let isInHtmlAttribute = (state === STATES.HTML_ATTRIBUTE);
-    let placeholderNode = isInHtmlAttribute ? 'null' : `root.${this.getPlaceholderName(instruction)}`;
-
-    let output = `td.${util.getTdMethodName('section')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), ${placeholderNode}, ${bodiesHash}, c)`;
-
-    if (isInHtmlAttribute) {
-      let renderer = output + ',';
-      code.push(parentTdBody, {renderer});
-    } else {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      ${output};\n`;
-      code.push(parentTdBody, {fragment, renderer});
-    }
-  },
-
-  tdBody_block(instruction, code) {
-    let {parentTdBody, state, key, blockIndex} = instruction;
-    let blockName = key.join('.');
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
-      code.push(parentTdBody, {fragment, renderer});
-    } else {
-      let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this)),`;
-      code.push(parentTdBody, {renderer});
-    }
-  },
-
-  tdBody_helper(instruction, code) {
-    let {parentTdBody, tdBody, state, key, node} = instruction;
-    let params = node[1].params;
-    let bodies = node[1].bodies;
-    let paramsHash = this.createParamsHash(params);
-    let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('helper')}('${key.join('.')}', root.${this.getPlaceholderName(instruction)}, c, ${paramsHash}, ${bodiesHash});\n`;
-      code.push(parentTdBody, {fragment, renderer});
-    }
-  },
-
-  createBodiesHash(tdBody, bodies, mainBody) {
-    let bodiesHash = bodies.reduce((acc, body, idx) => {
-      let bodyName = body[1].name;
-      acc.push(`${bodyName}: this.r${tdBody + idx + 1}.bind(this)`);
-      return acc;
-    }, []);
-    if (mainBody && mainBody.length) {
-      bodiesHash.push(`main: this.r${tdBody}.bind(this)`);
-    }
-    return `{${bodiesHash.join(',')}}`;
-  },
-
-  createParamsHash(params) {
-    let paramsHash = params.reduce((acc, param) => {
-      let paramVal = param[1].val;
-      let paramKey = param[1].key;
-      if (Array.isArray(paramVal)) {
-        paramVal = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(paramVal[1].key)})`;
-      } else {
-        paramVal = typeof paramVal === 'number' ? paramVal : `'${paramVal}'`;
-      }
-      acc.push(`${paramKey}: ${paramVal}`);
-      return acc;
-    }, []);
-    return `{${paramsHash.join(',')}}`;
   }
-});
+};
 
 let generateJavascript = function (ast, options) {
   options.results.code = {
@@ -248,7 +250,16 @@ let generateJavascript = function (ast, options) {
       }
     }
   };
-  return codeGenerator(options.results.instructions, options.results.code);
+
+  for (let s in htmlSymbols) {
+    options.results.instructions.symbolsMap[s] = htmlSymbols[s];
+  }
+  for (let s in tornadoLeafSymbols) {
+    options.results.instructions.symbolsMap[s] = tornadoLeafSymbols[s];
+  }
+  for (let s in tornadoBodySymbols) {
+    options.results.instructions.symbolsMap[s] = tornadoBodySymbols[s];
+  }
 };
 
 export default generateJavascript;
