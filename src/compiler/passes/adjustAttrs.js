@@ -68,12 +68,10 @@ let generatedWalker = visitor.build({
     let {node, namespace} = item;
     let attrName = node[1].attrName;
     let adjustedAttr;
-    console.log(namespace);
     if (namespace) {
       adjustedAttr = svgAdjustAttrs[attrName];
     }
     node[1].attrName = adjustedAttr || attrName;
-    console.log(node[1].attrName);
   }
 });
 

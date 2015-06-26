@@ -1,3 +1,5 @@
+import helpers from './helpers';
+
 let tornado = {
 
   /**
@@ -552,5 +554,7 @@ tornado.e = tornado.exists;
 tornado.h = tornado.helper;
 tornado.b = tornado.block;
 tornado.s = tornado.nodeToString;
+
+tornado.registerHelpers(helpers);
 
 export default tornado;
