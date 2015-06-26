@@ -46,7 +46,7 @@ let suite = {
       })()
     },
     {
-      description: 'HTML comment within HTML attribute',
+      description: 'HTML attribute whose value contains characters that look like an HTML comment',
       template: '<div class="<!-- comment -->"></div>',
       context: {},
       expectedDom: (() => {
