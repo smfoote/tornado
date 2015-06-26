@@ -64,6 +64,16 @@ exports["default"] = {
 
   elTypes: {
     escapableRaw: ["textarea", "title"]
+  },
+  getPlaceholderName: function getPlaceholderName(instruction) {
+    var indexPath = instruction.indexPath;
+
+    return "p" + indexPath.join("");
+  },
+  createPlaceholder: function createPlaceholder(instruction) {
+    var placeholderName = this.getPlaceholderName(instruction);
+    return "var " + placeholderName + " = td." + this.getTdMethodName("createTextNode") + "('');\n      " + instruction.parentNodeName + ".appendChild(" + placeholderName + ");\n      res." + placeholderName + " = " + placeholderName + ";";
   }
+
 };
 //# sourceMappingURL=builder.js.map

@@ -59,5 +59,16 @@ export default {
 
   elTypes: {
     escapableRaw: ['textarea', 'title']
+  },
+  getPlaceholderName(instruction) {
+    let {indexPath} = instruction;
+    return `p${indexPath.join('')}`;
+  },
+  createPlaceholder(instruction) {
+    let placeholderName = this.getPlaceholderName(instruction);
+    return `var ${placeholderName} = td.${this.getTdMethodName('createTextNode')}('');
+      ${instruction.parentNodeName}.appendChild(${placeholderName});
+      res.${placeholderName} = ${placeholderName};`;
   }
+
 };

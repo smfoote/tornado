@@ -5,6 +5,9 @@ import htmlEntities from './compiler/passes/htmlEntities';
 import adjustAttrs from './compiler/passes/adjustAttrs';
 import buildInstructions from './compiler/passes/buildInstructions';
 import generateJS from './compiler/passes/generateJS';
+import generateTBody from './compiler/passes/generateTornadoBodySymbols';
+import generateTLeaf from './compiler/passes/generateTornadoLeafSymbols';
+import generateHtml from './compiler/passes/generateHtmlSymbols';
 import postprocess from './compiler/passes/postprocess';
 // import visualize from './compiler/passes/visualize';
 
@@ -13,7 +16,7 @@ const defaultPasses = [
   [], // checks
   [escapableRaw, htmlEntities, adjustAttrs], // transforms
   [buildInstructions], // generates
-  [generateJS, postprocess] // codegen
+  [generateJS, generateTBody, generateTLeaf, generateHtml, postprocess] // codegen
 ];
 let compiler = {
   compile(ast, name, options) {
