@@ -1,3 +1,5 @@
+/*eslint no-debugger:0 */
+
 "use strict";
 
 var emptyFrag = function emptyFrag() {
@@ -54,6 +56,21 @@ var helpers = {
     return truthTest(params, bodies, context, function (left, right) {
       return left <= right;
     });
+  },
+  contextDump: function contextDump(context, params) {
+    var formattedContext = JSON.stringify(context, null, 2);
+    if (params.to === "console") {
+      console.log(formattedContext);
+    } else {
+      var frag = document.createDocumentFragment();
+      var pre = document.createElement("pre");
+      pre.appendChild(document.createTextNode(formattedContext));
+      frag.appendChild(pre);
+      return frag;
+    }
+  },
+  "debugger": function _debugger() {
+    debugger;
   }
 };
 

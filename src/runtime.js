@@ -258,7 +258,7 @@ let tornado = {
     }
     if (Array.isArray(val)) {
       if (placeholderNode) {
-        let frag = document.createDocumentFragment();
+        let frag = this.createDocumentFragment();
         for (let i = 0, item; (item = val[i]); i++) {
           frag.appendChild(body(item));
         }
@@ -306,6 +306,7 @@ let tornado = {
   },
 
   helperResult(placeholderNode, returnVal) {
+    returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
     if (this.util.isPromise(returnVal)) {
       returnVal.then(frag => {
         if (placeholderNode) {
@@ -333,7 +334,7 @@ let tornado = {
   block(name, idx, context, template) {
     let renderer = this.getBlockRenderer(name, idx, template);
     if (!renderer) {
-      let frag = document.createDocumentFragment();
+      let frag = this.createDocumentFragment();
       frag.appendChild(document.createTextNode(''));
       return frag;
     }
@@ -507,6 +508,15 @@ let tornado = {
         return false;
       }
       return !!val;
+    },
+
+    /**
+     * Determine if a value is a HTML Node
+     * @param {*} val The value in question
+     * @return {Boolean}
+     */
+    isNode(val) {
+      return val instanceof Node;
     },
 
     /**
