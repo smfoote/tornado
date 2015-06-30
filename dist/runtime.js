@@ -19,6 +19,11 @@ var tornado = {
   helpers: {},
 
   /**
+   * Helper context
+   */
+  helperContext: {},
+
+  /**
    * Method for registering templates. This method is intended
    * to be called within a compiled template, but can be called
    * outside of that context as well.
@@ -70,7 +75,8 @@ var tornado = {
     var newContext = undefined;
     if (pathLength === 1) {
       // there is only one more item left in the path
-      var res = context[path.pop()];
+      var key = path.pop();
+      var res = context[key] || this.helperContext[key];
       if (res !== undefined) {
         return this.util.isFunction(res) ? res.bind(context)() : res;
       } else {
@@ -278,9 +284,12 @@ var tornado = {
     if (Array.isArray(val)) {
       if (placeholderNode) {
         var frag = this.createDocumentFragment();
+        this.helperContext.$len = val.length;
         for (var i = 0, item = undefined; item = val[i]; i++) {
+          this.helperContext.$idx = i;
           frag.appendChild(body(item));
         }
+        this.helperContext.$len = this.helperContext.$idx = null;
         this.replaceNode(placeholderNode, frag);
       } else {
         var attrs = [];
@@ -326,11 +335,11 @@ var tornado = {
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(function (values) {
           var resolvedParams = _this.util.arraysToObject(Object.keys(params).sort(), values);
-          var returnVal = helper(context, resolvedParams, bodies);
+          var returnVal = helper(context, resolvedParams, bodies, _this.helperContext);
           return _this.helperResult(placeholderNode, returnVal);
         });
       } else {
-        var returnVal = helper(context, params, bodies);
+        var returnVal = helper(context, params, bodies, this.helperContext);
         return this.helperResult(placeholderNode, returnVal);
       }
     }
