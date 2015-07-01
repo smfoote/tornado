@@ -184,6 +184,28 @@ let suite = {
       })()
     },
     {
+      description: 'Not Exists with a pending where reference is a promise',
+      template: 'Hello, {^now}later{:pending}coming soon{/now}',
+      context: {
+        now: function() {
+          return new Promise((resolve) => {
+            setTimeout(function() {
+              resolve(false);
+            }, 100);
+          });
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello, '));
+        let div = document.createElement('div');
+        div.setAttribute('class', 'tornado-pending');
+        div.appendChild(document.createTextNode('coming soon'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
       description: 'Not Exists with an else where reference is a promise that resolves to a falsy value',
       template: 'Hello, {^now}later{:else}never{/now}',
       context: {

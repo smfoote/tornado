@@ -153,6 +153,7 @@ let tornado = {
    */
   exists(val, placeholderNode, bodies, context) {
     if (this.util.isPromise(val)) {
+      placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
       val.then(data => {
         if (this.util.isTruthy(data)) {
           if (bodies.main) {
@@ -219,6 +220,7 @@ let tornado = {
   section(val, placeholderNode, bodies, context) {
     let body, ctx;
     if (this.util.isPromise(val)) {
+      placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
       val.then(data => {
         if (this.util.isTruthy(data)) {
           body = bodies.main;
@@ -340,6 +342,15 @@ let tornado = {
     return renderer(context).frag;
   },
 
+  /**
+   * Get the renderer for a given block. The renderer may be an inline partial, the block's default
+   * content, or an inline partial in a parent template. If no renderer is found, undefined will
+   * be returned.
+   * @param {String} name The name of the block
+   * @param {Number} idx The blocks index within the template
+   * @param {Object} template The template within which to look for a renderer
+   * @return {Function} The renderer if found, or undefined
+   */
   getBlockRenderer(name, idx, template) {
     let renderer;
     while (template) {
@@ -358,6 +369,27 @@ let tornado = {
       template = template.parentTemplate;
     }
     // If no renderer is found, undefined will be returned.
+  },
+
+  /**
+   * Build a pending body within a div with class "pending" (we have to wrap in a div so we can
+   * easily replace the entire thing when the promise resolves). If no pending body exists, then
+   * return false.
+   * @param {Node} placeholderNode The node where the pending body will be inserted
+   * @param {[Function]} body The pending body function, if it exists
+   * @param {Object} context The current Tornado context, to be used in building the pending body
+   * @return {HTMLElement|False} Return the containing div, or false
+   */
+  insertPendingBody(placeholderNode, body, context) {
+    if (body) {
+      let div = document.createElement('div');
+      div.setAttribute('class', 'tornado-pending');
+      div.appendChild(body(context));
+      this.replaceNode(placeholderNode, div);
+      return div;
+    } else {
+      return false;
+    }
   },
 
   /**
