@@ -345,6 +345,20 @@ let suite = {
         frag.appendChild(div);
         return frag;
       })()
+    },
+    {
+      description: '@highlight starting at the beginning of the string',
+      template: '{@highlight text="My text" start=0 end=2/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', 'td-highlight');
+        span.appendChild(document.createTextNode('My'));
+        frag.appendChild(span);
+        frag.appendChild(document.createTextNode(' text'));
+        return frag;
+      })()
     }
   ]
 };

@@ -289,11 +289,19 @@ var generateJavascript = function generateJavascript(ast, options) {
       var renderer = strings.renderer;
 
       if (idx >= this.fragments.length) {
-        if (fragment) this.fragments.push(fragment);
-        if (renderer) this.renderers.push(renderer);
+        if (fragment) {
+          this.fragments.push(fragment);
+        }
+        if (renderer) {
+          this.renderers.push(renderer);
+        }
       } else {
-        if (fragment) this.fragments[idx] += fragment;
-        if (renderer) this.renderers[idx] += renderer;
+        if (fragment) {
+          this.fragments[idx] += fragment;
+        }
+        if (renderer) {
+          this.renderers[idx] += renderer;
+        }
       }
     },
     slice: function slice(type, idx, start, end) {
