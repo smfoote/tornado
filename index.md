@@ -13,6 +13,30 @@ layout: default
       <p>{data.author}</p>
       <a href="{data.url}">{data.title}</a>
     </li>
+  {:pending}
+    <div class="container">
+      <div class="img-placeholder"></div>
+      <div class="content-container">
+        <div class="headline-placeholder"></div>
+        <div class="description-placeholder">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="img-placeholder"></div>
+      <div class="content-container">
+        <div class="headline-placeholder"></div>
+        <div class="description-placeholder">
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
   {/reddit.data.children}
 </ul></textarea>
  <textarea id="context" placeholder="Context goes here">{

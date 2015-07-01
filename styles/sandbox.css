@@ -12,11 +12,55 @@ textarea {
   border: 1px solid #CCC;
   background-color: #DDD;
   max-height: 2000px;
-  overflow: hidden;
+  overflow: auto;
   transition: max-height 400ms ease;
 }
 
 #output pre.min,
 #output div.min {
   max-height: 10px;
+}
+
+/* Placeholder Styles */
+#output .tornado-pending,
+#output .tornado-pending div {
+  border: none;
+}
+
+#output .tornado-pending .container {
+  width: 400px;
+  height: 200px;
+  background-color: #DDD;
+  margin-bottom: 15px;
+}
+#output .tornado-pending .img-placeholder {
+  float: left;
+  width: 120px;
+  height: 120px;
+  background-color: #4C7655;
+  margin: 10px;
+}
+#output .tornado-pending .content-container {
+  float: left;
+  margin-top: 10px;
+}
+#output .tornado-pending .headline-placeholder {
+  width: 220px;
+  height: 30px;
+  background-color: #BBB;
+}
+
+#output .tornado-pending .description-placeholder div {
+  height: 15px;
+  width: 190px;
+  margin-top: 10px;
+  background-color: #999;
+}
+
+#output .tornado-pending .description-placeholder div:first-child {
+  width: 220px;
+}
+
+#output .tornado-pending .description-placeholder div:last-child {
+  width: 205px
 }
