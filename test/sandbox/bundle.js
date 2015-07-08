@@ -5484,6 +5484,47 @@ var parser = require('../../dist/parser'),
     td = require('../../dist/runtime');
 
 window.td = td;
+
+var weatherIconMap = {
+  '3': 'P',   // thunderstorms
+  '4': '0',   // severe thunderstorms
+  '5': 'X',   // frozen rain
+  '6': 'X',
+  '7': 'X',
+  '8': 'X',
+  '9': 'Q',   // drizzle
+  '10': 'X',  // frozen rain
+  '11': 'Q',  // showers
+  '12': 'R',  // showers
+  '20': 'M',  // fog
+  '26': 'N',  // cloudy
+  '27': 'H',
+  '28': 'H',
+  '29': 'H',
+  '30': 'H',
+  '32': 'B',  // sunny
+  '33': 'H', // fair
+  '34': '3',
+  '37': 'P',
+  '38': 'P',
+  '39': 'P',
+  '44': 'H'
+};
+
+td.registerHelper('weatherIcon', function(context, params, bodies) {
+  var iconCode = weatherIconMap[params.code];
+  var result = bodies.main(context);
+  if (iconCode) {
+    var span = document.createElement('span');
+    span.setAttribute('data-icon-code', iconCode);
+    span.setAttribute('title', params.desc);
+    span.setAttribute('class', 'weather-icon');
+    span.appendChild(result);
+    result = span;
+  }
+  return result;
+});
+
 var button = document.querySelector('#render');
 var templateTextArea = document.querySelector('#template');
 var contextTextArea = document.querySelector('#context');

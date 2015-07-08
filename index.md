@@ -3,46 +3,80 @@ title: Tornado.js
 layout: default
 ---
 <div id="input">
- <textarea id="template" placeholder="Template goes here"><h3>What's on reddit:</h3>
-<ul>
-  {#reddit.data.children}
+ <textarea id="template" placeholder="Template goes here"><h2>Tornado Watch</h2>
+{#weather.query.results.channel}
+  <h3>Weather in {location.city}</h3>
+  <ul class="forecast">
     <li>
-      {#data.thumbnail}
-        <img src="{.}">
-      {/data.thumbnail}
-      <p>{data.author}</p>
-      <a href="{data.url}">{data.title}</a>
+      <h4 class="date">Current</h4>
+      {@weatherIcon code=item.condition.code desc=item.condition.text}{item.condition.text}{/weatherIcon}
+      <div class="temp">
+        <span class="high">{item.condition.temp}</span>
+      </div>
     </li>
-  {:pending}
-    <div class="container">
-      <div class="img-placeholder"></div>
-      <div class="content-container">
-        <div class="headline-placeholder"></div>
-        <div class="description-placeholder">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
+    {#item.forecast}
+      <li>
+      <h4 class="date">{date}</h4>
+      {@weatherIcon code=code desc=text}{text}{/weatherIcon}
+      <div class="temp">
+        <span class="high">{high}</span><span class="low">{low}</span>
       </div>
-    </div>
-
-    <div class="container">
-      <div class="img-placeholder"></div>
-      <div class="content-container">
-        <div class="headline-placeholder"></div>
-        <div class="description-placeholder">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
-      </div>
-    </div>
-  {/reddit.data.children}
-</ul></textarea>
+    </li>
+    {/item.forecast}
+  </ul>
+{:pending}
+  {#locations}
+    <h3 class="header-pl"></h3>
+    <ul class="forecast">
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span></div>
+      </li>
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+      </li>
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+      </li>
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+      </li>
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+      </li>
+      <li>
+        <h4 class="date-pl"></h4>
+        <div class="icon-pl"></div>
+        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+      </li>
+    </ul>
+  {/locations}
+{/weather.query.results.channel}
+<p>Weather data provided by <a href="https://developer.yahoo.com/weather/">Yahoo!</a> Weather icons provided by <a href="http://www.alessioatzeni.com/meteocons/">Meteocons</a>.</p>
+</textarea>
  <textarea id="context" placeholder="Context goes here">{
-  reddit: fetch('http://www.reddit.com/.json?limit=10').then(function(res) {
-    return res.json();
-  })
+  locations: ['Salt Lake City, UT', 'Mountain View, CA'],
+  YQLQuery: function() {
+    var locationsQuery = this.locations.map(function(location) {
+      return 'text="' + location + '"';
+    }).join(' OR ');
+    var str = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where ' + locationsQuery + ')';
+    return str.replace(' ', '%20').replace('=', '%3D').replace('"', '%22');
+  },
+  weather: function() {
+    return fetch('https://query.yahooapis.com/v1/public/yql?format=json&q='+ this.YQLQuery()).then(function(res) {
+      return res.json();
+    });
+  }
 }</textarea></textarea>
  <button id="render">Render</button>
 </div>
