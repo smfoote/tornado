@@ -10,7 +10,12 @@
     "tornado": "./bin/tornado"
   },
   "keywords": [
-    "HTML", "templating", "Dust", "asynchronous", "JavaScript", "ES6"
+    "HTML",
+    "templating",
+    "Dust",
+    "asynchronous",
+    "JavaScript",
+    "ES6"
   ],
   "author": "Steven Foote",
   "license": "Apache",
@@ -35,7 +40,8 @@
     "test": "test"
   },
   "dependencies": {
-    "cli": "^0.8.0"
+    "cli": "^0.8.0",
+    "simple-dom": "^0.2.4"
   },
   "repository": {
     "type": "git",
