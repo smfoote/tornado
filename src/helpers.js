@@ -27,17 +27,17 @@ let truthTest = function(params, bodies, context, test) {
 
 let helpers = {
   sep(context, params, bodies, helperContext) {
-    if (helperContext.$idx < helperContext.$len - 1) {
+    if (helperContext.get('$idx') < helperContext.get('$len') - 1) {
       return bodies.main(context);
     }
   },
   first(context, params, bodies, helperContext) {
-    if (helperContext.$idx === 0) {
+    if (helperContext.get('$idx') === 0) {
       return bodies.main(context);
     }
   },
   last(context, params, bodies, helperContext) {
-    if (helperContext.$idx === helperContext.$len - 1) {
+    if (helperContext.get('$idx') === helperContext.get('$len') - 1) {
       return bodies.main(context);
     }
   },

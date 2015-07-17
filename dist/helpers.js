@@ -33,17 +33,17 @@ var truthTest = function truthTest(params, bodies, context, test) {
 
 var helpers = {
   sep: function sep(context, params, bodies, helperContext) {
-    if (helperContext.$idx < helperContext.$len - 1) {
+    if (helperContext.get("$idx") < helperContext.get("$len") - 1) {
       return bodies.main(context);
     }
   },
   first: function first(context, params, bodies, helperContext) {
-    if (helperContext.$idx === 0) {
+    if (helperContext.get("$idx") === 0) {
       return bodies.main(context);
     }
   },
   last: function last(context, params, bodies, helperContext) {
-    if (helperContext.$idx === helperContext.$len - 1) {
+    if (helperContext.get("$idx") === helperContext.get("$len") - 1) {
       return bodies.main(context);
     }
   },

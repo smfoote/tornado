@@ -21,7 +21,20 @@ var tornado = {
   /**
    * Helper context
    */
-  helperContext: {},
+  helperContext: {
+    get: function get(key) {
+      return this.__context[key];
+    },
+    set: function set(key, val) {
+      // Prepend with $ if $ isn't already present
+      key = key[0] === "$" ? key : "$" + key;
+      this.__context[key] = val;
+    },
+    clear: function clear(key) {
+      this.set(key, null);
+    },
+    __context: {}
+  },
 
   /**
    * Method for registering templates. This method is intended
@@ -76,9 +89,12 @@ var tornado = {
     if (pathLength === 1) {
       // there is only one more item left in the path
       var key = path.pop();
-      var res = context[key] || this.helperContext[key];
+      var res = context[key];
+      var helperRes = this.helperContext.get(key);
       if (res !== undefined) {
         return this.util.isFunction(res) ? res.bind(context)() : res;
+      } else if (key[0] === "$" && helperRes !== undefined) {
+        return helperRes;
       } else {
         return "";
       }
@@ -284,12 +300,13 @@ var tornado = {
     if (Array.isArray(val)) {
       if (placeholderNode) {
         var frag = this.createDocumentFragment();
-        this.helperContext.$len = val.length;
+        this.helperContext.set("len", val.length);
         for (var i = 0, item = undefined; item = val[i]; i++) {
-          this.helperContext.$idx = i;
+          this.helperContext.set("idx", i);
           frag.appendChild(body(item));
         }
-        this.helperContext.$len = this.helperContext.$idx = null;
+        this.helperContext.clear("len");
+        this.helperContext.clear("idx");
         this.replaceNode(placeholderNode, frag);
       } else {
         var attrs = [];

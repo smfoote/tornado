@@ -197,6 +197,9 @@ let codeGenerator = generator.build({
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName('helper')}('${key.join('.')}', root.${this.getPlaceholderName(instruction)}, c, ${paramsHash}, ${bodiesHash});\n`;
       code.push(parentTdBody, {fragment, renderer});
+    } else {
+      let renderer = `td.${util.getTdMethodName('helper')}('${key.join('.')}', null, c, ${paramsHash}, ${bodiesHash}),`;
+      code.push(parentTdBody, {renderer});
     }
   },
 
