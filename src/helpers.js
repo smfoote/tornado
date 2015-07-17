@@ -50,6 +50,13 @@ let helpers = {
     return truthTest(params, bodies, context, (left, right) => {
       return left <= right;
     });
+  },
+  action(context, params, bodies) {
+    let {selector, type, method} = params;
+    type = type || 'click';
+    let frag = bodies.main(context);
+    frag.querySelector(selector).addEventListener(type, context[method].bind(context));
+    return frag;
   }
 };
 

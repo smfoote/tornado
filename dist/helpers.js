@@ -54,6 +54,16 @@ var helpers = {
     return truthTest(params, bodies, context, function (left, right) {
       return left <= right;
     });
+  },
+  action: function action(context, params, bodies) {
+    var selector = params.selector;
+    var type = params.type;
+    var method = params.method;
+
+    type = type || "click";
+    var frag = bodies.main(context);
+    frag.querySelector(selector).addEventListener(type, context[method].bind(context));
+    return frag;
   }
 };
 
