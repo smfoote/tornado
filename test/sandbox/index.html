@@ -5,26 +5,24 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here"><h3>What's on reddit:</h3>
-<ul>
-  {#reddit.data.children}
-    <li>
-      {#data.thumbnail}
-        <img src="{.}">
-      {/data.thumbnail}
-      <p>{data.author}</p>
-      <a href="{data.url}">{data.title}</a>
-    </li>
-  {:pending}
-    <li><h4>Reddit is still loading ... &#9731;</h4></li>
-  {/reddit.data.children}
-</ul>
-</textarea>
-      <textarea id="context" placeholder="Context goes here">{
-  reddit: fetch('http://www.reddit.com/.json?limit=10').then(function(res) {
-  return res.json();
-  })
-}</textarea>
+      <textarea id="template" placeholder="Template goes here">{#friends}
+  {@action type="click" selector="button" method="connect"}
+    <p>Connect with {name}!</p>
+    <button>Click to connect</button>
+  {/action}
+{/friends}</textarea>
+      <textarea id="context" placeholder="Context goes here">(function() {
+function Friend(name) {
+  this.name = name;
+  this.connect = function(evt) {
+    console.log('You are now connected to ' + this.name);
+  };
+}
+
+return {
+  friends: [new Friend('Steven'), new Friend('Prash')]
+};
+})();</textarea>
       <button id="render">Render</button>
     </div>
     <div id="output">
