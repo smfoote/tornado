@@ -345,6 +345,18 @@ let suite = {
         frag.appendChild(div);
         return frag;
       })()
+    },
+    {
+      description: '@sep in a section-loop with just one item',
+      template: '{#names}{.}{@sep}; {/sep}{/names}',
+      context: {
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Steven'));
+        return frag;
+      })()
     }
   ]
 };

@@ -348,9 +348,10 @@ var tornado = {
   helperResult: function helperResult(placeholderNode, returnVal) {
     var _this = this;
 
-    returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
+    returnVal = returnVal || "";
     if (this.util.isPromise(returnVal)) {
       returnVal.then(function (frag) {
+        frag = _this.util.isNode(frag) ? frag : _this.createDocumentFragment();
         if (placeholderNode) {
           _this.replaceNode(placeholderNode, frag);
         } else {
@@ -358,6 +359,7 @@ var tornado = {
         }
       });
     } else {
+      returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
       if (placeholderNode) {
         this.replaceNode(placeholderNode, returnVal);
       } else {

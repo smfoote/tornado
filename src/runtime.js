@@ -318,9 +318,10 @@ let tornado = {
   },
 
   helperResult(placeholderNode, returnVal) {
-    returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
+    returnVal = returnVal || '';
     if (this.util.isPromise(returnVal)) {
       returnVal.then(frag => {
+        frag = this.util.isNode(frag) ? frag : this.createDocumentFragment();
         if (placeholderNode) {
           this.replaceNode(placeholderNode, frag);
         } else {
@@ -328,6 +329,7 @@ let tornado = {
         }
       });
     } else {
+      returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
       if (placeholderNode) {
         this.replaceNode(placeholderNode, returnVal);
       } else {
