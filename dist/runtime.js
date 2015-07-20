@@ -275,7 +275,7 @@ var tornado = {
     }
     if (Array.isArray(val)) {
       if (placeholderNode) {
-        var frag = document.createDocumentFragment();
+        var frag = this.createDocumentFragment();
         for (var i = 0, item = undefined; item = val[i]; i++) {
           frag.appendChild(body(item));
         }
@@ -337,6 +337,7 @@ var tornado = {
   helperResult: function helperResult(placeholderNode, returnVal) {
     var _this = this;
 
+    returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
     if (this.util.isPromise(returnVal)) {
       returnVal.then(function (frag) {
         if (placeholderNode) {
@@ -364,7 +365,7 @@ var tornado = {
   block: function block(name, idx, context, template) {
     var renderer = this.getBlockRenderer(name, idx, template);
     if (!renderer) {
-      var frag = document.createDocumentFragment();
+      var frag = this.createDocumentFragment();
       frag.appendChild(document.createTextNode(""));
       return frag;
     }
@@ -575,6 +576,15 @@ var tornado = {
         return false;
       }
       return !!val;
+    },
+
+    /**
+     * Determine if a value is a HTML Node
+     * @param {*} val The value in question
+     * @return {Boolean}
+     */
+    isNode: function isNode(val) {
+      return val instanceof Node;
     },
 
     /**
