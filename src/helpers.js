@@ -67,6 +67,32 @@ let helpers = {
   },
   debugger() {
     debugger;
+  },
+  highlight(context, params) {
+    let {text, highlights} = params;
+    let frag = document.createDocumentFragment();
+    let sortedHighlights = highlights.sort((a, b) => { return a.end - b.end; });
+    let strParts = [];
+    let prevEnd = 0;
+    let hl;
+    for (let i = 0; hl = sortedHighlights[i]; i++) {
+      strParts.push({type: 'plain', val: text.slice(prevEnd, hl.start)});
+      strParts.push({type: 'bold', val: text.slice(hl.start, hl.end)});
+      prevEnd = hl.end;
+    }
+    strParts.push({type: 'plain', val: text.slice(prevEnd, text.length)});
+    strParts.forEach(part => {
+      if (part.type === 'plain') {
+        if (part.val.length) {
+          frag.appendChild(document.createTextNode(part.val));
+        }
+      } else {
+        let el = document.createElement('b');
+        el.appendChild(document.createTextNode(part.val));
+        frag.appendChild(el);
+      }
+    });
+    return frag;
   }
 };
 
