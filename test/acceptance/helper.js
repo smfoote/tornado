@@ -374,6 +374,41 @@ let suite = {
       })()
     },
     {
+      description: '@sep in a nested section-loop with multiple items',
+      template: '{#names}{first} {#last}{.}{@sep},{/sep}{/last}{@sep}; {/sep}{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('F'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('o'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('o'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('t'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('e'));
+        frag.appendChild(document.createTextNode('; '));
+        frag.appendChild(document.createTextNode('Prash'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('J'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('a'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('i'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('n'));
+        return frag;
+      })()
+    },
+    {
       description: '@sep in a section-loop with no items',
       template: '{#names}{.}{@sep}; {/sep}{/names}',
       context: {
@@ -431,6 +466,62 @@ let suite = {
         span.setAttribute('class', '');
         span.appendChild(document.createTextNode('Prash'));
         frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@first in a nested loop with multiple items',
+      template: '{#names}<div class="container{@first} outer-first{/first}">{#last}<span class="{@first}first{/first}">{.}</span>{/last}</div>{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'container outer-first');
+        let span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('F'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('t'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('e'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.setAttribute('class', 'container');
+        span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('J'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('a'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('i'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('n'));
+        div.appendChild(span);
+        frag.appendChild(div);
         return frag;
       })()
     },
@@ -495,6 +586,62 @@ let suite = {
         span.setAttribute('class', 'last');
         span.appendChild(document.createTextNode('Prash'));
         frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@last in a nested loop with multiple items',
+      template: '{#names}<div class="container{@last} outer-last{/last}">{#last}<span class="{@last}last{/last}">{.}</span>{/last}</div>{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'container');
+        let span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('F'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('t'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('e'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.setAttribute('class', 'container outer-last');
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('J'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('a'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('i'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('n'));
+        div.appendChild(span);
+        frag.appendChild(div);
         return frag;
       })()
     },

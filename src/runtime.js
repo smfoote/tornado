@@ -17,18 +17,39 @@ let tornado = {
    * Helper context
    */
   helperContext: {
+    push() {
+      this.__contextStack.push({});
+    },
+    pop() {
+      return this.__contextStack.pop();
+    },
+    peek() {
+      return this.__contextStack[this.__contextStack.length - 1];
+    },
     get(key) {
-      return this.__context[key];
+      for (let i = this.__contextStack.length - 1; i >= 0; i--) {
+        let context = this.__contextStack[i];
+        if (context[key] !== undefined) {
+          return context[key];
+        }
+      }
     },
     set(key, val) {
-      // Prepend with $ if $ isn't already present
-      key = key[0] === '$' ? key : `$${key}`;
-      this.__context[key] = val;
+      let context = this.peek();
+      context[this.normalizeKey(key)] = val;
+    },
+    setGlobal(key, val) {
+      this.__contextStack[0][this.normalizeKey(key)] = val;
     },
     clear(key) {
       this.set(key, null);
     },
-    __context: {}
+    normalizeKey(key) {
+      // Prepend with $ if $ isn't already present
+      return key[0] === '$' ? key : `$${key}`;
+    },
+    // Inititialize the stack with the global scope
+    __contextStack: [{}]
   },
 
   /**
@@ -83,11 +104,10 @@ let tornado = {
       // there is only one more item left in the path
       let key = path.pop();
       let res = context[key];
-      let helperRes = this.helperContext.get(key);
       if (res !== undefined) {
         return this.util.isFunction(res) ? res.bind(context)() : res;
-      } else if (key[0] === '$' && helperRes !== undefined) {
-        return helperRes;
+      } else if (key[0] === '$' && this.helperContext.get(key) !== undefined) {
+        return this.helperContext.get(key);
       } else {
         return '';
       }
@@ -242,6 +262,8 @@ let tornado = {
    */
   section(val, placeholderNode, bodies, context) {
     let body, ctx;
+    // TODO: when section becomes a helper, remove this call to helperContext
+    this.helperContext.push();
     if (this.util.isPromise(val)) {
       placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
       val.then(data => {
@@ -264,7 +286,10 @@ let tornado = {
         body = bodies.else;
         ctx = context;
       }
-      return this.sectionResult(ctx, placeholderNode, body);
+      let res = this.sectionResult(ctx, placeholderNode, body);
+      // TODO: when section becomes a helper, remove this call to helperContext
+      this.helperContext.pop();
+      return res;
     }
   },
 
@@ -289,8 +314,6 @@ let tornado = {
           this.helperContext.set('idx', i);
           frag.appendChild(body(item));
         }
-        this.helperContext.clear('len');
-        this.helperContext.clear('idx');
         this.replaceNode(placeholderNode, frag);
       } else {
         let attrs = [];
@@ -320,6 +343,7 @@ let tornado = {
     if (!helper) {
       throw new Error(`Helper not registered: ${name}`);
     } else {
+      this.helperContext.push();
       let paramVals = this.util.getValuesFromObject(params);
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(values => {
@@ -329,7 +353,9 @@ let tornado = {
         });
       } else {
         let returnVal = helper(context, params, bodies, this.helperContext);
-        return this.helperResult(placeholderNode, returnVal);
+        let res = this.helperResult(placeholderNode, returnVal);
+        this.helperContext.pop();
+        return res;
       }
     }
   },
