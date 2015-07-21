@@ -14,6 +14,12 @@ var buildInstructions = _interopRequire(require("./compiler/passes/buildInstruct
 
 var generateJS = _interopRequire(require("./compiler/passes/generateJS"));
 
+var generateTBody = _interopRequire(require("./compiler/passes/generateTornadoBodySymbols"));
+
+var generateTLeaf = _interopRequire(require("./compiler/passes/generateTornadoLeafSymbols"));
+
+var generateHtml = _interopRequire(require("./compiler/passes/generateHtmlSymbols"));
+
 var postprocess = _interopRequire(require("./compiler/passes/postprocess"));
 
 // import visualize from './compiler/passes/visualize';
@@ -21,7 +27,7 @@ var postprocess = _interopRequire(require("./compiler/passes/postprocess"));
 var defaultPasses = [[], // checks
 [escapableRaw, htmlEntities, adjustAttrs], // transforms
 [buildInstructions], // generates
-[generateJS, postprocess] // codegen
+[generateJS, generateTBody, generateTLeaf, generateHtml, postprocess] // codegen
 ];
 var compiler = {
   compile: function compile(ast, name, options) {
@@ -42,6 +48,7 @@ var compiler = {
       name: name,
       instructions: []
     };
+    results.instructions.symbolsMap = {};
     passes.forEach(function (stage) {
       stage.forEach(function (pass) {
         var context = new Context(results);
