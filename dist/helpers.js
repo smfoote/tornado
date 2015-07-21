@@ -1,12 +1,17 @@
+"use strict";
+
+var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+
 /*eslint no-debugger:0 */
 
-"use strict";
+var util = _interopRequire(require("./util"));
 
 var emptyFrag = function emptyFrag() {
   return document.createDocumentFragment();
 };
 
 var truthTest = function truthTest(params, bodies, context, test) {
+  util.assert(params.val !== undefined, "The `val` param is required for @eq, @ne, @lt, @lte, @gt, and @gte");
   var key = params.key;
   var val = params.val;
   var main = bodies.main;
