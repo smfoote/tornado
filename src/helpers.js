@@ -1,10 +1,13 @@
 /*eslint no-debugger:0 */
 
+import util from './util';
+
 let emptyFrag = function() {
   return document.createDocumentFragment();
 };
 
 let truthTest = function(params, bodies, context, test) {
+  util.assert(params.val !== undefined, 'The `val` param is required for @eq, @ne, @lt, @lte, @gt, and @gte');
   let {key, val} = params;
   let {main} = bodies;
   let elseBody = bodies.else;
