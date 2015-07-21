@@ -235,11 +235,19 @@ let generateJavascript = function (ast, options) {
     push(idx, strings) {
       let {fragment, renderer} = strings;
       if (idx >= this.fragments.length) {
-        if (fragment) this.fragments.push(fragment);
-        if (renderer) this.renderers.push(renderer);
+        if (fragment) {
+          this.fragments.push(fragment);
+        }
+        if (renderer) {
+          this.renderers.push(renderer);
+        }
       } else {
-        if (fragment) this.fragments[idx] += fragment;
-        if (renderer) this.renderers[idx] += renderer;
+        if (fragment) {
+          this.fragments[idx] += fragment;
+        }
+        if (renderer) {
+          this.renderers[idx] += renderer;
+        }
       }
     },
     slice(type, idx, start, end) {
