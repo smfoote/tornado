@@ -6,6 +6,14 @@ let emptyFrag = function() {
   return document.createDocumentFragment();
 };
 
+const MATH_OPERATOR_MAP = {
+  '+': 'add',
+  '-': 'subtract',
+  '*': 'multiply',
+  '/': 'divide',
+  '%': 'mod'
+};
+
 let truthTest = function(context, params, bodies, helperContext, test) {
   let {key, val} = params;
   let selectState = helperContext.get('$selectState');
@@ -109,6 +117,65 @@ let helpers = {
     let selectState = helperContext.get('$selectState');
     if (selectState && !selectState.isResolved) {
       return bodies.main(context);
+    }
+  },
+  math(context, params, bodies, helperContext) {
+    let {a, b, operator, round} = params;
+    let {main} = bodies;
+    let res;
+
+    util.assert(a !== undefined, '@math requires the `a` parameter');
+    util.assert(operator !== undefined, '@math requires the `operator` parameter');
+
+    if (Object.keys(MATH_OPERATOR_MAP).indexOf(operator) > -1) {
+      operator = MATH_OPERATOR_MAP[operator];
+    }
+
+    a = parseFloat(a);
+    b = parseFloat(b);
+
+    switch (operator) {
+      case 'add':
+        res = a + b;
+        break;
+      case 'subtract':
+        res = a - b;
+        break;
+      case 'multiply':
+        res = a * b;
+        break;
+      case 'divide':
+        util.assert(b !== 0, 'Division by 0 is not allowed, not even in Tornado');
+        res = a / b;
+        break;
+      case 'mod':
+        util.assert(b !== 0, 'Division by 0 is not allowed, not even in Tornado');
+        res = a % b;
+        break;
+      case 'ceil':
+      case 'floor':
+      case 'round':
+      case 'abs':
+        res = Math[operator](a);
+        break;
+      case 'toint':
+        res = parseInt(a, 10);
+        break;
+      default:
+        // TODO replace this with proper error handling
+        console.log(`@math does not support ${operator} operator`);
+    }
+    if (round) {
+      res = Math.round(res);
+    }
+    if (main) {
+      helperContext.set('selectState', {
+        key: res,
+        isResolved: false
+      });
+      return bodies.main(context);
+    } else {
+      return emptyFrag().appendChild(document.createTextNode(res));
     }
   }
 };

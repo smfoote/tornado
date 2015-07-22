@@ -212,7 +212,10 @@ float "float"
   = l:integer "." r:integer+ { return parseFloat(l + "." + r.join('')); }
 
 integer "integer"
-  = digits:[0-9]+ { return parseInt(digits.join(""), 10); }
+  = sign:[-]? digits:[0-9]+ {
+    sign = sign ? sign : '';
+    return parseInt(sign + digits.join(""), 10);
+}
 
 plain_text
   = b:(!comment !tornado_comment !start_tag !end_tag !self_closing_tag !html_entity !tornado_tag c:. {return c;})+ {

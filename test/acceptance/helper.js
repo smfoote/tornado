@@ -771,6 +771,194 @@ let suite = {
         frag.appendChild(document.createTextNode(' here'));
         return frag;
       })()
+    },
+    {
+      description: '@math with no body -- add',
+      template: '{@math a=1 b=2 operator="add"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('3'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- (+)',
+      template: '{@math a=1 b=2 operator="+"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('3'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- subtract',
+      template: '{@math a=1 b=2 operator="subtract"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('-1'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- (-))',
+      template: '{@math a=1 b=2 operator="-"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('-1'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- multiply',
+      template: '{@math a=7 b=6 operator="multiply"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('42'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- (*)',
+      template: '{@math a=7 b=6 operator="*"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('42'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- divide',
+      template: '{@math a=144 b=12 operator="divide"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('12'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- (/)',
+      template: '{@math a=144 b=12 operator="/"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('12'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- mod',
+      template: '{@math a=15 b=12 operator="mod"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('3'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- (%)',
+      template: '{@math a=15 b=12 operator="%"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('3'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- ceil',
+      template: '{@math a=1.5 operator="ceil"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('2'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- floor',
+      template: '{@math a=1.5 operator="floor"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('1'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- round',
+      template: '{@math a=1.5 operator="round"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('2'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- abs',
+      template: '{@math a=-15 operator="abs"/}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('15'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with no body -- toint',
+      template: '{@math a=age operator="toint"/}',
+      context: {
+        age: '15'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('15'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with body and @eq',
+      template: '{@math a=5 b=10 operator="add"}{@eq val=15}!Quinceanera!{/eq}{/math}',
+      context: {
+        age: '15'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('!Quinceanera!'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with body and @gt',
+      template: '{@math a=hour b=12 operator="mod"}{@gt val=3}It\'s past 3 o\'clock{/gt}{/math}',
+      context: {
+        hour: '17'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('It\'s past 3 o\'clock'));
+        return frag;
+      })()
+    },
+    {
+      description: '@math with body and @default',
+      template: '{@math a=hour b=12 operator="mod"}{@gt val=3}It\'s past 3 o\'clock{/gt}{@default}It\'s not past 3 yet{/default}{/math}',
+      context: {
+        hour: '15'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('It\'s not past 3 yet'));
+        return frag;
+      })()
     }
   ]
 };
