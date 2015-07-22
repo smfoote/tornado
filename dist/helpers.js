@@ -10,18 +10,29 @@ var emptyFrag = function emptyFrag() {
   return document.createDocumentFragment();
 };
 
-var truthTest = function truthTest(params, bodies, context, test) {
-  util.assert(params.val !== undefined, "The `val` param is required for @eq, @ne, @lt, @lte, @gt, and @gte");
+var truthTest = function truthTest(context, params, bodies, helperContext, test) {
   var key = params.key;
   var val = params.val;
+
+  var selectState = helperContext.get("$selectState");
+  if (!key && selectState) {
+    key = selectState.key;
+  }
+  util.assert(key !== undefined, "@eq, @ne, @lt, @lte, @gt, @gte require a `key` parameter in themselves or in a parent helper");
+  util.assert(val !== undefined, "@eq, @ne, @lt, @lte, @gt, @gte require a `val` parameter");
   var main = bodies.main;
 
   var elseBody = bodies["else"];
   if (key && val) {
     if (test(key, val)) {
+      var res = undefined;
       if (main) {
-        return main(context);
+        res = main(context);
       }
+      if (selectState) {
+        selectState.isResolved = true;
+      }
+      return res;
     } else if (elseBody) {
       return elseBody(context);
     }
@@ -47,33 +58,33 @@ var helpers = {
       return bodies.main(context);
     }
   },
-  eq: function eq(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  eq: function eq(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left === right;
     });
   },
-  ne: function ne(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  ne: function ne(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left !== right;
     });
   },
-  gt: function gt(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  gt: function gt(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left > right;
     });
   },
-  lt: function lt(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  lt: function lt(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left < right;
     });
   },
-  gte: function gte(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  gte: function gte(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left >= right;
     });
   },
-  lte: function lte(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  lte: function lte(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left <= right;
     });
   },
@@ -91,6 +102,22 @@ var helpers = {
   },
   "debugger": function _debugger() {
     debugger;
+  },
+  select: function select(context, params, bodies, helperContext) {
+    var key = params.key;
+
+    util.assert(key !== undefined, "@select helper requires a `key` parameter");
+    helperContext.set("selectState", {
+      key: key,
+      isResolved: false
+    });
+    return bodies.main(context);
+  },
+  "default": function _default(context, params, bodies, helperContext) {
+    var selectState = helperContext.get("$selectState");
+    if (selectState && !selectState.isResolved) {
+      return bodies.main(context);
+    }
   }
 };
 
