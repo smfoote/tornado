@@ -21,6 +21,7 @@
     "quotes"              : [1, "single", "avoid-escape"],
     "no-loop-func"        : 0,
     "no-cond-assign"      : 0,
+    "no-underscore-dangle": 0,
 
     "semi"                : [2, "always"],
     "no-debugger"         : 2,

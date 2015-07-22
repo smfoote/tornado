@@ -148,7 +148,6 @@ let suite = {
       context: {
         friends: ['Prash', 'Jimmy', 'Kate', 'Seth', 'Tonya'],
         numFriends: function() {
-          console.log(this.friends.length);
           return this.friends.length;
         }
       },
@@ -343,6 +342,332 @@ let suite = {
         let div = document.createElement('div');
         div.appendChild(document.createTextNode('This is the answer?'));
         frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: '@sep in a section-loop with just one item',
+      template: '{#names}{.}{@sep}; {/sep}{/names}',
+      context: {
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Steven'));
+        return frag;
+      })()
+    },
+    {
+      description: '@sep in a section-loop with multiple items',
+      template: '{#names}{.}{@sep}; {/sep}{/names}',
+      context: {
+        names: ['Steven', 'Jimmy', 'Prash']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(document.createTextNode('; '));
+        frag.appendChild(document.createTextNode('Jimmy'));
+        frag.appendChild(document.createTextNode('; '));
+        frag.appendChild(document.createTextNode('Prash'));
+        return frag;
+      })()
+    },
+    {
+      description: '@sep in a nested section-loop with multiple items',
+      template: '{#names}{first} {#last}{.}{@sep},{/sep}{/last}{@sep}; {/sep}{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('F'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('o'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('o'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('t'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('e'));
+        frag.appendChild(document.createTextNode('; '));
+        frag.appendChild(document.createTextNode('Prash'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('J'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('a'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('i'));
+        frag.appendChild(document.createTextNode(','));
+        frag.appendChild(document.createTextNode('n'));
+        return frag;
+      })()
+    },
+    {
+      description: '@sep in a section-loop with no items',
+      template: '{#names}{.}{@sep}; {/sep}{/names}',
+      context: {
+        names: []
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(''));
+        return frag;
+      })()
+    },
+    {
+      description: '@sep outside of a loop',
+      template: '<span>{@sep}artificial separation{/sep}</span>',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@first in a loop with one item',
+      template: '{#names}<span class="{@first}first{/first}">{.}</span>{/names}',
+      context: {
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@first in a loop with multiple items',
+      template: '{#names}<span class="{@first}first{/first}">{.}</span>{/names}',
+      context: {
+        names: ['Steven', 'Jimmy', 'Prash']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('Jimmy'));
+        frag.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('Prash'));
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@first in a nested loop with multiple items',
+      template: '{#names}<div class="container{@first} outer-first{/first}">{#last}<span class="{@first}first{/first}">{.}</span>{/last}</div>{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'container outer-first');
+        let span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('F'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('t'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('e'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.setAttribute('class', 'container');
+        span = document.createElement('span');
+        span.setAttribute('class', 'first');
+        span.appendChild(document.createTextNode('J'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('a'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('i'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('n'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: '@first in a loop with no items',
+      template: '{#names}<span class="{@first}first{/first}">{.}</span>{/names}',
+      context: {
+        names: []
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(''));
+        return frag;
+      })()
+    },
+    {
+      description: '@first outside of a loop',
+      template: '<span class="{@first}first{/first}"></span>',
+      context: {
+        names: []
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', '');
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@last in a loop with one item',
+      template: '{#names}<span class="{@last}last{/last}">{.}</span>{/names}',
+      context: {
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@last in a loop with multiple items',
+      template: '{#names}<span class="{@last}last{/last}">{.}</span>{/names}',
+      context: {
+        names: ['Steven', 'Jimmy', 'Prash']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('Steven'));
+        frag.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('Jimmy'));
+        frag.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('Prash'));
+        frag.appendChild(span);
+        return frag;
+      })()
+    },
+    {
+      description: '@last in a nested loop with multiple items',
+      template: '{#names}<div class="container{@last} outer-last{/last}">{#last}<span class="{@last}last{/last}">{.}</span>{/last}</div>{/names}',
+      context: {
+        names: [
+          {first: 'Steven', last: ['F', 'o', 'o', 't', 'e']},
+          {first: 'Prash', last: ['J', 'a', 'i', 'n']}
+        ]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.setAttribute('class', 'container');
+        let span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('F'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('o'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('t'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('e'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.setAttribute('class', 'container outer-last');
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('J'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('a'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', '');
+        span.appendChild(document.createTextNode('i'));
+        div.appendChild(span);
+        span = document.createElement('span');
+        span.setAttribute('class', 'last');
+        span.appendChild(document.createTextNode('n'));
+        div.appendChild(span);
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: '@last in a loop with no items',
+      template: '{#names}<span class="{@last}last{/last}">{.}</span>{/names}',
+      context: {
+        names: []
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(''));
+        return frag;
+      })()
+    },
+    {
+      description: '@last outside of a loop',
+      template: '<span class="{@last}last{/last}"></span>',
+      context: {
+        names: []
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let span = document.createElement('span');
+        span.setAttribute('class', '');
+        frag.appendChild(span);
         return frag;
       })()
     }

@@ -26,6 +26,21 @@ let truthTest = function(params, bodies, context, test) {
 };
 
 let helpers = {
+  sep(context, params, bodies, helperContext) {
+    if (helperContext.get('$idx') < helperContext.get('$len') - 1) {
+      return bodies.main(context);
+    }
+  },
+  first(context, params, bodies, helperContext) {
+    if (helperContext.get('$idx') === 0) {
+      return bodies.main(context);
+    }
+  },
+  last(context, params, bodies, helperContext) {
+    if (helperContext.get('$idx') === helperContext.get('$len') - 1) {
+      return bodies.main(context);
+    }
+  },
   eq(context, params, bodies) {
     return truthTest(params, bodies, context, (left, right) => {
       return left === right;

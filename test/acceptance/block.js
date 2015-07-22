@@ -1,5 +1,4 @@
-/*eslint no-eval: 0 */
-
+/*eslint no-eval:0 */
 let suite = {
   name: 'Blocks and Inline Partials',
   tests: [

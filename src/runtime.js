@@ -14,6 +14,45 @@ let tornado = {
   helpers: {},
 
   /**
+   * Helper context
+   */
+  helperContext: {
+    push() {
+      this.__contextStack.push({});
+    },
+    pop() {
+      return this.__contextStack.pop();
+    },
+    peek() {
+      return this.__contextStack[this.__contextStack.length - 1];
+    },
+    get(key) {
+      for (let i = this.__contextStack.length - 1; i >= 0; i--) {
+        let context = this.__contextStack[i];
+        if (context[key] !== undefined) {
+          return context[key];
+        }
+      }
+    },
+    set(key, val) {
+      let context = this.peek();
+      context[this.normalizeKey(key)] = val;
+    },
+    setGlobal(key, val) {
+      this.__contextStack[0][this.normalizeKey(key)] = val;
+    },
+    clear(key) {
+      this.set(key, null);
+    },
+    normalizeKey(key) {
+      // Prepend with $ if $ isn't already present
+      return key[0] === '$' ? key : `$${key}`;
+    },
+    // Inititialize the stack with the global scope
+    __contextStack: [{}]
+  },
+
+  /**
    * Method for registering templates. This method is intended
    * to be called within a compiled template, but can be called
    * outside of that context as well.
@@ -63,9 +102,12 @@ let tornado = {
     let newContext;
     if (pathLength === 1) {
       // there is only one more item left in the path
-      let res = context[path.pop()];
+      let key = path.pop();
+      let res = context[key];
       if (res !== undefined) {
         return this.util.isFunction(res) ? res.bind(context)() : res;
+      } else if (key[0] === '$' && this.helperContext.get(key) !== undefined) {
+        return this.helperContext.get(key);
       } else {
         return '';
       }
@@ -220,6 +262,8 @@ let tornado = {
    */
   section(val, placeholderNode, bodies, context) {
     let body, ctx;
+    // TODO: when section becomes a helper, remove this call to helperContext
+    this.helperContext.push();
     if (this.util.isPromise(val)) {
       placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
       val.then(data => {
@@ -242,7 +286,10 @@ let tornado = {
         body = bodies.else;
         ctx = context;
       }
-      return this.sectionResult(ctx, placeholderNode, body);
+      let res = this.sectionResult(ctx, placeholderNode, body);
+      // TODO: when section becomes a helper, remove this call to helperContext
+      this.helperContext.pop();
+      return res;
     }
   },
 
@@ -262,7 +309,9 @@ let tornado = {
     if (Array.isArray(val)) {
       if (placeholderNode) {
         let frag = this.createDocumentFragment();
+        this.helperContext.set('len', val.length);
         for (let i = 0, item; (item = val[i]); i++) {
+          this.helperContext.set('idx', i);
           frag.appendChild(body(item));
         }
         this.replaceNode(placeholderNode, frag);
@@ -294,24 +343,28 @@ let tornado = {
     if (!helper) {
       throw new Error(`Helper not registered: ${name}`);
     } else {
+      this.helperContext.push();
       let paramVals = this.util.getValuesFromObject(params);
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(values => {
           let resolvedParams = this.util.arraysToObject(Object.keys(params).sort(), values);
-          let returnVal = helper(context, resolvedParams, bodies);
+          let returnVal = helper(context, resolvedParams, bodies, this.helperContext);
           return this.helperResult(placeholderNode, returnVal);
         });
       } else {
-        let returnVal = helper(context, params, bodies);
-        return this.helperResult(placeholderNode, returnVal);
+        let returnVal = helper(context, params, bodies, this.helperContext);
+        let res = this.helperResult(placeholderNode, returnVal);
+        this.helperContext.pop();
+        return res;
       }
     }
   },
 
   helperResult(placeholderNode, returnVal) {
-    returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
+    returnVal = returnVal || '';
     if (this.util.isPromise(returnVal)) {
       returnVal.then(frag => {
+        frag = this.util.isNode(frag) ? frag : this.createDocumentFragment();
         if (placeholderNode) {
           this.replaceNode(placeholderNode, frag);
         } else {
@@ -319,6 +372,7 @@ let tornado = {
         }
       });
     } else {
+      returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
       if (placeholderNode) {
         this.replaceNode(placeholderNode, returnVal);
       } else {

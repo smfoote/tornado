@@ -249,6 +249,9 @@ var codeGenerator = generator.build({
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', root." + this.getPlaceholderName(instruction) + ", c, " + paramsHash + ", " + bodiesHash + ");\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
+    } else {
+      var renderer = "td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', null, c, " + paramsHash + ", " + bodiesHash + "),";
+      code.push(parentTdBody, { renderer: renderer });
     }
   },
 
