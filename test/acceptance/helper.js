@@ -670,6 +670,107 @@ let suite = {
         frag.appendChild(span);
         return frag;
       })()
+    },
+    {
+      description: '@select with only @default',
+      template: '{@select key=type}{@default}Default{/default}{/select}',
+      context: {
+        type: 'green'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Default'));
+        return frag;
+      })()
+    },
+    {
+      description: '@select with @eq that matches',
+      template: '{@select key=type}{@eq val="green"}GREEN!{/eq}{/select}',
+      context: {
+        type: 'green'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('GREEN!'));
+        return frag;
+      })()
+    },
+    {
+      description: '@select with multiple @eq, one that matches',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@eq val="green"}GREEN!{/eq}{/select}',
+      context: {
+        type: 'green'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('GREEN!'));
+        return frag;
+      })()
+    },
+    {
+      description: '@select with multiple @eq, none match',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@eq val="green"}GREEN!{/eq}{/select}',
+      context: {
+        type: 'yellow'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        return frag;
+      })()
+    },
+    {
+      description: '@select with multiple @eq, none match, and a @default',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@eq val="green"}GREEN!{/eq}{@default}A lack of color here{/default}{/select}',
+      context: {
+        type: 'yellow'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('A lack of color here'));
+        return frag;
+      })()
+    },
+    {
+      description: '@select with multiple @eq, one match, and a @default',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@eq val="green"}GREEN!{/eq}{@default}A lack of color here{/default}{/select}',
+      context: {
+        type: 'green'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('GREEN!'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Nested @select',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@default}A lack of {@select key=category}{@eq val="color"}color{/eq}{/select} here{/default}{/select}',
+      context: {
+        type: 'green',
+        category: 'color'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('A lack of '));
+        frag.appendChild(document.createTextNode('color'));
+        frag.appendChild(document.createTextNode(' here'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Nested @select with nested @default',
+      template: '{@select key=type}{@eq val="blue"}BLUE!{/eq}{@default}A lack of {@select key=category}{@eq val="color"}color{/eq}{@default}category{/default}{/select} here{/default}{/select}',
+      context: {
+        type: 'green',
+        category: 'stuff'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('A lack of '));
+        frag.appendChild(document.createTextNode('category'));
+        frag.appendChild(document.createTextNode(' here'));
+        return frag;
+      })()
     }
   ]
 };
