@@ -9,7 +9,8 @@ grunt.initConfig({
       },
       files: [
         {expand: true, cwd: 'src/', dest: 'dist/', ext: '.js', src: '**/*.js'},
-        {src: 'bin/tornado.es6', dest: 'bin/tornado'}
+        {src: 'bin/tornado.es6', dest: 'bin/tornado'},
+        {src: 'index.es6', dest: 'tornado.js'}
       ]
     },
     acceptance: {
