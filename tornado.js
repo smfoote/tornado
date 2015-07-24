@@ -4,7 +4,7 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var parser = _interopRequire(require("./dist/parser"));
 
-var compiler = _interopRequire(require("./src/compiler"));
+var compiler = _interopRequire(require("./dist/compiler"));
 
 var tornado = {
   compile: function compile(templateString, name, options) {

@@ -1,5 +1,5 @@
 import parser from './dist/parser';
-import compiler from './src/compiler';
+import compiler from './dist/compiler';
 
 let tornado = {
   compile(templateString, name, options) {
