@@ -959,6 +959,104 @@ let suite = {
         frag.appendChild(document.createTextNode('It\'s not past 3 yet'));
         return frag;
       })()
+    },
+    {
+      description: '@repeat with no references in the body',
+      template: '{@repeat count=2}<p>Hello!</p>{/repeat}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let p = document.createElement('p');
+        p.appendChild(document.createTextNode('Hello!'));
+        frag.appendChild(p);
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('Hello!'));
+        frag.appendChild(p);
+        return frag;
+      })()
+    },
+    {
+      description: '@repeat with references in the body',
+      template: '{@repeat count=2}<p>Hello, {name}!</p>{/repeat}',
+      context: {
+        name: 'Mundo'
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let p = document.createElement('p');
+        p.appendChild(document.createTextNode('Hello, '));
+        p.appendChild(document.createTextNode('Mundo'));
+        p.appendChild(document.createTextNode('!'));
+        frag.appendChild(p);
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('Hello, '));
+        p.appendChild(document.createTextNode('Mundo'));
+        p.appendChild(document.createTextNode('!'));
+        frag.appendChild(p);
+        return frag;
+      })()
+    },
+    {
+      description: '@repeat with references to $idx and $len',
+      template: '{@repeat count=2}<p>{$idx} of {$len}</p>{/repeat}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let p = document.createElement('p');
+        p.appendChild(document.createTextNode('0'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        frag.appendChild(p);
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('1'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        frag.appendChild(p);
+        return frag;
+      })()
+    },
+    {
+      description: '@repeat nested within section with references to $idx and $len',
+      template: '{#numbers}<div>{$idx}: {.} {@repeat count=2}<p>{$idx} of {$len}</p>{/repeat}</div>{/numbers}',
+      context: {
+        numbers: [1,2]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode('0'));
+        div.appendChild(document.createTextNode(': '));
+        div.appendChild(document.createTextNode('1'));
+        div.appendChild(document.createTextNode(' '));
+        let p = document.createElement('p');
+        p.appendChild(document.createTextNode('0'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        div.appendChild(p);
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('1'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        div.appendChild(p);
+        frag.appendChild(div);
+        div = document.createElement('div');
+        div.appendChild(document.createTextNode('1'));
+        div.appendChild(document.createTextNode(': '));
+        div.appendChild(document.createTextNode('2'));
+        div.appendChild(document.createTextNode(' '));
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('0'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        div.appendChild(p);
+        p = document.createElement('p');
+        p.appendChild(document.createTextNode('1'));
+        p.appendChild(document.createTextNode(' of '));
+        p.appendChild(document.createTextNode('2'));
+        div.appendChild(p);
+        frag.appendChild(div);
+        return frag;
+      })()
     }
   ]
 };
