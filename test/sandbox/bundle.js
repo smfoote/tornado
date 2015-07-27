@@ -709,6 +709,9 @@ var codeGenerator = generator.build({
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', root." + this.getPlaceholderName(instruction) + ", c, " + paramsHash + ", " + bodiesHash + ");\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
+    } else {
+      var renderer = "td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', null, c, " + paramsHash + ", " + bodiesHash + "),";
+      code.push(parentTdBody, { renderer: renderer });
     }
   },
 
@@ -749,11 +752,19 @@ var generateJavascript = function generateJavascript(ast, options) {
       var renderer = strings.renderer;
 
       if (idx >= this.fragments.length) {
-        if (fragment) this.fragments.push(fragment);
-        if (renderer) this.renderers.push(renderer);
+        if (fragment) {
+          this.fragments.push(fragment);
+        }
+        if (renderer) {
+          this.renderers.push(renderer);
+        }
       } else {
-        if (fragment) this.fragments[idx] += fragment;
-        if (renderer) this.renderers[idx] += renderer;
+        if (fragment) {
+          this.fragments[idx] += fragment;
+        }
+        if (renderer) {
+          this.renderers[idx] += renderer;
+        }
       }
     },
     slice: function slice(type, idx, start, end) {
@@ -1048,21 +1059,47 @@ module.exports = visitor;
 },{}],15:[function(require,module,exports){
 "use strict";
 
+var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
+
+/*eslint no-debugger:0 */
+
+var util = _interopRequire(require("./util"));
+
 var emptyFrag = function emptyFrag() {
   return document.createDocumentFragment();
 };
 
-var truthTest = function truthTest(params, bodies, context, test) {
+var MATH_OPERATOR_MAP = {
+  "+": "add",
+  "-": "subtract",
+  "*": "multiply",
+  "/": "divide",
+  "%": "mod"
+};
+
+var truthTest = function truthTest(context, params, bodies, helperContext, test) {
   var key = params.key;
   var val = params.val;
+
+  var selectState = helperContext.get("$selectState");
+  if (!key && selectState) {
+    key = selectState.key;
+  }
+  util.assert(key !== undefined, "@eq, @ne, @lt, @lte, @gt, @gte require a `key` parameter in themselves or in a parent helper");
+  util.assert(val !== undefined, "@eq, @ne, @lt, @lte, @gt, @gte require a `val` parameter");
   var main = bodies.main;
 
   var elseBody = bodies["else"];
   if (key && val) {
     if (test(key, val)) {
+      var res = undefined;
       if (main) {
-        return main(context);
+        res = main(context);
       }
+      if (selectState) {
+        selectState.isResolved = true;
+      }
+      return res;
     } else if (elseBody) {
       return elseBody(context);
     }
@@ -1073,41 +1110,163 @@ var truthTest = function truthTest(params, bodies, context, test) {
 };
 
 var helpers = {
-  eq: function eq(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  sep: function sep(context, params, bodies, helperContext) {
+    if (helperContext.get("$idx") < helperContext.get("$len") - 1) {
+      return bodies.main(context);
+    }
+  },
+  first: function first(context, params, bodies, helperContext) {
+    if (helperContext.get("$idx") === 0) {
+      return bodies.main(context);
+    }
+  },
+  last: function last(context, params, bodies, helperContext) {
+    if (helperContext.get("$idx") === helperContext.get("$len") - 1) {
+      return bodies.main(context);
+    }
+  },
+  eq: function eq(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left === right;
     });
   },
-  ne: function ne(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  ne: function ne(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left !== right;
     });
   },
-  gt: function gt(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  gt: function gt(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left > right;
     });
   },
-  lt: function lt(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  lt: function lt(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left < right;
     });
   },
-  gte: function gte(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  gte: function gte(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left >= right;
     });
   },
-  lte: function lte(context, params, bodies) {
-    return truthTest(params, bodies, context, function (left, right) {
+  lte: function lte(context, params, bodies, helperContext) {
+    return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left <= right;
     });
+  },
+  contextDump: function contextDump(context, params) {
+    var formattedContext = JSON.stringify(context, null, 2);
+    if (params.to === "console") {
+      console.log(formattedContext);
+    } else {
+      var frag = document.createDocumentFragment();
+      var pre = document.createElement("pre");
+      pre.appendChild(document.createTextNode(formattedContext));
+      frag.appendChild(pre);
+      return frag;
+    }
+  },
+  "debugger": function _debugger() {
+    debugger;
+  },
+  select: function select(context, params, bodies, helperContext) {
+    var key = params.key;
+
+    util.assert(key !== undefined, "@select helper requires a `key` parameter");
+    helperContext.set("selectState", {
+      key: key,
+      isResolved: false
+    });
+    return bodies.main(context);
+  },
+  "default": function _default(context, params, bodies, helperContext) {
+    var selectState = helperContext.get("$selectState");
+    if (selectState && !selectState.isResolved) {
+      return bodies.main(context);
+    }
+  },
+  math: function math(context, params, bodies, helperContext) {
+    var a = params.a;
+    var b = params.b;
+    var operator = params.operator;
+    var round = params.round;
+    var main = bodies.main;
+
+    var res = undefined;
+
+    util.assert(a !== undefined, "@math requires the `a` parameter");
+    util.assert(operator !== undefined, "@math requires the `operator` parameter");
+
+    if (Object.keys(MATH_OPERATOR_MAP).indexOf(operator) > -1) {
+      operator = MATH_OPERATOR_MAP[operator];
+    }
+
+    a = parseFloat(a);
+    b = parseFloat(b);
+
+    switch (operator) {
+      case "add":
+        res = a + b;
+        break;
+      case "subtract":
+        res = a - b;
+        break;
+      case "multiply":
+        res = a * b;
+        break;
+      case "divide":
+        util.assert(b !== 0, "Division by 0 is not allowed, not even in Tornado");
+        res = a / b;
+        break;
+      case "mod":
+        util.assert(b !== 0, "Division by 0 is not allowed, not even in Tornado");
+        res = a % b;
+        break;
+      case "ceil":
+      case "floor":
+      case "round":
+      case "abs":
+        res = Math[operator](a);
+        break;
+      case "toint":
+        res = parseInt(a, 10);
+        break;
+      default:
+        // TODO replace this with proper error handling
+        console.log("@math does not support " + operator + " operator");
+    }
+    if (round) {
+      res = Math.round(res);
+    }
+    if (main) {
+      helperContext.set("selectState", {
+        key: res,
+        isResolved: false
+      });
+      return bodies.main(context);
+    } else {
+      return emptyFrag().appendChild(document.createTextNode(res));
+    }
+  },
+  repeat: function repeat(context, params, bodies, helperContext) {
+    var count = params.count;
+    var main = bodies.main;
+
+    util.assert(typeof count === "number" && count >= 0, "@repeat requires the `count` param, and it must be a number 0 or greater.");
+    var frag = emptyFrag();
+    helperContext.set("len", count);
+    for (var i = 0; i < count; i++) {
+      helperContext.set("idx", i);
+      frag.appendChild(main(context));
+    }
+    return frag;
   }
 };
 
 module.exports = helpers;
 //# sourceMappingURL=helpers.js.map
-},{}],16:[function(require,module,exports){
+},{"./util":18}],16:[function(require,module,exports){
 module.exports = (function() {
   /*
    * Generated by PEG.js 0.8.0.
@@ -1301,68 +1460,74 @@ module.exports = (function() {
         peg$c67 = { type: "other", description: "float" },
         peg$c68 = function(l, r) { return parseFloat(l + "." + r.join('')); },
         peg$c69 = { type: "other", description: "integer" },
-        peg$c70 = /^[0-9]/,
-        peg$c71 = { type: "class", value: "[0-9]", description: "[0-9]" },
-        peg$c72 = function(digits) { return parseInt(digits.join(""), 10); },
-        peg$c73 = function(b) {
+        peg$c70 = null,
+        peg$c71 = /^[\-]/,
+        peg$c72 = { type: "class", value: "[\\-]", description: "[\\-]" },
+        peg$c73 = /^[0-9]/,
+        peg$c74 = { type: "class", value: "[0-9]", description: "[0-9]" },
+        peg$c75 = function(sign, digits) {
+            sign = sign ? sign : '';
+            return parseInt(sign + digits.join(""), 10);
+        },
+        peg$c76 = function(b) {
             return ['PLAIN_TEXT', b.join('').replace(/\n/g, '\\n')];
           },
-        peg$c74 = function(entity) {
+        peg$c77 = function(entity) {
             return ['HTML_ENTITY', entity.join('')];
           },
-        peg$c75 = /^[#a-zA-Z0-9]/,
-        peg$c76 = { type: "class", value: "[#a-zA-Z0-9]", description: "[#a-zA-Z0-9]" },
-        peg$c77 = function(char) {
+        peg$c78 = /^[#a-zA-Z0-9]/,
+        peg$c79 = { type: "class", value: "[#a-zA-Z0-9]", description: "[#a-zA-Z0-9]" },
+        peg$c80 = function(char) {
             return char.join('');
           },
-        peg$c78 = function(b) {
+        peg$c81 = function(b) {
             return ['PLAIN_TEXT', b.join('')];
           },
-        peg$c79 = /^[^`]/,
-        peg$c80 = { type: "class", value: "[^`]", description: "[^`]" },
-        peg$c81 = function(val) {
+        peg$c82 = /^[^`]/,
+        peg$c83 = { type: "class", value: "[^`]", description: "[^`]" },
+        peg$c84 = function(val) {
             return ['PLAIN_TEXT', val.join('')];
           },
-        peg$c82 = /^[\t\x0B\f\n \xA0\uFEFF]/,
-        peg$c83 = { type: "class", value: "[\\t\\x0B\\f\\n \\xA0\\uFEFF]", description: "[\\t\\x0B\\f\\n \\xA0\\uFEFF]" },
-        peg$c84 = "</",
-        peg$c85 = { type: "literal", value: "</", description: "\"</\"" },
-        peg$c86 = "<",
-        peg$c87 = { type: "literal", value: "<", description: "\"<\"" },
-        peg$c88 = ">",
-        peg$c89 = { type: "literal", value: ">", description: "\">\"" },
-        peg$c90 = "/>",
-        peg$c91 = { type: "literal", value: "/>", description: "\"/>\"" },
-        peg$c92 = "{/",
-        peg$c93 = { type: "literal", value: "{/", description: "\"{/\"" },
-        peg$c94 = "/}",
-        peg$c95 = { type: "literal", value: "/}", description: "\"/}\"" },
-        peg$c96 = "{",
-        peg$c97 = { type: "literal", value: "{", description: "\"{\"" },
-        peg$c98 = "}",
-        peg$c99 = { type: "literal", value: "}", description: "\"}\"" },
-        peg$c100 = "=",
-        peg$c101 = { type: "literal", value: "=", description: "\"=\"" },
-        peg$c102 = "\"",
-        peg$c103 = { type: "literal", value: "\"", description: "\"\\\"\"" },
-        peg$c104 = "'",
-        peg$c105 = { type: "literal", value: "'", description: "\"'\"" },
-        peg$c106 = "&",
-        peg$c107 = { type: "literal", value: "&", description: "\"&\"" },
-        peg$c108 = ";",
-        peg$c109 = { type: "literal", value: ";", description: "\";\"" },
-        peg$c110 = /^[^"]/,
-        peg$c111 = { type: "class", value: "[^\"]", description: "[^\"]" },
-        peg$c112 = "\n",
-        peg$c113 = { type: "literal", value: "\n", description: "\"\\n\"" },
-        peg$c114 = "\r\n",
-        peg$c115 = { type: "literal", value: "\r\n", description: "\"\\r\\n\"" },
-        peg$c116 = "\r",
-        peg$c117 = { type: "literal", value: "\r", description: "\"\\r\"" },
-        peg$c118 = "\u2028",
-        peg$c119 = { type: "literal", value: "\u2028", description: "\"\\u2028\"" },
-        peg$c120 = "\u2029",
-        peg$c121 = { type: "literal", value: "\u2029", description: "\"\\u2029\"" },
+        peg$c85 = /^[\t\x0B\f\n \xA0\uFEFF]/,
+        peg$c86 = { type: "class", value: "[\\t\\x0B\\f\\n \\xA0\\uFEFF]", description: "[\\t\\x0B\\f\\n \\xA0\\uFEFF]" },
+        peg$c87 = "</",
+        peg$c88 = { type: "literal", value: "</", description: "\"</\"" },
+        peg$c89 = "<",
+        peg$c90 = { type: "literal", value: "<", description: "\"<\"" },
+        peg$c91 = ">",
+        peg$c92 = { type: "literal", value: ">", description: "\">\"" },
+        peg$c93 = "/>",
+        peg$c94 = { type: "literal", value: "/>", description: "\"/>\"" },
+        peg$c95 = "{/",
+        peg$c96 = { type: "literal", value: "{/", description: "\"{/\"" },
+        peg$c97 = "/}",
+        peg$c98 = { type: "literal", value: "/}", description: "\"/}\"" },
+        peg$c99 = "{",
+        peg$c100 = { type: "literal", value: "{", description: "\"{\"" },
+        peg$c101 = "}",
+        peg$c102 = { type: "literal", value: "}", description: "\"}\"" },
+        peg$c103 = "=",
+        peg$c104 = { type: "literal", value: "=", description: "\"=\"" },
+        peg$c105 = "\"",
+        peg$c106 = { type: "literal", value: "\"", description: "\"\\\"\"" },
+        peg$c107 = "'",
+        peg$c108 = { type: "literal", value: "'", description: "\"'\"" },
+        peg$c109 = "&",
+        peg$c110 = { type: "literal", value: "&", description: "\"&\"" },
+        peg$c111 = ";",
+        peg$c112 = { type: "literal", value: ";", description: "\";\"" },
+        peg$c113 = /^[^"]/,
+        peg$c114 = { type: "class", value: "[^\"]", description: "[^\"]" },
+        peg$c115 = "\n",
+        peg$c116 = { type: "literal", value: "\n", description: "\"\\n\"" },
+        peg$c117 = "\r\n",
+        peg$c118 = { type: "literal", value: "\r\n", description: "\"\\r\\n\"" },
+        peg$c119 = "\r",
+        peg$c120 = { type: "literal", value: "\r", description: "\"\\r\"" },
+        peg$c121 = "\u2028",
+        peg$c122 = { type: "literal", value: "\u2028", description: "\"\\u2028\"" },
+        peg$c123 = "\u2029",
+        peg$c124 = { type: "literal", value: "\u2029", description: "\"\\u2029\"" },
 
         peg$currPos          = 0,
         peg$reportedPos      = 0,
@@ -3513,37 +3678,55 @@ module.exports = (function() {
     }
 
     function peg$parseinteger() {
-      var s0, s1, s2;
+      var s0, s1, s2, s3;
 
       peg$silentFails++;
       s0 = peg$currPos;
-      s1 = [];
-      if (peg$c70.test(input.charAt(peg$currPos))) {
-        s2 = input.charAt(peg$currPos);
+      if (peg$c71.test(input.charAt(peg$currPos))) {
+        s1 = input.charAt(peg$currPos);
         peg$currPos++;
       } else {
-        s2 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c71); }
+        s1 = peg$FAILED;
+        if (peg$silentFails === 0) { peg$fail(peg$c72); }
       }
-      if (s2 !== peg$FAILED) {
-        while (s2 !== peg$FAILED) {
-          s1.push(s2);
-          if (peg$c70.test(input.charAt(peg$currPos))) {
-            s2 = input.charAt(peg$currPos);
-            peg$currPos++;
-          } else {
-            s2 = peg$FAILED;
-            if (peg$silentFails === 0) { peg$fail(peg$c71); }
-          }
-        }
-      } else {
-        s1 = peg$c2;
+      if (s1 === peg$FAILED) {
+        s1 = peg$c70;
       }
       if (s1 !== peg$FAILED) {
-        peg$reportedPos = s0;
-        s1 = peg$c72(s1);
+        s2 = [];
+        if (peg$c73.test(input.charAt(peg$currPos))) {
+          s3 = input.charAt(peg$currPos);
+          peg$currPos++;
+        } else {
+          s3 = peg$FAILED;
+          if (peg$silentFails === 0) { peg$fail(peg$c74); }
+        }
+        if (s3 !== peg$FAILED) {
+          while (s3 !== peg$FAILED) {
+            s2.push(s3);
+            if (peg$c73.test(input.charAt(peg$currPos))) {
+              s3 = input.charAt(peg$currPos);
+              peg$currPos++;
+            } else {
+              s3 = peg$FAILED;
+              if (peg$silentFails === 0) { peg$fail(peg$c74); }
+            }
+          }
+        } else {
+          s2 = peg$c2;
+        }
+        if (s2 !== peg$FAILED) {
+          peg$reportedPos = s0;
+          s1 = peg$c75(s1, s2);
+          s0 = s1;
+        } else {
+          peg$currPos = s0;
+          s0 = peg$c2;
+        }
+      } else {
+        peg$currPos = s0;
+        s0 = peg$c2;
       }
-      s0 = s1;
       peg$silentFails--;
       if (s0 === peg$FAILED) {
         s1 = peg$FAILED;
@@ -3809,7 +3992,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c73(s1);
+        s1 = peg$c76(s1);
       }
       s0 = s1;
 
@@ -3843,7 +4026,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c74(s1);
+        s1 = peg$c77(s1);
       }
       s0 = s1;
 
@@ -3855,22 +4038,22 @@ module.exports = (function() {
 
       s0 = peg$currPos;
       s1 = [];
-      if (peg$c75.test(input.charAt(peg$currPos))) {
+      if (peg$c78.test(input.charAt(peg$currPos))) {
         s2 = input.charAt(peg$currPos);
         peg$currPos++;
       } else {
         s2 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c76); }
+        if (peg$silentFails === 0) { peg$fail(peg$c79); }
       }
       if (s2 !== peg$FAILED) {
         while (s2 !== peg$FAILED) {
           s1.push(s2);
-          if (peg$c75.test(input.charAt(peg$currPos))) {
+          if (peg$c78.test(input.charAt(peg$currPos))) {
             s2 = input.charAt(peg$currPos);
             peg$currPos++;
           } else {
             s2 = peg$FAILED;
-            if (peg$silentFails === 0) { peg$fail(peg$c76); }
+            if (peg$silentFails === 0) { peg$fail(peg$c79); }
           }
         }
       } else {
@@ -3878,7 +4061,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c77(s1);
+        s1 = peg$c80(s1);
       }
       s0 = s1;
 
@@ -4111,7 +4294,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c78(s1);
+        s1 = peg$c81(s1);
       }
       s0 = s1;
 
@@ -4344,7 +4527,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c78(s1);
+        s1 = peg$c81(s1);
       }
       s0 = s1;
 
@@ -4412,12 +4595,12 @@ module.exports = (function() {
                 s7 = peg$c2;
               }
               if (s7 !== peg$FAILED) {
-                if (peg$c79.test(input.charAt(peg$currPos))) {
+                if (peg$c82.test(input.charAt(peg$currPos))) {
                   s8 = input.charAt(peg$currPos);
                   peg$currPos++;
                 } else {
                   s8 = peg$FAILED;
-                  if (peg$silentFails === 0) { peg$fail(peg$c80); }
+                  if (peg$silentFails === 0) { peg$fail(peg$c83); }
                 }
                 if (s8 !== peg$FAILED) {
                   peg$reportedPos = s2;
@@ -4506,12 +4689,12 @@ module.exports = (function() {
                     s7 = peg$c2;
                   }
                   if (s7 !== peg$FAILED) {
-                    if (peg$c79.test(input.charAt(peg$currPos))) {
+                    if (peg$c82.test(input.charAt(peg$currPos))) {
                       s8 = input.charAt(peg$currPos);
                       peg$currPos++;
                     } else {
                       s8 = peg$FAILED;
-                      if (peg$silentFails === 0) { peg$fail(peg$c80); }
+                      if (peg$silentFails === 0) { peg$fail(peg$c83); }
                     }
                     if (s8 !== peg$FAILED) {
                       peg$reportedPos = s2;
@@ -4547,7 +4730,7 @@ module.exports = (function() {
       }
       if (s1 !== peg$FAILED) {
         peg$reportedPos = s0;
-        s1 = peg$c81(s1);
+        s1 = peg$c84(s1);
       }
       s0 = s1;
 
@@ -4557,12 +4740,12 @@ module.exports = (function() {
     function peg$parsews() {
       var s0;
 
-      if (peg$c82.test(input.charAt(peg$currPos))) {
+      if (peg$c85.test(input.charAt(peg$currPos))) {
         s0 = input.charAt(peg$currPos);
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c83); }
+        if (peg$silentFails === 0) { peg$fail(peg$c86); }
       }
 
       return s0;
@@ -4571,12 +4754,12 @@ module.exports = (function() {
     function peg$parselangleslash() {
       var s0;
 
-      if (input.substr(peg$currPos, 2) === peg$c84) {
-        s0 = peg$c84;
+      if (input.substr(peg$currPos, 2) === peg$c87) {
+        s0 = peg$c87;
         peg$currPos += 2;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c85); }
+        if (peg$silentFails === 0) { peg$fail(peg$c88); }
       }
 
       return s0;
@@ -4586,11 +4769,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 60) {
-        s0 = peg$c86;
+        s0 = peg$c89;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c87); }
+        if (peg$silentFails === 0) { peg$fail(peg$c90); }
       }
 
       return s0;
@@ -4600,11 +4783,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 62) {
-        s0 = peg$c88;
+        s0 = peg$c91;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c89); }
+        if (peg$silentFails === 0) { peg$fail(peg$c92); }
       }
 
       return s0;
@@ -4613,12 +4796,12 @@ module.exports = (function() {
     function peg$parserangleslash() {
       var s0;
 
-      if (input.substr(peg$currPos, 2) === peg$c90) {
-        s0 = peg$c90;
+      if (input.substr(peg$currPos, 2) === peg$c93) {
+        s0 = peg$c93;
         peg$currPos += 2;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c91); }
+        if (peg$silentFails === 0) { peg$fail(peg$c94); }
       }
 
       return s0;
@@ -4627,12 +4810,12 @@ module.exports = (function() {
     function peg$parselbraceslash() {
       var s0;
 
-      if (input.substr(peg$currPos, 2) === peg$c92) {
-        s0 = peg$c92;
+      if (input.substr(peg$currPos, 2) === peg$c95) {
+        s0 = peg$c95;
         peg$currPos += 2;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c93); }
+        if (peg$silentFails === 0) { peg$fail(peg$c96); }
       }
 
       return s0;
@@ -4641,12 +4824,12 @@ module.exports = (function() {
     function peg$parserbraceslash() {
       var s0;
 
-      if (input.substr(peg$currPos, 2) === peg$c94) {
-        s0 = peg$c94;
+      if (input.substr(peg$currPos, 2) === peg$c97) {
+        s0 = peg$c97;
         peg$currPos += 2;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c95); }
+        if (peg$silentFails === 0) { peg$fail(peg$c98); }
       }
 
       return s0;
@@ -4656,11 +4839,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 123) {
-        s0 = peg$c96;
+        s0 = peg$c99;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c97); }
+        if (peg$silentFails === 0) { peg$fail(peg$c100); }
       }
 
       return s0;
@@ -4670,11 +4853,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 125) {
-        s0 = peg$c98;
+        s0 = peg$c101;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c99); }
+        if (peg$silentFails === 0) { peg$fail(peg$c102); }
       }
 
       return s0;
@@ -4684,11 +4867,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 61) {
-        s0 = peg$c100;
+        s0 = peg$c103;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c101); }
+        if (peg$silentFails === 0) { peg$fail(peg$c104); }
       }
 
       return s0;
@@ -4698,11 +4881,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 34) {
-        s0 = peg$c102;
+        s0 = peg$c105;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c103); }
+        if (peg$silentFails === 0) { peg$fail(peg$c106); }
       }
 
       return s0;
@@ -4712,11 +4895,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 39) {
-        s0 = peg$c104;
+        s0 = peg$c107;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c105); }
+        if (peg$silentFails === 0) { peg$fail(peg$c108); }
       }
 
       return s0;
@@ -4726,11 +4909,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 38) {
-        s0 = peg$c106;
+        s0 = peg$c109;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c107); }
+        if (peg$silentFails === 0) { peg$fail(peg$c110); }
       }
 
       return s0;
@@ -4740,11 +4923,11 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 59) {
-        s0 = peg$c108;
+        s0 = peg$c111;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c109); }
+        if (peg$silentFails === 0) { peg$fail(peg$c112); }
       }
 
       return s0;
@@ -4753,12 +4936,12 @@ module.exports = (function() {
     function peg$parsenon_quote() {
       var s0;
 
-      if (peg$c110.test(input.charAt(peg$currPos))) {
+      if (peg$c113.test(input.charAt(peg$currPos))) {
         s0 = input.charAt(peg$currPos);
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c111); }
+        if (peg$silentFails === 0) { peg$fail(peg$c114); }
       }
 
       return s0;
@@ -4768,43 +4951,43 @@ module.exports = (function() {
       var s0;
 
       if (input.charCodeAt(peg$currPos) === 10) {
-        s0 = peg$c112;
+        s0 = peg$c115;
         peg$currPos++;
       } else {
         s0 = peg$FAILED;
-        if (peg$silentFails === 0) { peg$fail(peg$c113); }
+        if (peg$silentFails === 0) { peg$fail(peg$c116); }
       }
       if (s0 === peg$FAILED) {
-        if (input.substr(peg$currPos, 2) === peg$c114) {
-          s0 = peg$c114;
+        if (input.substr(peg$currPos, 2) === peg$c117) {
+          s0 = peg$c117;
           peg$currPos += 2;
         } else {
           s0 = peg$FAILED;
-          if (peg$silentFails === 0) { peg$fail(peg$c115); }
+          if (peg$silentFails === 0) { peg$fail(peg$c118); }
         }
         if (s0 === peg$FAILED) {
           if (input.charCodeAt(peg$currPos) === 13) {
-            s0 = peg$c116;
+            s0 = peg$c119;
             peg$currPos++;
           } else {
             s0 = peg$FAILED;
-            if (peg$silentFails === 0) { peg$fail(peg$c117); }
+            if (peg$silentFails === 0) { peg$fail(peg$c120); }
           }
           if (s0 === peg$FAILED) {
             if (input.charCodeAt(peg$currPos) === 8232) {
-              s0 = peg$c118;
+              s0 = peg$c121;
               peg$currPos++;
             } else {
               s0 = peg$FAILED;
-              if (peg$silentFails === 0) { peg$fail(peg$c119); }
+              if (peg$silentFails === 0) { peg$fail(peg$c122); }
             }
             if (s0 === peg$FAILED) {
               if (input.charCodeAt(peg$currPos) === 8233) {
-                s0 = peg$c120;
+                s0 = peg$c123;
                 peg$currPos++;
               } else {
                 s0 = peg$FAILED;
-                if (peg$silentFails === 0) { peg$fail(peg$c121); }
+                if (peg$silentFails === 0) { peg$fail(peg$c124); }
               }
             }
           }
@@ -4850,6 +5033,8 @@ module.exports = (function() {
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
+var util = _interopRequire(require("./util"));
+
 var helpers = _interopRequire(require("./helpers"));
 
 var tornado = {
@@ -4863,6 +5048,45 @@ var tornado = {
    * All registered Helpers
    */
   helpers: {},
+
+  /**
+   * Helper context
+   */
+  helperContext: {
+    push: function push() {
+      this.__contextStack.push({});
+    },
+    pop: function pop() {
+      return this.__contextStack.pop();
+    },
+    peek: function peek() {
+      return this.__contextStack[this.__contextStack.length - 1];
+    },
+    get: function get(key) {
+      for (var i = this.__contextStack.length - 1; i >= 0; i--) {
+        var context = this.__contextStack[i];
+        if (context[key] !== undefined) {
+          return context[key];
+        }
+      }
+    },
+    set: function set(key, val) {
+      var context = this.peek();
+      context[this.normalizeKey(key)] = val;
+    },
+    setGlobal: function setGlobal(key, val) {
+      this.__contextStack[0][this.normalizeKey(key)] = val;
+    },
+    clear: function clear(key) {
+      this.set(key, null);
+    },
+    normalizeKey: function normalizeKey(key) {
+      // Prepend with $ if $ isn't already present
+      return key[0] === "$" ? key : "$" + key;
+    },
+    // Inititialize the stack with the global scope
+    __contextStack: [{}]
+  },
 
   /**
    * Method for registering templates. This method is intended
@@ -4916,9 +5140,12 @@ var tornado = {
     var newContext = undefined;
     if (pathLength === 1) {
       // there is only one more item left in the path
-      var res = context[path.pop()];
+      var key = path.pop();
+      var res = context[key];
       if (res !== undefined) {
         return this.util.isFunction(res) ? res.bind(context)() : res;
+      } else if (key[0] === "$" && this.helperContext.get(key) !== undefined) {
+        return this.helperContext.get(key);
       } else {
         return "";
       }
@@ -5082,6 +5309,8 @@ var tornado = {
 
     var body = undefined,
         ctx = undefined;
+    // TODO: when section becomes a helper, remove this call to helperContext
+    this.helperContext.push();
     if (this.util.isPromise(val)) {
       placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
       val.then(function (data) {
@@ -5104,7 +5333,10 @@ var tornado = {
         body = bodies["else"];
         ctx = context;
       }
-      return this.sectionResult(ctx, placeholderNode, body);
+      var res = this.sectionResult(ctx, placeholderNode, body);
+      // TODO: when section becomes a helper, remove this call to helperContext
+      this.helperContext.pop();
+      return res;
     }
   },
 
@@ -5123,8 +5355,10 @@ var tornado = {
     }
     if (Array.isArray(val)) {
       if (placeholderNode) {
-        var frag = document.createDocumentFragment();
+        var frag = this.createDocumentFragment();
+        this.helperContext.set("len", val.length);
         for (var i = 0, item = undefined; item = val[i]; i++) {
+          this.helperContext.set("idx", i);
           frag.appendChild(body(item));
         }
         this.replaceNode(placeholderNode, frag);
@@ -5168,16 +5402,19 @@ var tornado = {
     if (!helper) {
       throw new Error("Helper not registered: " + name);
     } else {
+      this.helperContext.push();
       var paramVals = this.util.getValuesFromObject(params);
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(function (values) {
           var resolvedParams = _this.util.arraysToObject(Object.keys(params).sort(), values);
-          var returnVal = helper(context, resolvedParams, bodies);
+          var returnVal = helper(context, resolvedParams, bodies, _this.helperContext);
           return _this.helperResult(placeholderNode, returnVal);
         });
       } else {
-        var returnVal = helper(context, params, bodies);
-        return this.helperResult(placeholderNode, returnVal);
+        var returnVal = helper(context, params, bodies, this.helperContext);
+        var res = this.helperResult(placeholderNode, returnVal);
+        this.helperContext.pop();
+        return res;
       }
     }
   }),
@@ -5185,8 +5422,10 @@ var tornado = {
   helperResult: function helperResult(placeholderNode, returnVal) {
     var _this = this;
 
+    returnVal = returnVal || "";
     if (this.util.isPromise(returnVal)) {
       returnVal.then(function (frag) {
+        frag = _this.util.isNode(frag) ? frag : _this.createDocumentFragment();
         if (placeholderNode) {
           _this.replaceNode(placeholderNode, frag);
         } else {
@@ -5194,6 +5433,7 @@ var tornado = {
         }
       });
     } else {
+      returnVal = this.util.isNode(returnVal) ? returnVal : this.createDocumentFragment();
       if (placeholderNode) {
         this.replaceNode(placeholderNode, returnVal);
       } else {
@@ -5212,7 +5452,7 @@ var tornado = {
   block: function block(name, idx, context, template) {
     var renderer = this.getBlockRenderer(name, idx, template);
     if (!renderer) {
-      var frag = document.createDocumentFragment();
+      var frag = this.createDocumentFragment();
       frag.appendChild(document.createTextNode(""));
       return frag;
     }
@@ -5369,91 +5609,7 @@ var tornado = {
     }
   },
 
-  util: {
-    /**
-     * Determine if a value is an object
-     * @param {*} val The value in question
-     * @return {Boolean}
-     */
-    isObject: function isObject(val) {
-      return typeof val === "object" && val !== null;
-    },
-
-    /**
-     * Deterime if a value is a Promise
-     * @param {*} val The value in question
-     * @return {Boolean}
-     */
-    isPromise: function isPromise(val) {
-      return this.isFunction(val.then);
-    },
-
-    /**
-     * Check if an Array cotains any promises
-     * @param {Array} arr The Array whose values are in question
-     * @return {Boolean}
-     */
-    hasPromises: function hasPromises(arr) {
-      var _this = this;
-
-      return arr.some(function (val) {
-        return _this.isPromise(val);
-      });
-    },
-
-    /**
-     * Determine if a value is a Function
-     * @param {*} val The value in question
-     * @return {Boolean}
-     */
-    isFunction: function isFunction(val) {
-      return typeof val === "function";
-    },
-
-    /**
-     * Determine Tornado truthiness
-     * @param {*} val The value in question
-     * @return {Boolean}
-     */
-    isTruthy: function isTruthy(val) {
-      if (val === 0) {
-        return true;
-      }
-      if (Array.isArray(val) && !val.length) {
-        return false;
-      }
-      return !!val;
-    },
-
-    /**
-     * Return the values of the object (sorted by key name) as an array
-     * @param {Object} obj The object from which the values are to be extracted
-     * @return {Array}
-     */
-    getValuesFromObject: function getValuesFromObject(obj) {
-      return Object.keys(obj).sort().map(function (key) {
-        return obj[key];
-      });
-    },
-
-    /**
-     * Given two arrays of equal length, the values in the first array become keys and the values of
-     * the second array become values of a new object.
-     * @param {Object} keys An array with the names of keys for the new object
-     * @param {Object} values An array with the values for the new object
-     * @return {Object}
-     */
-    arraysToObject: function arraysToObject(keys, values) {
-      var result = {};
-      if (!keys.length === values.length) {
-        return result;
-      }
-      for (var i = 0, len = keys.length; i < len; i++) {
-        result[keys[i]] = values[i];
-      }
-      return result;
-    }
-  }
+  util: util
 };
 
 /**
@@ -5478,7 +5634,120 @@ tornado.registerHelpers(helpers);
 module.exports = tornado;
 /*name*/ /*c*/
 //# sourceMappingURL=runtime.js.map
-},{"./helpers":15}],18:[function(require,module,exports){
+},{"./helpers":15,"./util":18}],18:[function(require,module,exports){
+"use strict";
+
+module.exports = {
+  /**
+   * Determine if a value is an object
+   * @param {*} val The value in question
+   * @return {Boolean}
+   */
+  isObject: function isObject(val) {
+    return typeof val === "object" && val !== null;
+  },
+
+  /**
+   * Deterime if a value is a Promise
+   * @param {*} val The value in question
+   * @return {Boolean}
+   */
+  isPromise: function isPromise(val) {
+    return this.isFunction(val.then);
+  },
+
+  /**
+   * Check if an Array cotains any promises
+   * @param {Array} arr The Array whose values are in question
+   * @return {Boolean}
+   */
+  hasPromises: function hasPromises(arr) {
+    var _this = this;
+
+    return arr.some(function (val) {
+      return _this.isPromise(val);
+    });
+  },
+
+  /**
+   * Determine if a value is a Function
+   * @param {*} val The value in question
+   * @return {Boolean}
+   */
+  isFunction: function isFunction(val) {
+    return typeof val === "function";
+  },
+
+  /**
+   * Determine Tornado truthiness
+   * @param {*} val The value in question
+   * @return {Boolean}
+   */
+  isTruthy: function isTruthy(val) {
+    if (val === 0) {
+      return true;
+    }
+    if (Array.isArray(val) && !val.length) {
+      return false;
+    }
+    return !!val;
+  },
+
+  /**
+   * Determine if a value is a HTML Node
+   * @param {*} val The value in question
+   * @return {Boolean}
+   */
+  isNode: function isNode(val) {
+    return val instanceof Node;
+  },
+
+  /**
+   * Return the values of the object (sorted by key name) as an array
+   * @param {Object} obj The object from which the values are to be extracted
+   * @return {Array}
+   */
+  getValuesFromObject: function getValuesFromObject(obj) {
+    return Object.keys(obj).sort().map(function (key) {
+      return obj[key];
+    });
+  },
+
+  /**
+   * Given two arrays of equal length, the values in the first array become keys and the values of
+   * the second array become values of a new object.
+   * @param {Object} keys An array with the names of keys for the new object
+   * @param {Object} values An array with the values for the new object
+   * @return {Object}
+   */
+  arraysToObject: function arraysToObject(keys, values) {
+    var result = {};
+    if (!keys.length === values.length) {
+      return result;
+    }
+    for (var i = 0, len = keys.length; i < len; i++) {
+      result[keys[i]] = values[i];
+    }
+    return result;
+  },
+
+  /**
+   * Throw an error if a condition is falsy (the condition may be a function, whose result will be
+   * evaluated for truthiness).
+   * @param {Boolean|Function} condition The condition to be evaluated
+   * @param {String} description The description to be used when thorwing an error
+   */
+  assert: function assert(condition, description) {
+    if (this.isFunction(condition)) {
+      condition = condition();
+    }
+    if (!condition) {
+      throw new Error(description);
+    }
+  }
+};
+//# sourceMappingURL=util.js.map
+},{}],19:[function(require,module,exports){
 var parser = require('../../dist/parser'),
     compiler = require('../../dist/compiler'),
     td = require('../../dist/runtime');
@@ -5579,4 +5848,4 @@ outputContainer.addEventListener('click', function(evt) {
   target.classList.toggle('min');
 });
 
-},{"../../dist/compiler":1,"../../dist/parser":16,"../../dist/runtime":17}]},{},[18]);
+},{"../../dist/compiler":1,"../../dist/parser":16,"../../dist/runtime":17}]},{},[19]);

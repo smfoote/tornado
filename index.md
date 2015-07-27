@@ -4,7 +4,7 @@ layout: default
 ---
 <div id="input">
  <textarea id="template" placeholder="Template goes here"><h2>Tornado Watch</h2>
-{#weather.query.results.channel}
+{#weather}
   <h3>Weather in {location.city}</h3>
   <ul class="forecast">
     <li>
@@ -28,43 +28,29 @@ layout: default
   {#locations}
     <h3 class="header-pl"></h3>
     <ul class="forecast">
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span></div>
-      </li>
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
-      </li>
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
-      </li>
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
-      </li>
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
-      </li>
-      <li>
-        <h4 class="date-pl"></h4>
-        <div class="icon-pl"></div>
-        <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
-      </li>
+      {@repeat count=5}
+        <li>
+          <h4 class="date-pl"></h4>
+          <div class="icon-pl"></div>
+          <div class="temp-pl"><span class="high"></span><span class="low"></span></div>
+        </li>
+      {/repeat}
     </ul>
   {/locations}
-{/weather.query.results.channel}
+{/weather}
+
 <p>Weather data provided by <a href="https://developer.yahoo.com/weather/">Yahoo!</a> Weather icons provided by <a href="http://www.alessioatzeni.com/meteocons/">Meteocons</a>.</p>
 </textarea>
- <textarea id="context" placeholder="Context goes here">{
-  locations: ['Salt Lake City, UT', 'Mountain View, CA'],
+  <textarea id="context" placeholder="Context goes here">{
+  weather: function() {
+    var url = this.baseURL + this.YQLQuery();
+    return fetch(url).then(function(res) {
+      return res.json().then(function(d) {
+        return d.query.results.channel;
+      });
+    });
+  },
+
   YQLQuery: function() {
     var locationsQuery = this.locations.map(function(location) {
       return 'text="' + location + '"';
@@ -72,11 +58,13 @@ layout: default
     var str = 'select * from weather.forecast where woeid in (select woeid from geo.places(1) where ' + locationsQuery + ')';
     return str.replace(' ', '%20').replace('=', '%3D').replace('"', '%22');
   },
-  weather: function() {
-    return fetch('https://query.yahooapis.com/v1/public/yql?format=json&q='+ this.YQLQuery()).then(function(res) {
-      return res.json();
-    });
-  }
+
+  baseURL: 'https://query.yahooapis.com/v1/public/yql?format=json&q=',
+
+  locations: [
+    'Salt Lake City, UT',
+    'Mountain View, CA'
+  ]
 }</textarea></textarea>
  <button id="render">Render</button>
 </div>
