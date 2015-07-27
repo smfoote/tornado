@@ -177,6 +177,18 @@ let helpers = {
     } else {
       return emptyFrag().appendChild(document.createTextNode(res));
     }
+  },
+  repeat(context, params, bodies, helperContext) {
+    let {count} = params;
+    let {main} = bodies;
+    util.assert(typeof count === 'number' && count >= 0, '@repeat requires the `count` param, and it must be a number 0 or greater.');
+    let frag = emptyFrag();
+    helperContext.set('len', count);
+    for (let i = 0; i < count; i++) {
+      helperContext.set('idx', i);
+      frag.appendChild(main(context));
+    }
+    return frag;
   }
 };
 
