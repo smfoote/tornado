@@ -24,19 +24,17 @@ let truthTest = function(context, params, bodies, helperContext, test) {
   util.assert(val !== undefined, '@eq, @ne, @lt, @lte, @gt, @gte require a `val` parameter');
   let {main} = bodies;
   let elseBody = bodies.else;
-  if (key && val) {
-    if (test(key, val)) {
-      let res;
-      if (main) {
-        res = main(context);
-      }
-      if (selectState) {
-        selectState.isResolved = true;
-      }
-      return res;
-    } else if (elseBody) {
-      return elseBody(context);
+  if (test(key, val)) {
+    let res;
+    if (main) {
+      res = main(context);
     }
+    if (selectState) {
+      selectState.isResolved = true;
+    }
+    return res;
+  } else if (elseBody) {
+    return elseBody(context);
   }
 
   // There are no appropriate bodies, so return an empty fragment

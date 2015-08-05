@@ -184,6 +184,18 @@ let suite = {
       })()
     },
     {
+      description: '@ne with with key and val of 0',
+      template: '{@ne key=0 val=0}<div>2 + 2</div>{:else}<div>These are equal :(</div>{/ne}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode('These are equal :('));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
       description: '@ne with non-equal strings',
       template: '{@ne key="hello" val="bonjour"}<div>Bonjour, ça va?</div>{:else}<div>Huh?</div>{/ne}',
       context: {},
