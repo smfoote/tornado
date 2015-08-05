@@ -31,19 +31,17 @@ var truthTest = function truthTest(context, params, bodies, helperContext, test)
   var main = bodies.main;
 
   var elseBody = bodies["else"];
-  if (key && val) {
-    if (test(key, val)) {
-      var res = undefined;
-      if (main) {
-        res = main(context);
-      }
-      if (selectState) {
-        selectState.isResolved = true;
-      }
-      return res;
-    } else if (elseBody) {
-      return elseBody(context);
+  if (test(key, val)) {
+    var res = undefined;
+    if (main) {
+      res = main(context);
     }
+    if (selectState) {
+      selectState.isResolved = true;
+    }
+    return res;
+  } else if (elseBody) {
+    return elseBody(context);
   }
 
   // There are no appropriate bodies, so return an empty fragment
