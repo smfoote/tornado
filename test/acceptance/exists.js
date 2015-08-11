@@ -223,15 +223,7 @@ let suite = {
           });
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        let div = document.createElement('div');
-        div.setAttribute('class', 'tornado-pending');
-        div.appendChild(document.createTextNode('coming soon'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: 'Hello, <div class="tornado-pending">coming soon</div>'
     },
     {
       description: 'Exists with an else where reference is a promise that rejects',

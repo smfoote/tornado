@@ -1,6 +1,9 @@
 import compiler from '../dist/compiler';
 import parser from '../dist/parser';
+import simpleDom from 'simple-dom';
 
+let doc = new simpleDom.Document();
+let serializer = new simpleDom.HTMLSerializer(simpleDom.voidMap);
 
 // Compare the attributes of two nodes for equality
 function compareAttrs(a, b) {
@@ -16,6 +19,7 @@ function compareAttrs(a, b) {
 }
 
 // Compare DOM nodes for equality
+// TODO: remove this once all the expectedDoms are converted to expectedHTMLs
 function compareNodes(a, b) {
   let aChildren = a.childNodes || [];
   let bChildren = b.childNodes || [];
@@ -58,15 +62,16 @@ function createTestOutput(test) {
   return li;
 }
 
+// FIXME: Why is this needed?
+describe('tests are about to run', function(){
+  it('should initiate tests', function(){
+      chai.assert.equal('x', 'x');
+  });
+});
+
 function runSuites(suites) {
   const compilerModes = ['dev', 'production'];
-  let container = document.querySelector('#output');
   suites.forEach(suite => {
-    let suiteContainer = document.createElement('div');
-    let header = document.createElement('h2');
-    header.appendChild(document.createTextNode(suite.name));
-    suiteContainer.appendChild(header);
-    container.appendChild(suiteContainer);
     suite.tests.forEach(test => {
       if (test.setup && typeof test.setup === 'function') {
         test.setup(parser, compiler);
@@ -80,18 +85,32 @@ function runSuites(suites) {
         eval(`tl = ${compiledTemplate};`);
         let out = tl.render(test.context);
         let res;
-        // Wait for promises to resolve
-        setTimeout(() => {
-          res = compareNodes(out, test.expectedDom);
-          if (!res) {
-            let div = document.createElement('div');
-            div.appendChild(out);
-            let expectedDiv = document.createElement('div');
-            expectedDiv.appendChild(test.expectedDom);
-            test.fail = `Expected ${div.innerHTML} to equal ${expectedDiv.innerHTML}`;
-          }
-          suiteContainer.appendChild(createTestOutput(test, res));
-        }, 0);
+        res = false;
+
+        setTimeout(function() {
+          let htmlString = serializer.serialize(out);
+          describe(test.description, function(){
+            it(`Expected ${htmlString} to equal ${test.expectedHTML}`, function(done){
+              if (test.expectedHTML) {
+                chai.assert.equal(htmlString, test.expectedHTML);
+
+                if (test.expectedHTMLResolved) {
+                  setTimeout(function() {
+                    let resolvedHTMLString = serializer.serialize(out);
+                    chai.assert.equal(resolvedHTMLString, test.expectedHTMLResolved);
+                    done();
+                  }, 200);
+                } else {
+                    done();
+                }
+              } else {
+                // TODO: remove this once all the expectedDoms are converted to expectedHTMLs
+                chai.assert.equal(compareNodes(out, test.expectedDom), true);
+                done();
+              }
+            });
+          });
+        }, 0); 
       }
     });
   });
