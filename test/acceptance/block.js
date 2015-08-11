@@ -32,7 +32,8 @@ let suite = {
         frag.appendChild(document.createTextNode(' and '));
         frag.appendChild(document.createTextNode('Default2'));
         return frag;
-      })()
+      })(),
+      expectedHTML: 'Default and Default2'
     },
     {
       description: 'Multiple blocks, different names.',
@@ -105,13 +106,7 @@ let suite = {
       description: 'Block inside attribute with inline-partial',
       template: '<div class="{+block}Default{/block}"></div>{<block}yellow{/block}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'yellow');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="yellow"></div>'
     },
     {
       description: 'Block in parent template, inline-partial in child template',
@@ -123,13 +118,7 @@ let suite = {
       },
       template: '{>parent/}{<content}Child content{/content}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Child content'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Child content</div>'
     }
   ]
 };
