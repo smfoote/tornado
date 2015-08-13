@@ -1,0 +1,134 @@
+@font-face {
+    font-family: 'MeteoconsRegular';
+    src: url('meteocons-webfont.eot');
+    src: url('meteocons-webfont.eot?#iefix') format('embedded-opentype'),
+         url('meteocons-webfont.woff') format('woff'),
+         url('meteocons-webfont.ttf') format('truetype'),
+         url('meteocons-webfont.svg#MeteoconsRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+html {
+  font-family: 'Helvetica-Neue', 'Helvetica', 'Arial', sans-serif;
+}
+
+textarea {
+  width: 45vw;
+  height: 500px;
+  font-family: monospace;
+  font-size: 14px;
+  background-color: #292C33;
+  color: #57AFC1;
+}
+
+#output pre,
+#output div {
+  border: 1px solid #CCC;
+  background-color: #DDD;
+  max-height: 2000px;
+  overflow: auto;
+  transition: max-height 400ms ease;
+}
+
+#output pre.min,
+#output div.min {
+  max-height: 10px;
+}
+
+/* Placeholder Styles */
+#output .tornado-pending {
+  opacity: 0.5;
+}
+
+#output .tornado-pending,
+#output .tornado-pending div {
+  border: none;
+}
+
+#output .tornado-pending .header-pl {
+  height: 21px;
+  width: 200px;
+  background-color: #000;
+  margin-top: 0;
+}
+
+#output .tornado-pending .date-pl {
+  height: 18px;
+  width: 80px;
+  background-color: #000;
+}
+
+#output .tornado-pending .icon-pl {
+  height: 80px;
+  width: 80px;
+  background-color: #0A077C;
+  margin-bottom: 20px;
+}
+#output .tornado-pending .temp-pl {
+  text-align: center;
+}
+
+#output .tornado-pending .high,
+#output .tornado-pending .low {
+  display: inline-block;
+  height: 18px;
+  width: 18px;
+}
+
+#output .tornado-pending .high {
+  background-color: #C59707;
+}
+
+#output .tornado-pending .low {
+  background-color: #1543A6;
+}
+
+#output .output {
+  padding: 10px;
+}
+
+.forecast {
+  list-style-type: none;
+  padding: 0;
+}
+
+.forecast > li {
+  display: inline-block;
+  padding: 5px 15px;
+}
+
+#output .temp {
+  border: none;
+  text-align: center;
+  font-weight: bold;
+}
+
+.date {
+  text-align: center;
+}
+
+.weather-icon {
+  color: transparent;
+  display: block;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px auto;
+  text-align: center;
+}
+
+.weather-icon:before {
+  color: #0A077C;
+  font-size: 80px;
+  font-family: 'MeteoconsRegular';
+  content: attr(data-icon-code);
+}
+
+.high {
+  color: #C59707;
+}
+
+.low {
+  color: #1543A6;
+  margin-left: 5px;
+}
