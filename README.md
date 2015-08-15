@@ -35,7 +35,7 @@ $ tornado hello.td > hello.js
 
 ### Using your compiled templates
 
-Now your templates are compiled and you are ready to use them on your page. You need both the Tornado runtime and the compiled templates on the page, and the Tornado runtime must be included first. For now, the Tornado runtime can be found at [https://raw.githubusercontent.com/smfoote/tornado/master/dist/runtime.js](https://raw.githubusercontent.com/smfoote/tornado/master/dist/runtime.js). A properly released version will be available on or before August 15, 2015.
+Now your templates are compiled and you are ready to use them on your page. You need both the Tornado runtime and the compiled templates on the page, and the Tornado runtime must be included first. The runtime can be downloaded from the [latest release](https://github.com/smfoote/tornado/releases/latest).
 
 ```
 var container = document.getElementById('content-container');
