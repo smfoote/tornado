@@ -316,5 +316,7 @@ var generateJavascript = function generateJavascript(ast, options) {
   return codeGenerator(options.results.instructions, options.results.code);
 };
 
-module.exports = generateJavascript;
+module.exports = {
+  codegen: [generateJavascript]
+};
 //# sourceMappingURL=generateJS.js.map

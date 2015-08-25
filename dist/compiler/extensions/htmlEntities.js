@@ -27,8 +27,10 @@ var generatedWalker = visitor.build({
   }
 });
 
-var htmlEntities = function htmlEntities(ast, options) {
-  return generatedWalker(ast, options.context);
+var htmlEntities = {
+  transforms: [function (ast, options) {
+    return generatedWalker(ast, options.context);
+  }]
 };
 
 module.exports = htmlEntities;

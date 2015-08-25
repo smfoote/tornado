@@ -75,8 +75,10 @@ let generatedWalker = visitor.build({
   }
 });
 
-let adjustAttrs = function (ast, options) {
-  return generatedWalker(ast, options.context);
+let adjustAttrs = {
+  transforms: [function (ast, options) {
+    return generatedWalker(ast, options.context);
+  }]
 };
 
 export default adjustAttrs;
