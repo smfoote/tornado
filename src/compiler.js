@@ -8,12 +8,13 @@ import generateJS from './compiler/extensions/generateJS';
 import postprocess from './compiler/extensions/postprocess';
 
 
-const stages = ['checks', 'transforms', 'instructions', 'codegen'];
+const stages = ['checks', 'transforms', 'instructions'];
 let compiler = {
   checks: [],
   transforms: [],
   instructions: [],
-  codegen: [],
+  codeGenerator: generateJS,
+  postprocessor: postprocess,
   compile(ast, name/*, options*/) {
     let results = {
       name,
@@ -25,6 +26,10 @@ let compiler = {
         pass(ast, {results, context});
       });
     });
+    // TODO Don't mutate the results object. Have each pass return its result (and consume the
+    // previous pass's result) instead.
+    this.codeGenerator(results);
+    this.postprocessor(results);
     return results.code;
   },
   useExtension(helper) {
@@ -36,9 +41,12 @@ let compiler = {
   },
   useExtensions(helpers) {
     helpers.forEach(helper => this.useExtension(helper));
+  },
+  useCodeGenerator(generator) {
+    this.codeGenerator = generator;
   }
 };
 
-compiler.useExtensions([escapableRaw, htmlEntities, adjustAttrs, buildInstructions, generateJS, postprocess]);
+compiler.useExtensions([escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
 
 export default compiler;

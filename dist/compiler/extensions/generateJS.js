@@ -13,7 +13,24 @@ var STATES = _utilsBuilder.STATES;
 
 var noop = function noop() {};
 
-var codeGenerator = generator.build({
+var codeGenerator = {
+  generatorFns: {},
+  useCodeGeneratorFn: function useCodeGeneratorFn(codeGenerator) {
+    this.generatorFns[codeGenerator.name] = codeGenerator.method;
+  },
+  useCodeGeneratorFns: function useCodeGeneratorFns(codeGenerators) {
+    var _this = this;
+
+    Object.keys(codeGenerators).forEach(function (generatorName) {
+      return _this.useCodeGeneratorFn({ name: generatorName, method: codeGenerators[generatorName] });
+    });
+  },
+  build: function build() {
+    return generator.build(this.generatorFns);
+  }
+};
+
+codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL(instruction, code) {
     var tdBody = instruction.tdBody;
     var key = instruction.key;
@@ -283,8 +300,8 @@ var codeGenerator = generator.build({
   }
 });
 
-var generateJavascript = function generateJavascript(ast, options) {
-  options.results.code = {
+var generateJavascript = function generateJavascript(results) {
+  results.code = {
     fragments: [],
     renderers: [],
     push: function push(idx, strings) {
@@ -307,16 +324,21 @@ var generateJavascript = function generateJavascript(ast, options) {
         }
       }
     },
+    /**
+     * Remove characters from the generated code.
+     * @param {String} type Either 'fragments' or 'renderers'
+     * @param {Number} idx The index of the fragment or renderer from which the characters are to be removed
+     * @param {Number} start The character position to start slicing from
+     * @param {Number} end The character position where the slice ends
+     */
     slice: function slice(type, idx, start, end) {
       if (this[type] && this[type][idx]) {
         this[type][idx] = this[type][idx].slice(start, end);
       }
     }
   };
-  return codeGenerator(options.results.instructions, options.results.code);
+  return codeGenerator.build()(results.instructions, results.code);
 };
 
-module.exports = {
-  codegen: [generateJavascript]
-};
+module.exports = generateJavascript;
 //# sourceMappingURL=generateJS.js.map

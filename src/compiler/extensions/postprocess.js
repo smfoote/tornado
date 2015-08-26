@@ -1,8 +1,13 @@
 import util from '../utils/builder';
 
 let flush = function(results) {
+  let templateVars = [];
+  if (results.extensions && results.extensions.templateVars) {
+    templateVars = results.extensions.templateVars;
+  }
   results.code = `(function(){
 var frags = {},
+  ${templateVars.join('\n  ')}
   template = {
     ${results.code.fragments.join(',\n    ')},
     ${results.code.renderers.join(',\n    ')}
@@ -13,13 +18,10 @@ var frags = {},
 })();`;
 };
 
-let postprocess = {
-  codegen: [function(ast, options) {
-    let results = options.results;
-    if (results) {
-      flush(results);
-    }
-  }]
+let postprocess = function(results) {
+  if (results) {
+    flush(results);
+  }
 };
 
 export default postprocess;
