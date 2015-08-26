@@ -21,8 +21,10 @@ let generatedWalker = visitor.build({
   }
 });
 
-let htmlEntities = function (ast, options) {
-  return generatedWalker(ast, options.context);
+let htmlEntities = {
+  transforms: [function (ast, options) {
+    return generatedWalker(ast, options.context);
+  }]
 };
 
 export default htmlEntities;

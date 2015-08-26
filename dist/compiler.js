@@ -4,53 +4,58 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var Context = _interopRequire(require("./compiler/context"));
 
-var escapableRaw = _interopRequire(require("./compiler/passes/escapableRaw"));
+var escapableRaw = _interopRequire(require("./compiler/extensions/escapableRaw"));
 
-var htmlEntities = _interopRequire(require("./compiler/passes/htmlEntities"));
+var htmlEntities = _interopRequire(require("./compiler/extensions/htmlEntities"));
 
-var adjustAttrs = _interopRequire(require("./compiler/passes/adjustAttrs"));
+var adjustAttrs = _interopRequire(require("./compiler/extensions/adjustAttrs"));
 
-var buildInstructions = _interopRequire(require("./compiler/passes/buildInstructions"));
+var buildInstructions = _interopRequire(require("./compiler/extensions/buildInstructions"));
 
-var generateJS = _interopRequire(require("./compiler/passes/generateJS"));
+var generateJS = _interopRequire(require("./compiler/extensions/generateJS"));
 
-var postprocess = _interopRequire(require("./compiler/passes/postprocess"));
+var postprocess = _interopRequire(require("./compiler/extensions/postprocess"));
 
-// import visualize from './compiler/passes/visualize';
-
-var defaultPasses = [[], // checks
-[escapableRaw, htmlEntities, adjustAttrs], // transforms
-[buildInstructions], // generates
-[generateJS, postprocess] // codegen
-];
+var stages = ["checks", "transforms", "instructions", "codegen"];
 var compiler = {
-  compile: function compile(ast, name, options) {
-    var passes = undefined;
+  checks: [],
+  transforms: [],
+  instructions: [],
+  codegen: [],
+  compile: function compile(ast, name /*, options*/) {
+    var _this = this;
 
-    if (options && options.passes) {
-      passes = options.passes;
-      // merge defaults into passes
-      for (var key in defaultPasses) {
-        if (defaultPasses.hasOwnProperty(key) && !passes.hasOwnProperty(key)) {
-          passes[key] = defaultPasses[key];
-        }
-      }
-    } else {
-      passes = defaultPasses;
-    }
     var results = {
       name: name,
       instructions: []
     };
-    passes.forEach(function (stage) {
-      stage.forEach(function (pass) {
+    stages.forEach(function (stage) {
+      _this[stage].forEach(function (pass) {
         var context = new Context(results);
         pass(ast, { results: results, context: context });
       });
     });
     return results.code;
+  },
+  useExtension: function useExtension(helper) {
+    var _this = this;
+
+    stages.forEach(function (passType) {
+      if (helper.hasOwnProperty(passType) && Array.isArray(helper[passType])) {
+        _this[passType] = _this[passType].concat(helper[passType]);
+      }
+    });
+  },
+  useExtensions: function useExtensions(helpers) {
+    var _this = this;
+
+    helpers.forEach(function (helper) {
+      return _this.useExtension(helper);
+    });
   }
 };
+
+compiler.useExtensions([escapableRaw, htmlEntities, adjustAttrs, buildInstructions, generateJS, postprocess]);
 
 module.exports = compiler;
 //# sourceMappingURL=compiler.js.map

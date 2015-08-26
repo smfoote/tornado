@@ -13,11 +13,13 @@ var frags = {},
 })();`;
 };
 
-let postprocess = function(ast, options) {
-  let results = options.results;
-  if (results) {
-    flush(results);
-  }
+let postprocess = {
+  codegen: [function(ast, options) {
+    let results = options.results;
+    if (results) {
+      flush(results);
+    }
+  }]
 };
 
 export default postprocess;

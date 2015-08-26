@@ -17,8 +17,10 @@ var generatedWalker = visitor.build({
   }
 });
 
-var escapableRaw = function escapableRaw(ast, options) {
-  return generatedWalker(ast, options.context);
+var escapableRaw = {
+  transforms: [function (ast, options) {
+    return generatedWalker(ast, options.context);
+  }]
 };
 
 module.exports = escapableRaw;

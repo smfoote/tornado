@@ -262,4 +262,6 @@ let generateJavascript = function (ast, options) {
   return codeGenerator(options.results.instructions, options.results.code);
 };
 
-export default generateJavascript;
+export default {
+  codegen: [generateJavascript]
+};

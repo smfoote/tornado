@@ -12,8 +12,10 @@ let generatedWalker = visitor.build({
   }
 });
 
-let escapableRaw = function (ast, options) {
-  return generatedWalker(ast, options.context);
+let escapableRaw = {
+  transforms: [function (ast, options) {
+    return generatedWalker(ast, options.context);
+  }]
 };
 
 export default escapableRaw;

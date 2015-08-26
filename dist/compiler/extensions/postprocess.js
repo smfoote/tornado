@@ -8,11 +8,13 @@ var flush = function flush(results) {
   results.code = "(function(){\nvar frags = {},\n  template = {\n    " + results.code.fragments.join(",\n    ") + ",\n    " + results.code.renderers.join(",\n    ") + "\n  };\n  template.render = template.r0;\n  td." + util.getTdMethodName("register") + "(\"" + results.name + "\", template);\n  return template;\n})();";
 };
 
-var postprocess = function postprocess(ast, options) {
-  var results = options.results;
-  if (results) {
-    flush(results);
-  }
+var postprocess = {
+  codegen: [function (ast, options) {
+    var results = options.results;
+    if (results) {
+      flush(results);
+    }
+  }]
 };
 
 module.exports = postprocess;

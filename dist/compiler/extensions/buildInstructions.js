@@ -64,8 +64,10 @@ var generateWalker = visitor.build({
   }
 });
 
-var generateInstructions = function generateInstructions(ast, options) {
-  return generateWalker(ast, options.context);
+var generateInstructions = {
+  instructions: [function (ast, options) {
+    return generateWalker(ast, options.context);
+  }]
 };
 
 module.exports = generateInstructions;

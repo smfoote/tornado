@@ -61,8 +61,10 @@ let generateWalker = visitor.build({
   }
 });
 
-let generateInstructions = function (ast, options) {
-  return generateWalker(ast, options.context);
+let generateInstructions = {
+  instructions: [function (ast, options) {
+    return generateWalker(ast, options.context);
+  }]
 };
 
 export default generateInstructions;
