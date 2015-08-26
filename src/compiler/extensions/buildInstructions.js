@@ -6,11 +6,6 @@ import Instruction from '../utils/Instruction';
 let generateWalker = visitor.build({
   TORNADO_PARTIAL: {
     enter(item, ctx) {
-      // let meta = item.node[1];
-      // let params = meta.params;
-      // if (params.length === 1 && params[0].key === 'context') {
-      //   context = `td.${util.getTdMethodName('get')}(c, ${params[0].val})`;
-      // }
       ctx.pushInstruction(new Instruction('insert', {key: item.node[1].key, item, ctx}));
     }
   },

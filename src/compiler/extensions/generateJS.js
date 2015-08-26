@@ -7,7 +7,21 @@ import {STATES} from '../utils/builder';
 
 let noop = function() {};
 
-let codeGenerator = generator.build({
+let codeGenerator = {
+  generatorFns: {},
+  useCodeGeneratorFn(codeGenerator) {
+    this.generatorFns[codeGenerator.name] = codeGenerator.method;
+  },
+  useCodeGeneratorFns(codeGenerators) {
+    Object.keys(codeGenerators)
+    .forEach(generatorName => this.useCodeGeneratorFn({name: generatorName, method: codeGenerators[generatorName]}));
+  },
+  build() {
+    return generator.build(this.generatorFns);
+  }
+};
+
+codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL(instruction, code) {
     let {tdBody, key} = instruction;
     let context = 'c';
@@ -231,8 +245,8 @@ let codeGenerator = generator.build({
   }
 });
 
-let generateJavascript = function (ast, options) {
-  options.results.code = {
+let generateJavascript = function (results) {
+  results.code = {
     fragments: [],
     renderers: [],
     push(idx, strings) {
@@ -253,15 +267,20 @@ let generateJavascript = function (ast, options) {
         }
       }
     },
+    /**
+     * Remove characters from the generated code.
+     * @param {String} type Either 'fragments' or 'renderers'
+     * @param {Number} idx The index of the fragment or renderer from which the characters are to be removed
+     * @param {Number} start The character position to start slicing from
+     * @param {Number} end The character position where the slice ends
+     */
     slice(type, idx, start, end) {
       if (this[type] && this[type][idx]) {
         this[type][idx] = this[type][idx].slice(start, end);
       }
     }
   };
-  return codeGenerator(options.results.instructions, options.results.code);
+  return codeGenerator.build()(results.instructions, results.code);
 };
 
-export default {
-  codegen: [generateJavascript]
-};
+export default generateJavascript;

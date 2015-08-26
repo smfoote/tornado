@@ -16,12 +16,13 @@ var generateJS = _interopRequire(require("./compiler/extensions/generateJS"));
 
 var postprocess = _interopRequire(require("./compiler/extensions/postprocess"));
 
-var stages = ["checks", "transforms", "instructions", "codegen"];
+var stages = ["checks", "transforms", "instructions"];
 var compiler = {
   checks: [],
   transforms: [],
   instructions: [],
-  codegen: [],
+  codeGenerator: generateJS,
+  postprocessor: postprocess,
   compile: function compile(ast, name /*, options*/) {
     var _this = this;
 
@@ -35,6 +36,10 @@ var compiler = {
         pass(ast, { results: results, context: context });
       });
     });
+    // TODO Don't mutate the results object. Have each pass return its result (and consume the
+    // previous pass's result) instead.
+    this.codeGenerator(results);
+    this.postprocessor(results);
     return results.code;
   },
   useExtension: function useExtension(helper) {
@@ -52,10 +57,13 @@ var compiler = {
     helpers.forEach(function (helper) {
       return _this.useExtension(helper);
     });
+  },
+  useCodeGenerator: function useCodeGenerator(generator) {
+    this.codeGenerator = generator;
   }
 };
 
-compiler.useExtensions([escapableRaw, htmlEntities, adjustAttrs, buildInstructions, generateJS, postprocess]);
+compiler.useExtensions([escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
 
 module.exports = compiler;
 //# sourceMappingURL=compiler.js.map
