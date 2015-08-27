@@ -1,0 +1,53 @@
+api.addBody
+api.addBodies
+api.leaveBody
+api.leaveBodies
+
+
+api.addElement
+api.leaveElement
+
+api.addReference
+
+api.addParam
+
+
+// Adding/removing body/bodies
+api.entities.bodys
+[ { mains: [ 1 ], bodies: [], fragment: 0 },
+  { mains: [ 2 ], bodies: [], fragment: 1 },
+  { mains: [ 3 ], bodies: [], fragment: 2 },
+  { mains: [], bodies: [], fragment: 3 } ]
+
+
+  api.entities.bodys
+[ { mains: [], bodies: [ 1 ], fragment: 0 },
+  { mains: [], bodies: [ 2 ], fragment: 1 },
+  { mains: [], bodies: [ 3 ], fragment: 2 },
+  { mains: [], bodies: [], fragment: 3 } ]
+
+
+> api.entities.fragments
+[ {}, {}, {}, {} ]
+
+
+// Adding references
+
+> api.entities.bodys[0].refs
+[ { key: 'hello', element: 0 } ]
+
+> api.entities.fragments[0]
+{ elements: [ 0 ]   
+
+> api.entities.elements
+[ { type: 'placeholder' } ]
+
+
+// adding param (TBD: param values can be bodies so we actually should use enter leave)
+
+> api.entities.bodys
+[ { mains: [], bodies: [], fragment: 0, params: [ 0, 1, 2 ] } ]
+> api.entities.params
+[ { key: 'a', value: '1' },
+  { key: 'b', value: '2' },
+  { key: 'c', value: '3' } ]
