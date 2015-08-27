@@ -8,60 +8,60 @@ var Instruction = _interopRequire(require("../utils/Instruction"));
 
 var generateWalker = visitor.build({
   TORNADO_PARTIAL: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("insert", { key: item.node[1].key, item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("insert_TORNADO_PARTIAL", { key: item.node[1].key }, state));
     }
   },
   TORNADO_BODY: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("open", { key: item.node[1].key, item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("open_TORNADO_BODY", { key: item.node[1].key }, state));
     },
-    leave: function leave(item, ctx) {
-      ctx.pushInstruction(new Instruction("close", { item: item, ctx: ctx }));
+    leave: function leave(item, instructions, state) {
+      instructions.push(new Instruction("close_TORNADO_BODY", {}, state));
     }
   },
   TORNADO_REFERENCE: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("insert", { key: item.node[1].key, item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("insert_TORNADO_REFERENCE", { key: item.node[1].key }, state));
     }
   },
   TORNADO_COMMENT: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("insert", { item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("insert_TORNADO_COMMENT", {}, state));
     }
   },
   HTML_ELEMENT: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("open", { key: item.node[1].tag_info.key, item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("open_HTML_ELEMENT", { key: item.node[1].tag_info.key }, state));
     },
-    leave: function leave(item, ctx) {
+    leave: function leave(item, instructions, state) {
       item.state = item.previousState;
-      ctx.pushInstruction(new Instruction("close", { item: item, ctx: ctx }));
+      instructions.push(new Instruction("close_HTML_ELEMENT", {}, state));
     }
   },
   HTML_ATTRIBUTE: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("open", { item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("open_HTML_ATTRIBUTE", {}, state));
     },
-    leave: function leave(item, ctx) {
-      ctx.pushInstruction(new Instruction("close", { item: item, ctx: ctx }));
+    leave: function leave(item, instructions, state) {
+      instructions.push(new Instruction("close_HTML_ATTRIBUTE", {}, state));
     }
   },
   HTML_COMMENT: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("insert", { item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("insert_HTML_COMMENT", {}, state));
     }
   },
   PLAIN_TEXT: {
-    enter: function enter(item, ctx) {
-      ctx.pushInstruction(new Instruction("insert", { item: item, ctx: ctx }));
+    enter: function enter(item, instructions, state) {
+      instructions.push(new Instruction("insert_PLAIN_TEXT", {}, state));
     }
   }
 });
 
 var generateInstructions = {
   instructions: [function (ast, options) {
-    return generateWalker(ast, options.context);
+    return generateWalker(ast, options.results.instructions, options.results.state);
   }]
 };
 

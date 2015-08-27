@@ -1,4 +1,6 @@
-var History = function() {
+"use strict";
+
+var History = function History() {
   var history = [];
   var childrens = []; // an array of children
   var count = 0;
@@ -11,21 +13,21 @@ var History = function() {
     }
   }
   this.current = current;
-  this.enter = function() {
+  this.enter = function () {
     history.push(count++);
     childrens.push([]);
   };
-  this.leave = function() {
+  this.leave = function () {
     var val = history.pop();
     if (val) {
       store(val);
     }
   };
-  this.children = function() {
+  this.children = function () {
     return childrens[history.length - 1];
   };
 
-  this.debugShow = function() {
+  this.debugShow = function () {
     return history;
   };
 
@@ -33,3 +35,4 @@ var History = function() {
 };
 
 module.exports = History;
+//# sourceMappingURL=History.js.map

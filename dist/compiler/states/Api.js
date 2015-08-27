@@ -1,11 +1,12 @@
-var History = require('./History');
+"use strict";
 
-var Api = function() {
+var History = require("./History");
+
+var Api = function Api() {
   var tdHistory = new History(),
       elHistory = new History(),
       meta = {},
-      entities = {
-      };
+      entities = {};
 
   function addBodyAndFragment(b, f) {
     var len;
@@ -25,8 +26,7 @@ var Api = function() {
   }
 
   function addElement(el) {
-    var elIndex,
-        currentFragment;
+    var elIndex, currentFragment;
     // add a new element
     elHistory.enter();
     if (entities.elements) {
@@ -38,7 +38,7 @@ var Api = function() {
     // connect it to the fragment
     elIndex = elHistory.current();
     currentFragment = entities.fragments[meta.currentFragment];
-    if (currentFragment.elements){
+    if (currentFragment.elements) {
       currentFragment.elements.push(elIndex);
     } else {
       currentFragment.elements = [elIndex];
@@ -77,10 +77,10 @@ var Api = function() {
   }
 
   return {
-    addBody: function() {
-      addBodyAndFragment({mains: [], bodies: []}, {elements: []});
+    addBody: function addBody() {
+      addBodyAndFragment({ mains: [], bodies: [] }, { elements: [] });
     },
-    leaveBody: function() {
+    leaveBody: function leaveBody() {
       var tIndex = tdHistory.current();
       tdHistory.leave();
       var parentIndex = tdHistory.current();
@@ -90,10 +90,10 @@ var Api = function() {
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },
-    addBodies: function() {
-      addBodyAndFragment({mains: [], bodies: []}, {elements: []});
+    addBodies: function addBodies() {
+      addBodyAndFragment({ mains: [], bodies: [] }, { elements: [] });
     },
-    leaveBodies: function() {
+    leaveBodies: function leaveBodies() {
       var tIndex = tdHistory.current();
       tdHistory.leave();
       var parentIndex = tdHistory.current();
@@ -110,12 +110,12 @@ var Api = function() {
     addElement: addElement,
     leaveElement: leaveElement,
     // references
-    addReference: function(r) {
+    addReference: function addReference(r) {
       // add placeholder element
       var tIndex = meta.currentBody,
           elIndex,
           currentBody;
-      addElement({type: 'placeholder'});
+      addElement({ type: "placeholder" });
       elIndex = meta.currentElement;
       leaveElement();
 
@@ -136,5 +136,5 @@ var Api = function() {
   };
 };
 
-
 module.exports = Api;
+//# sourceMappingURL=Api.js.map
