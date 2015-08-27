@@ -5,7 +5,6 @@ import generator from '../codeGenerator';
 import util from '../utils/builder';
 import {STATES} from '../utils/builder';
 
-let noop = function() {};
 
 let codeGenerator = {
   generatorFns: {},
@@ -22,102 +21,41 @@ let codeGenerator = {
 };
 
 codeGenerator.useCodeGeneratorFns({
-  insert_TORNADO_PARTIAL(instruction, code) {
-    let {tdBody, key} = instruction;
-    let context = 'c';
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
-      code.push(tdBody, {fragment, renderer});
+  insert_TORNADO_PARTIAL(/*instruction, code*/) {
+  },
+  open_TORNADO_BODY(instruction) {
+    let {config, state} = instruction;
+    let {key, type, name} = config;
+    if (type === 'bodies') {
+      state.addBodies(name);
     } else {
-      let renderer = `td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this).then(function(node){return td.${util.getTdMethodName('nodeToString')}(node)}),`;
-      code.push(tdBody, {renderer});
+      state.addBody(key, type);
     }
   },
-  open_TORNADO_BODY(instruction, code) {
-    let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
-    if (needsOwnMethod) {
-      this.createMethodHeaders(tdBody, code, tdMethodName);
-    }
-    let buildTdBodyCode = (this[`tdBody_${bodyType}`] || noop).bind(this);
-    buildTdBodyCode(instruction, code);
-  },
-  close_TORNADO_BODY(instruction, code) {
-    let {tdBody, needsOwnMethod, tdMethodName} = instruction;
-    if (needsOwnMethod) {
-      this.createMethodFooters(tdBody, code, tdMethodName);
-    }
-  },
-  insert_TORNADO_REFERENCE(instruction, code) {
-    let {tdBody, key, state} = instruction;
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
-      code.push(tdBody, {fragment, renderer});
+  close_TORNADO_BODY(instruction) {
+    let {config, state} = instruction;
+    if (config.type === 'bodies') {
+      state.leaveBodies();
     } else {
-      let renderer = `td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}),`;
-      code.push(tdBody, {renderer});
+      state.leaveBody();
     }
+  },
+  insert_TORNADO_REFERENCE(instruction) {
+    let {config, state} = instruction;
+    state.addReference(config);
   },
 
-  open_HTML_ELEMENT(instruction, code) {
-    let {state, tdBody, elCount, key, namespace} = instruction;
-    namespace = namespace ? `, '${namespace}'` : '';
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      var el${elCount} = td.${util.getTdMethodName('createElement')}('${key}'${namespace});\n`;
-      code.push(tdBody, {fragment});
-    }
+  open_HTML_ELEMENT(/*instruction, code*/) {
   },
-  close_HTML_ELEMENT(instruction, code) {
-    let {state, parentNodeName, elCount, tdBody} = instruction;
-    if (state === STATES.ESCAPABLE_RAW) {
-      let fragment = `      el${elCount - 1}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
-      code.push(tdBody, {fragment});
-    } else if (state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${parentNodeName}.appendChild(el${elCount});\n`;
-      code.push(tdBody, {fragment});
-    }
+  close_HTML_ELEMENT(/*instruction, code*/) {
   },
-  open_HTML_ATTRIBUTE(instruction, code) {
-    let {tdBody, node, hasTornadoRef, parentNodeName} = instruction;
-    let attrInfo = node[1];
-    let placeholderName = this.getPlaceholderName(instruction);
-    let fragment = `      res.${placeholderName} = ${parentNodeName};\n`;
-    let renderer = `      td.${util.getTdMethodName('setAttribute')}`;
-    renderer += `(root.${placeholderName}, '${attrInfo.attrName}', `;
-    if (hasTornadoRef) {
-      renderer += '[';
-    } else {
-      renderer += '';
-    }
-    code.push(tdBody, {fragment, renderer});
+  open_HTML_ATTRIBUTE(/*instruction, code*/) {
   },
-  close_HTML_ATTRIBUTE(instruction, code) {
-    let {tdBody, hasTornadoRef} = instruction;
-    let renderer;
-    if (hasTornadoRef) {
-      renderer = ']);\n';
-    } else {
-      renderer = ');\n';
-    }
-    // Remove the trailing comma from the last item in the array
-    code.slice('renderers', tdBody, 0, -1);
-    code.push(tdBody, {renderer});
+  close_HTML_ATTRIBUTE(/*instruction, code*/) {
   },
-  insert_HTML_COMMENT(instruction, code) {
-    let {tdBody, parentNodeName, contents} = instruction;
-    let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createHTMLComment')}('${contents}'));\n`;
-    code.push(tdBody, {fragment});
+  insert_HTML_COMMENT(/*instruction, code*/) {
   },
-  insert_PLAIN_TEXT(instruction, code) {
-    let {tdBody, parentNodeName, contents} = instruction;
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents}'));\n`;
-      code.push(tdBody, {fragment});
-    } else {
-      let renderer = `'${contents}',`;
-      code.push(tdBody, {renderer});
-    }
+  insert_PLAIN_TEXT(/*instruction, code*/) {
   },
 
   createMethodHeaders(tdBody, code, methodName) {

@@ -11,8 +11,6 @@ var util = _interopRequire(_utilsBuilder);
 
 var STATES = _utilsBuilder.STATES;
 
-var noop = function noop() {};
-
 var codeGenerator = {
   generatorFns: {},
   useCodeGeneratorFn: function useCodeGeneratorFn(codeGenerator) {
@@ -31,136 +29,43 @@ var codeGenerator = {
 };
 
 codeGenerator.useCodeGeneratorFns({
-  insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var key = instruction.key;
+  insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL() {},
+  open_TORNADO_BODY: function open_TORNADO_BODY(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+    var key = config.key;
+    var type = config.type;
+    var name = config.name;
 
-    var context = "c";
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
-      var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this));\n";
-      code.push(tdBody, { fragment: fragment, renderer: renderer });
+    if (type === "bodies") {
+      state.addBodies(name);
     } else {
-      var renderer = "td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this).then(function(node){return td." + util.getTdMethodName("nodeToString") + "(node)}),";
-      code.push(tdBody, { renderer: renderer });
+      state.addBody(key, type);
     }
   },
-  open_TORNADO_BODY: function open_TORNADO_BODY(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var bodyType = instruction.bodyType;
-    var tdMethodName = instruction.tdMethodName;
-    var needsOwnMethod = instruction.needsOwnMethod;
-
-    if (needsOwnMethod) {
-      this.createMethodHeaders(tdBody, code, tdMethodName);
-    }
-    var buildTdBodyCode = (this["tdBody_" + bodyType] || noop).bind(this);
-    buildTdBodyCode(instruction, code);
-  },
-  close_TORNADO_BODY: function close_TORNADO_BODY(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var needsOwnMethod = instruction.needsOwnMethod;
-    var tdMethodName = instruction.tdMethodName;
-
-    if (needsOwnMethod) {
-      this.createMethodFooters(tdBody, code, tdMethodName);
-    }
-  },
-  insert_TORNADO_REFERENCE: function insert_TORNADO_REFERENCE(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var key = instruction.key;
+  close_TORNADO_BODY: function close_TORNADO_BODY(instruction) {
+    var config = instruction.config;
     var state = instruction.state;
 
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
-      var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("createTextNode") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + ")));\n";
-      code.push(tdBody, { fragment: fragment, renderer: renderer });
+    if (config.type === "bodies") {
+      state.leaveBodies();
     } else {
-      var renderer = "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "),";
-      code.push(tdBody, { renderer: renderer });
+      state.leaveBody();
     }
   },
-
-  open_HTML_ELEMENT: function open_HTML_ELEMENT(instruction, code) {
+  insert_TORNADO_REFERENCE: function insert_TORNADO_REFERENCE(instruction) {
+    var config = instruction.config;
     var state = instruction.state;
-    var tdBody = instruction.tdBody;
-    var elCount = instruction.elCount;
-    var key = instruction.key;
-    var namespace = instruction.namespace;
 
-    namespace = namespace ? ", '" + namespace + "'" : "";
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      var el" + elCount + " = td." + util.getTdMethodName("createElement") + "('" + key + "'" + namespace + ");\n";
-      code.push(tdBody, { fragment: fragment });
-    }
+    state.addReference(config);
   },
-  close_HTML_ELEMENT: function close_HTML_ELEMENT(instruction, code) {
-    var state = instruction.state;
-    var parentNodeName = instruction.parentNodeName;
-    var elCount = instruction.elCount;
-    var tdBody = instruction.tdBody;
 
-    if (state === STATES.ESCAPABLE_RAW) {
-      var fragment = "      el" + (elCount - 1) + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
-      code.push(tdBody, { fragment: fragment });
-    } else if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + parentNodeName + ".appendChild(el" + elCount + ");\n";
-      code.push(tdBody, { fragment: fragment });
-    }
-  },
-  open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var node = instruction.node;
-    var hasTornadoRef = instruction.hasTornadoRef;
-    var parentNodeName = instruction.parentNodeName;
-
-    var attrInfo = node[1];
-    var placeholderName = this.getPlaceholderName(instruction);
-    var fragment = "      res." + placeholderName + " = " + parentNodeName + ";\n";
-    var renderer = "      td." + util.getTdMethodName("setAttribute");
-    renderer += "(root." + placeholderName + ", '" + attrInfo.attrName + "', ";
-    if (hasTornadoRef) {
-      renderer += "[";
-    } else {
-      renderer += "";
-    }
-    code.push(tdBody, { fragment: fragment, renderer: renderer });
-  },
-  close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var hasTornadoRef = instruction.hasTornadoRef;
-
-    var renderer = undefined;
-    if (hasTornadoRef) {
-      renderer = "]);\n";
-    } else {
-      renderer = ");\n";
-    }
-    // Remove the trailing comma from the last item in the array
-    code.slice("renderers", tdBody, 0, -1);
-    code.push(tdBody, { renderer: renderer });
-  },
-  insert_HTML_COMMENT: function insert_HTML_COMMENT(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var parentNodeName = instruction.parentNodeName;
-    var contents = instruction.contents;
-
-    var fragment = "      " + parentNodeName + ".appendChild(td." + util.getTdMethodName("createHTMLComment") + "('" + contents + "'));\n";
-    code.push(tdBody, { fragment: fragment });
-  },
-  insert_PLAIN_TEXT: function insert_PLAIN_TEXT(instruction, code) {
-    var tdBody = instruction.tdBody;
-    var parentNodeName = instruction.parentNodeName;
-    var contents = instruction.contents;
-
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + parentNodeName + ".appendChild(td." + util.getTdMethodName("createTextNode") + "('" + contents + "'));\n";
-      code.push(tdBody, { fragment: fragment });
-    } else {
-      var renderer = "'" + contents + "',";
-      code.push(tdBody, { renderer: renderer });
-    }
-  },
+  open_HTML_ELEMENT: function open_HTML_ELEMENT() {},
+  close_HTML_ELEMENT: function close_HTML_ELEMENT() {},
+  open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE() {},
+  close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE() {},
+  insert_HTML_COMMENT: function insert_HTML_COMMENT() {},
+  insert_PLAIN_TEXT: function insert_PLAIN_TEXT() {},
 
   createMethodHeaders: function createMethodHeaders(tdBody, code, methodName) {
     var suffix = methodName ? methodName : tdBody;
@@ -341,4 +246,5 @@ var generateJavascript = function generateJavascript(results) {
 };
 
 module.exports = generateJavascript;
+/*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/
 //# sourceMappingURL=generateJS.js.map

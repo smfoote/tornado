@@ -14,10 +14,10 @@ var generateWalker = visitor.build({
   },
   TORNADO_BODY: {
     enter: function enter(item, instructions, state) {
-      instructions.push(new Instruction("open_TORNADO_BODY", { key: item.node[1].key }, state));
+      instructions.push(new Instruction("open_TORNADO_BODY", { key: item.node[1].key, type: item.node[1].type, name: item.node[1].name }, state));
     },
     leave: function leave(item, instructions, state) {
-      instructions.push(new Instruction("close_TORNADO_BODY", {}, state));
+      instructions.push(new Instruction("close_TORNADO_BODY", { type: item.node[1].type }, state));
     }
   },
   TORNADO_REFERENCE: {

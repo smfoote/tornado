@@ -6,9 +6,9 @@
 let generator = {
   build(fns) {
     let execute = function(instruction, code) {
-      let {action, nodeType} = instruction;
-      if (fns[`${action}_${nodeType}`]) {
-        fns[`${action}_${nodeType}`](instruction, code);
+      let {action} = instruction;
+      if (fns[`${action}`]) {
+        fns[`${action}`](instruction, code);
       }
     };
 
