@@ -1,29 +1,25 @@
 var History = function() {
-  var history = [];
-  var childrens = []; // an array of children
+  var history = [],
+      memory = [];
   var count = 0;
   function current() {
     return history[history.length - 1];
   }
-  function store(child) {
-    if (history.length) {
-      childrens[history.length - 1].push(child);
-    }
-  }
   this.current = current;
   this.enter = function() {
     history.push(count++);
-    childrens.push([]);
   };
   this.leave = function() {
-    var val = history.pop();
-    if (val) {
-      store(val);
-    }
+    history.pop();
   };
-  this.children = function() {
-    return childrens[history.length - 1];
+  this.jump = function() {
+    memory.push(history);
+    history = [];
   };
+  this.drop = function() {
+    history = memory.pop();
+  };
+
 
   this.debugShow = function() {
     return history;

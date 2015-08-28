@@ -5,34 +5,24 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 var util = _interopRequire(require("../utils/builder"));
 
 // helper method for recursively writing elements
-var writeElements = (function (_writeElements) {
-  var _writeElementsWrapper = function writeElements(_x, _x2, _x3, _x4) {
-    return _writeElements.apply(this, arguments);
-  };
-
-  _writeElementsWrapper.toString = function () {
-    return _writeElements.toString();
-  };
-
-  return _writeElementsWrapper;
-})(function (indexes, elements, parent, out) {
-  parent = parent ? "el" + parent : "frag";
+function writeElements(indexes, elements, parent, out) {
+  var name = typeof parent === "number" ? "el" + parent : "frag";
   indexes.forEach(function (i) {
     var el = elements[i];
     if (el.type === "placeholder" || el.type === "plaintext") {
-      out.push("var el" + i + " = td.createTextNode('" + el.type + "');\n");
+      out.push("var el" + i + " = td.createTextNode('" + el.type + "-" + el.content + "');\n");
     } else {
-      out.push("var el" + i + " = td.createElement('" + el.type + "');\n");
+      out.push("var el" + i + " = td.createElement('" + el.type + "-" + el.key + "');\n");
     }
-    out.push("" + parent + ".appendChild(el" + i + ");\n");
+    out.push("" + name + ".appendChild(el" + i + ");\n");
     // recurse over the children
     if (el.elements) {
-      writeElements(el.elements, elements, parent, out);
+      writeElements(el.elements, elements, i, out);
     }
   });
-});
+}
 
-var writeFragments = function writeFragments(results) {
+function writeFragments(results) {
   var fragments = results.state.entities.fragments,
       elements = results.state.entities.elements;
 
@@ -49,9 +39,9 @@ var writeFragments = function writeFragments(results) {
     codeFragments.push("}");
     results.code.fragments.push(codeFragments.join(""));
   });
-};
+}
 
-var writeBodys = function writeBodys(results) {
+function writeBodys(results) {
   var bodys = results.state.entities.bodys;
   // initialize the results renderer
   results.code.renderers = [];
@@ -62,10 +52,10 @@ var writeBodys = function writeBodys(results) {
     // add all mains
     // add all alternate bodies
     // add method footer
-    codeRenderer.push("return root.frag\n}");
+    codeRenderer.push("return root.frag;\n}");
     results.code.renderers.push(codeRenderer.join(""));
   });
-};
+}
 
 var flush = function flush(results) {
   var templateVars = [];

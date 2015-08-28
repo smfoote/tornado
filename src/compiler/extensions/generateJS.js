@@ -45,9 +45,13 @@ codeGenerator.useCodeGeneratorFns({
     state.addReference(config);
   },
 
-  open_HTML_ELEMENT(/*instruction, code*/) {
+  open_HTML_ELEMENT(instruction) {
+    let {config, state} = instruction;
+    state.addElement(config);
   },
-  close_HTML_ELEMENT(/*instruction, code*/) {
+  close_HTML_ELEMENT(instruction) {
+    let {state} = instruction;
+    state.leaveElement();
   },
   open_HTML_ATTRIBUTE(/*instruction, code*/) {
   },
@@ -55,7 +59,10 @@ codeGenerator.useCodeGeneratorFns({
   },
   insert_HTML_COMMENT(/*instruction, code*/) {
   },
-  insert_PLAIN_TEXT(/*instruction, code*/) {
+  insert_PLAIN_TEXT(instruction) {
+    let {config, state} = instruction;
+    state.addElement(config);
+    state.leaveElement();
   },
 
   createMethodHeaders(tdBody, code, methodName) {

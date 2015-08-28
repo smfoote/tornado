@@ -21,12 +21,17 @@ var Api = function Api() {
       entities.fragments = [f];
     }
 
+    elHistory.jump();
+    meta.currentElement = null;
+
     meta.currentBody = tdHistory.current();
     meta.currentFragment = tdHistory.current();
   }
 
   function addElement(el) {
-    var elIndex, currentFragment;
+    var elIndex;
+
+    el.elements = [];
     // add a new element
     elHistory.enter();
     if (entities.elements) {
@@ -35,14 +40,7 @@ var Api = function Api() {
       entities.elements = [el];
     }
 
-    // connect it to the fragment
     elIndex = elHistory.current();
-    currentFragment = entities.fragments[meta.currentFragment];
-    if (currentFragment.elements) {
-      currentFragment.elements.push(elIndex);
-    } else {
-      currentFragment.elements = [elIndex];
-    }
     meta.currentElement = elIndex;
   }
 
@@ -67,12 +65,22 @@ var Api = function Api() {
   }
 
   function leaveElement() {
-    var elIndex = elHistory.current();
+    var elIndex = elHistory.current(),
+        currentFragment;
     elHistory.leave();
     var parentIndex = elHistory.current();
     if (parentIndex >= 0) {
       entities.elements[parentIndex].elements.push(elIndex);
+    } else {
+      // add it to the fragment
+      currentFragment = entities.fragments[meta.currentFragment];
+      if (currentFragment.elements) {
+        currentFragment.elements.push(elIndex);
+      } else {
+        currentFragment.elements = [elIndex];
+      }
     }
+
     meta.currentElement = parentIndex;
   }
 
@@ -83,10 +91,13 @@ var Api = function Api() {
     leaveBody: function leaveBody() {
       var tIndex = tdHistory.current();
       tdHistory.leave();
+      elHistory.drop();
       var parentIndex = tdHistory.current();
       if (parentIndex >= 0) {
         entities.bodys[parentIndex].mains.push(tIndex);
       }
+
+      meta.currentElement = elHistory.current();
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },
@@ -96,10 +107,13 @@ var Api = function Api() {
     leaveBodies: function leaveBodies() {
       var tIndex = tdHistory.current();
       tdHistory.leave();
+      elHistory.drop();
       var parentIndex = tdHistory.current();
       if (parentIndex >= 0) {
         entities.bodys[parentIndex].bodies.push(tIndex);
       }
+
+      meta.currentElement = elHistory.current();
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },

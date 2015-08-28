@@ -60,12 +60,27 @@ codeGenerator.useCodeGeneratorFns({
     state.addReference(config);
   },
 
-  open_HTML_ELEMENT: function open_HTML_ELEMENT() {},
-  close_HTML_ELEMENT: function close_HTML_ELEMENT() {},
+  open_HTML_ELEMENT: function open_HTML_ELEMENT(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+
+    state.addElement(config);
+  },
+  close_HTML_ELEMENT: function close_HTML_ELEMENT(instruction) {
+    var state = instruction.state;
+
+    state.leaveElement();
+  },
   open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE() {},
   close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE() {},
   insert_HTML_COMMENT: function insert_HTML_COMMENT() {},
-  insert_PLAIN_TEXT: function insert_PLAIN_TEXT() {},
+  insert_PLAIN_TEXT: function insert_PLAIN_TEXT(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+
+    state.addElement(config);
+    state.leaveElement();
+  },
 
   createMethodHeaders: function createMethodHeaders(tdBody, code, methodName) {
     var suffix = methodName ? methodName : tdBody;
@@ -246,5 +261,5 @@ var generateJavascript = function generateJavascript(results) {
 };
 
 module.exports = generateJavascript;
-/*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/
+/*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/
 //# sourceMappingURL=generateJS.js.map

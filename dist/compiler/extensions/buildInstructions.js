@@ -32,7 +32,7 @@ var generateWalker = visitor.build({
   },
   HTML_ELEMENT: {
     enter: function enter(item, instructions, state) {
-      instructions.push(new Instruction("open_HTML_ELEMENT", { key: item.node[1].tag_info.key }, state));
+      instructions.push(new Instruction("open_HTML_ELEMENT", { key: item.node[1].tag_info.key, type: "element" }, state));
     },
     leave: function leave(item, instructions, state) {
       item.state = item.previousState;
@@ -54,7 +54,7 @@ var generateWalker = visitor.build({
   },
   PLAIN_TEXT: {
     enter: function enter(item, instructions, state) {
-      instructions.push(new Instruction("insert_PLAIN_TEXT", {}, state));
+      instructions.push(new Instruction("insert_PLAIN_TEXT", { content: item.node[1], type: "plaintext" }, state));
     }
   }
 });

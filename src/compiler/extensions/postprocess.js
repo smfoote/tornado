@@ -1,24 +1,24 @@
 import util from '../utils/builder';
 
 // helper method for recursively writing elements
-let writeElements = function(indexes, elements, parent, out) {
-  parent = parent ? 'el' + parent : 'frag';
+ function writeElements(indexes, elements, parent, out) {
+  let name = typeof parent === 'number' ? 'el' + parent : 'frag';
   indexes.forEach(function(i) {
     let el = elements[i];
     if (el.type === 'placeholder' || el.type === 'plaintext') {
-      out.push(`var el${i} = td.createTextNode('${el.type}');\n`);
+      out.push(`var el${i} = td.createTextNode('${el.type}-${el.content}');\n`);
     } else {
-      out.push(`var el${i} = td.createElement('${el.type}');\n`);
+      out.push(`var el${i} = td.createElement('${el.type}-${el.key}');\n`);
     }
-    out.push(`${parent}.appendChild(el${i});\n`);
+    out.push(`${name}.appendChild(el${i});\n`);
     // recurse over the children
     if (el.elements) {
-      writeElements(el.elements, elements, parent, out);
+      writeElements(el.elements, elements, i, out);
     }
   });
-};
+}
 
-let writeFragments = function(results) {
+function writeFragments(results) {
   let fragments = results.state.entities.fragments,
       elements = results.state.entities.elements;
 
@@ -38,9 +38,9 @@ let writeFragments = function(results) {
     codeFragments.push('}');
     results.code.fragments.push(codeFragments.join(''));
   });
-};
+}
 
-let writeBodys = function(results) {
+function writeBodys(results) {
   let bodys = results.state.entities.bodys;
   // initialize the results renderer
   results.code.renderers = [];
@@ -56,7 +56,7 @@ let writeBodys = function(results) {
     results.code.renderers.push(codeRenderer.join(''));
 
   });
-};
+}
 
 let flush = function(results) {
   let templateVars = [];
