@@ -27,9 +27,9 @@ codeGenerator.useCodeGeneratorFns({
     let {config, state} = instruction;
     let {key, type, name} = config;
     if (type === 'bodies') {
-      state.addBodies(name);
+      state.addBodies({name});
     } else {
-      state.addBody(key, type);
+      state.addBody({key, type});
     }
   },
   close_TORNADO_BODY(instruction) {

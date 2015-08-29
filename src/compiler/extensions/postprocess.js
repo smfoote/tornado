@@ -5,8 +5,10 @@ import util from '../utils/builder';
   let name = typeof parent === 'number' ? 'el' + parent : 'frag';
   indexes.forEach(function(i) {
     let el = elements[i];
-    if (el.type === 'placeholder' || el.type === 'plaintext') {
-      out.push(`var el${i} = td.createTextNode('${el.type}-${el.content}');\n`);
+    if (el.type === 'placeholder') {
+      out.push(`res.p${i} = td.createTextNode('${el.type}');\n`);
+    } else if (el.type === 'plaintext') {
+      out.push(`var el${i} = td.createTextNode('${el.type}');\n`);
     } else {
       out.push(`var el${i} = td.createElement('${el.type}-${el.key}');\n`);
     }
@@ -40,8 +42,61 @@ function writeFragments(results) {
   });
 }
 
+function writeBodyAlternates(indexes, bodys, out) {
+  if (indexes && indexes.length) {
+    indexes.forEach(function(i) {
+      out.push(`, ${bodys[i].name}: this.r${i}.bind(this)`);
+    });
+  }
+}
+function writeBodyMains(indexes, bodys, params, out) {
+  indexes.forEach(function(i) {
+    let body = bodys[i];
+    let key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
+    if (body.type === 'helper') {
+      // helper - key, placeholder, context, params, bodies
+      out.push(`td.${body.type}(${key}, root.p${body.element}, c, `);
+      writeBodyParams(body.params, params, out);
+      out.push(`, {main: this.r${i}.bind(this)`);
+      writeBodyAlternates(body.bodies, bodys, out);
+      out.push('});\n');
+    } else if (body.type === 'block') {
+      // block - name, idx, context, template
+    } else {
+      // exists - key, placeholder, bodies, context
+      // notexists - key, placeholder, bodies, context
+      // section - key, placeholder, bodies, context
+      out.push(`td.${body.type}(${key}, root.p${body.element}, {main: this.r${i}.bind(this)`);
+      writeBodyAlternates(body.bodies, bodys, out);
+      out.push(', c});\n');
+    }
+  });
+}
+function writeBodyParams(indexes, params, out) {
+  let keyValues = [];
+  out.push('{');
+  if (indexes && indexes.length) {
+    indexes.forEach(function(i) {
+      let p = params[i],
+          value;
+      //TODO: string interpolation is not supported yet e.g. param="hello {foo}"
+      value = typeof p.value === 'string' ? p.value : `td.get(c, ${JSON.stringify(p.value)})`;
+      keyValues.push(`${p.key}: ${value}`);
+    });
+    out.push(keyValues.join(', '));
+  }
+  out.push('}');
+}
+function writeBodyRefs(references, out) {
+  references.forEach(function(ref) {
+    let key = typeof ref === 'string' ? key : `td.get(c, ${JSON.stringify(ref.key)})`;
+    out.push(`td.${util.getTdMethodName('replaceNode')}(root.p${ref.element}, td.${util.getTdMethodName('createTextNode')}(${key}));`);
+  });
+}
+
 function writeBodys(results) {
-  let bodys = results.state.entities.bodys;
+  let bodys = results.state.entities.bodys,
+      params = results.state.entities.params;
   // initialize the results renderer
   results.code.renderers = [];
   bodys.forEach(function(b, idx) {
@@ -49,8 +104,12 @@ function writeBodys(results) {
     // add method header
     codeRenderer.push(`r${idx}: function() {
       var root = this.f${b.fragment};\n`);
+    // add all references
+    if (b.refs) {
+      writeBodyRefs(b.refs, codeRenderer);
+    }
     // add all mains
-    // add all alternate bodies
+    writeBodyMains(b.mains, bodys, params, codeRenderer);
     // add method footer
     codeRenderer.push('return root.frag;\n}');
     results.code.renderers.push(codeRenderer.join(''));

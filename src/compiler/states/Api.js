@@ -84,24 +84,41 @@ var Api = function() {
   }
 
   return {
-    addBody: function() {
-      addBodyAndFragment({mains: [], bodies: []}, {elements: []});
+    addBody: function(b) {
+      b = b || {};
+      b.mains = [];
+      b.bodies = [];
+      addBodyAndFragment(b, {elements: []});
     },
     leaveBody: function() {
-      var tIndex = tdHistory.current();
+      var tIndex = tdHistory.current(),
+          elIndex,
+          childBody,
+          parentBody;
       tdHistory.leave();
       elHistory.drop();
       var parentIndex = tdHistory.current();
+      // attach to a parent if we have one
       if (parentIndex >= 0) {
-        entities.bodys[parentIndex].mains.push(tIndex);
+        parentBody = entities.bodys[parentIndex];
+        parentBody.mains.push(tIndex);
+
+        childBody = entities.bodys[tIndex];
+        addElement({type: 'placeholder'});
+        elIndex = meta.currentElement;
+        leaveElement();
+        childBody.element = elIndex;
       }
 
       meta.currentElement = elHistory.current();
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },
-    addBodies: function() {
-      addBodyAndFragment({mains: [], bodies: []}, {elements: []});
+    addBodies: function(b) {
+      b = b || {};
+      b.mains = [];
+      b.bodies = [];
+      addBodyAndFragment(b, {elements: []});
     },
     leaveBodies: function() {
       var tIndex = tdHistory.current();

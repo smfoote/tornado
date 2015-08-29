@@ -38,9 +38,9 @@ codeGenerator.useCodeGeneratorFns({
     var name = config.name;
 
     if (type === "bodies") {
-      state.addBodies(name);
+      state.addBodies({ name: name });
     } else {
-      state.addBody(key, type);
+      state.addBody({ key: key, type: type });
     }
   },
   close_TORNADO_BODY: function close_TORNADO_BODY(instruction) {

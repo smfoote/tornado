@@ -20,7 +20,30 @@ test('addBody one level deep', function(t) {
   t.equal(api.meta.currentBody, 0, 'currentBody should point to this new body');
   t.end();
 });
+test('addBody/addbodies should accept a parameter', function(t) {
+  var api = new Api();
+  api.addBody({foo: 1, bar: 2});
+  t.equal(api.entities.bodys[0].foo, 1, 'should have a parameter saved');
+  t.equal(api.entities.bodys[0].bar, 2, 'should have another parameter saved');
+  api.addBodies({foo: 3, bar: 4});
+  t.equal(api.entities.bodys[1].foo, 3, 'should have a parameter saved');
+  t.equal(api.entities.bodys[1].bar, 4, 'should have another parameter saved');
+  t.end();
+});
 
+test('addBody should add placeholder nodes', function(t) {
+  var api = new Api();
+  // first body (open template)
+  api.addBody();
+  t.equal(typeof api.entities.elements, 'undefined', 'no need for a placeholder when there is no parent fragment');
+  api.addBody();
+  api.leaveBody();
+  t.equal(api.entities.elements[0].type, 'placeholder', 'a placeholder is added after leaving a child node');
+  t.equal(api.entities.bodys[1].element, 0, 'a placeholder reference is added on the child body');
+  api.leaveBody();
+  t.equal(api.entities.elements.length, 1, 'leaving the outer body should not change things');
+  t.end();
+});
 
 test('addBody two level deep', function(t) {
   var api = new Api();
