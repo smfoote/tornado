@@ -10,7 +10,7 @@ function writeElements(indexes, elements, parent, out) {
   indexes.forEach(function (i) {
     var el = elements[i];
     if (el.type === "placeholder") {
-      out.push("res.p" + i + " = td.createTextNode('" + el.type + "');\n");
+      out.push("var el" + i + " = res.p" + i + " = td.createTextNode('" + el.type + "');\n");
     } else if (el.type === "plaintext") {
       out.push("var el" + i + " = td.createTextNode('" + el.type + "');\n");
     } else {
@@ -38,13 +38,13 @@ function writeFragments(results) {
     // add all elements of this fragment
     writeElements(f.elements, elements, null, codeFragments);
     // add method footer
-    codeFragments.push("}");
+    codeFragments.push("return res;\n}");
     results.code.fragments.push(codeFragments.join(""));
   });
 }
 
 function writeBodyAlternates(indexes, bodys, out) {
-  if (indexes.length) {
+  if (indexes && indexes.length) {
     indexes.forEach(function (i) {
       out.push(", " + bodys[i].name + ": this.r" + i + ".bind(this)");
     });
@@ -74,12 +74,18 @@ function writeBodyMains(indexes, bodys, params, out) {
 function writeBodyParams(indexes, params, out) {
   var keyValues = [];
   out.push("{");
-  if (indexes.length) {
+  if (indexes && indexes.length) {
     indexes.forEach(function (i) {
       var p = params[i],
           value = undefined;
-      //TODO: string interpolation is not supported yet e.g. param="hello {foo}"
-      value = typeof p.value === "string" ? p.value : "td.get(c, " + JSON.stringify(p.value) + ")";
+      // TODO: string interpolation is not supported yet e.g. param="hello {foo}"
+      if (typeof p.val === "number") {
+        value = p.val;
+      } else if (typeof p.val === "string") {
+        value = JSON.stringify(p.val);
+      } else {
+        value = "td.get(c, " + JSON.stringify(p.val) + ")";
+      }
       keyValues.push("" + p.key + ": " + value);
     });
     out.push(keyValues.join(", "));
@@ -101,7 +107,7 @@ function writeBodys(results) {
   bodys.forEach(function (b, idx) {
     var codeRenderer = [];
     // add method header
-    codeRenderer.push("r" + idx + ": function() {\n      var root = this.f" + b.fragment + ";\n");
+    codeRenderer.push("r" + idx + ": function() {\n      var root = this.f" + b.fragment + "();\n");
     // add all references
     if (b.refs) {
       writeBodyRefs(b.refs, codeRenderer);

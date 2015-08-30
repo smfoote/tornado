@@ -2,11 +2,11 @@ import util from '../utils/builder';
 
 // helper method for recursively writing elements
  function writeElements(indexes, elements, parent, out) {
-  let name = typeof parent === 'number' ? 'el' + parent : 'frag';
+  let name = (typeof parent === 'number') ? 'el' + parent : 'frag';
   indexes.forEach(function(i) {
     let el = elements[i];
     if (el.type === 'placeholder') {
-      out.push(`res.p${i} = td.createTextNode('${el.type}');\n`);
+      out.push(`var el${i} = res.p${i} = td.createTextNode('${el.type}');\n`);
     } else if (el.type === 'plaintext') {
       out.push(`var el${i} = td.createTextNode('${el.type}');\n`);
     } else {
@@ -37,7 +37,7 @@ function writeFragments(results) {
     // add all elements of this fragment
     writeElements(f.elements, elements, null, codeFragments);
     // add method footer
-    codeFragments.push('}');
+    codeFragments.push('return res;\n}');
     results.code.fragments.push(codeFragments.join(''));
   });
 }
@@ -79,8 +79,14 @@ function writeBodyParams(indexes, params, out) {
     indexes.forEach(function(i) {
       let p = params[i],
           value;
-      //TODO: string interpolation is not supported yet e.g. param="hello {foo}"
-      value = typeof p.value === 'string' ? p.value : `td.get(c, ${JSON.stringify(p.value)})`;
+      // TODO: string interpolation is not supported yet e.g. param="hello {foo}"
+      if (typeof p.val === 'number') {
+        value = p.val;
+      } else if (typeof p.val === 'string') {
+        value = JSON.stringify(p.val);
+      } else {
+        value = `td.get(c, ${JSON.stringify(p.val)})`;
+      }
       keyValues.push(`${p.key}: ${value}`);
     });
     out.push(keyValues.join(', '));
@@ -103,7 +109,7 @@ function writeBodys(results) {
     let codeRenderer = [];
     // add method header
     codeRenderer.push(`r${idx}: function() {
-      var root = this.f${b.fragment};\n`);
+      var root = this.f${b.fragment}();\n`);
     // add all references
     if (b.refs) {
       writeBodyRefs(b.refs, codeRenderer);

@@ -30,6 +30,15 @@ var codeGenerator = {
 
 codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL() {},
+  insert_TORNADO_PARAMS: function insert_TORNADO_PARAMS(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+
+    var params = config.params;
+    params.forEach(function (p) {
+      state.addParam(p);
+    });
+  },
   open_TORNADO_BODY: function open_TORNADO_BODY(instruction) {
     var config = instruction.config;
     var state = instruction.state;

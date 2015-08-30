@@ -23,6 +23,13 @@ let codeGenerator = {
 codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL(/*instruction, code*/) {
   },
+  insert_TORNADO_PARAMS(instruction) {
+    let {config, state} = instruction;
+    let params = config.params;
+    params.forEach(function(p) {
+      state.addParam(p);
+    });
+  },
   open_TORNADO_BODY(instruction) {
     let {config, state} = instruction;
     let {key, type, name} = config;
