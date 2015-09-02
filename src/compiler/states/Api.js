@@ -3,6 +3,7 @@ var History = require('./History');
 var Api = function() {
   var tdHistory = new History(),
       elHistory = new History(),
+      stateHistory = new History(),
       meta = {},
       entities = {
       };
@@ -10,6 +11,7 @@ var Api = function() {
   function addBodyAndFragment(b, f) {
     var len;
     tdHistory.enter();
+    stateHistory.enter('fragments');
     if (entities.bodys) {
       len = entities.fragments.push(f);
       b.fragment = len - 1;
@@ -22,7 +24,7 @@ var Api = function() {
 
     elHistory.jump();
     meta.currentElement = null;
-
+    meta.currentState = stateHistory.current();
     meta.currentBody = tdHistory.current();
     meta.currentFragment = tdHistory.current();
   }
@@ -33,6 +35,7 @@ var Api = function() {
     el.elements = [];
     // add a new element
     elHistory.enter();
+    stateHistory.enter('elements');
     if (entities.elements) {
       entities.elements.push(el);
     } else {
@@ -41,6 +44,7 @@ var Api = function() {
 
     elIndex = elHistory.current();
     meta.currentElement = elIndex;
+    meta.currentState = stateHistory.current();
   }
 
   function addParam(p) {
@@ -67,6 +71,7 @@ var Api = function() {
     var elIndex = elHistory.current(),
         currentFragment;
     elHistory.leave();
+    stateHistory.leave();
     var parentIndex = elHistory.current();
     if (parentIndex >= 0) {
       entities.elements[parentIndex].elements.push(elIndex);
@@ -81,6 +86,7 @@ var Api = function() {
     }
 
     meta.currentElement = parentIndex;
+    meta.currentState = stateHistory.current();
   }
 
   return {
@@ -97,6 +103,7 @@ var Api = function() {
           parentBody;
       tdHistory.leave();
       elHistory.drop();
+      stateHistory.leave();
       var parentIndex = tdHistory.current();
       // attach to a parent if we have one
       if (parentIndex >= 0) {
@@ -111,6 +118,7 @@ var Api = function() {
       }
 
       meta.currentElement = elHistory.current();
+      meta.currentState = stateHistory.current();
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },
@@ -124,12 +132,14 @@ var Api = function() {
       var tIndex = tdHistory.current();
       tdHistory.leave();
       elHistory.drop();
+      stateHistory.leave();
       var parentIndex = tdHistory.current();
       if (parentIndex >= 0) {
         entities.bodys[parentIndex].bodies.push(tIndex);
       }
 
       meta.currentElement = elHistory.current();
+      meta.currentState = stateHistory.current();
       meta.currentBody = parentIndex;
       meta.currentFragment = parentIndex;
     },
@@ -157,6 +167,29 @@ var Api = function() {
       } else {
         currentBody.refs = [r];
       }
+    },
+    addAttr: function(attr) {
+      var currentEl = entities.elements[meta.currentElement],
+          len,
+          attrIndex;
+      stateHistory.enter('attrs');
+      // add a row into the attrs table
+      if (entities.attrs) {
+        len = entities.attrs.push(attr);
+        attrIndex = len - 1;
+      } else {
+        entities.attrs = [attr];
+        attrIndex = 0;
+      }
+      // attach attr to the current element
+      if (currentEl.attrs) {
+        currentEl.attrs.push(attrIndex);
+      } else {
+        currentEl.attrs = [attrIndex];
+      }
+    },
+    leaveAttr: function() {
+      stateHistory.leave();
     },
     addParam: addParam,
 
