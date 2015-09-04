@@ -4,6 +4,8 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var util = _interopRequire(require("./util"));
 
+var builtinHelpers = _interopRequire(require("./builtinHelpers"));
+
 var helpers = _interopRequire(require("./helpers"));
 
 var tornado = {
@@ -376,11 +378,17 @@ var tornado = {
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(function (values) {
           var resolvedParams = _this.util.arraysToObject(Object.keys(params).sort(), values);
-          var returnVal = helper(context, resolvedParams, bodies, _this.helperContext);
+          var returnVal = helper(context, resolvedParams, bodies, _this);
+          if (returnVal && _this.util.isPromise(returnVal)) {
+            placeholderNode = _this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
+          }
           return _this.helperResult(placeholderNode, returnVal);
         });
       } else {
-        var returnVal = helper(context, params, bodies, this.helperContext);
+        var returnVal = helper(context, params, bodies, this);
+        if (returnVal && this.util.isPromise(returnVal)) {
+          placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
+        }
         var res = this.helperResult(placeholderNode, returnVal);
         this.helperContext.pop();
         return res;
@@ -598,6 +606,7 @@ tornado.h = tornado.helper;
 tornado.b = tornado.block;
 tornado.s = tornado.nodeToString;
 
+tornado.registerHelpers(builtinHelpers);
 tornado.registerHelpers(helpers);
 
 module.exports = tornado;
