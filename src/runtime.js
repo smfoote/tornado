@@ -1,4 +1,5 @@
 import util from './util';
+import builtinHelpers from './builtinHelpers';
 import helpers from './helpers';
 
 let tornado = {
@@ -348,11 +349,17 @@ let tornado = {
       if (this.util.hasPromises(paramVals)) {
         Promise.all(paramVals).then(values => {
           let resolvedParams = this.util.arraysToObject(Object.keys(params).sort(), values);
-          let returnVal = helper(context, resolvedParams, bodies, this.helperContext);
+          let returnVal = helper(context, resolvedParams, bodies, this);
+          if (returnVal && this.util.isPromise(returnVal)) {
+            placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
+          }
           return this.helperResult(placeholderNode, returnVal);
         });
       } else {
-        let returnVal = helper(context, params, bodies, this.helperContext);
+        let returnVal = helper(context, params, bodies, this);
+        if (returnVal && this.util.isPromise(returnVal)) {
+          placeholderNode = this.insertPendingBody(placeholderNode, bodies.pending, context) || placeholderNode;
+        }
         let res = this.helperResult(placeholderNode, returnVal);
         this.helperContext.pop();
         return res;
@@ -565,6 +572,7 @@ tornado.h = tornado.helper;
 tornado.b = tornado.block;
 tornado.s = tornado.nodeToString;
 
+tornado.registerHelpers(builtinHelpers);
 tornado.registerHelpers(helpers);
 
 export default tornado;

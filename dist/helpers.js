@@ -49,47 +49,65 @@ var truthTest = function truthTest(context, params, bodies, helperContext, test)
 };
 
 var helpers = {
-  sep: function sep(context, params, bodies, helperContext) {
+  sep: function sep(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     if (helperContext.get("$idx") < helperContext.get("$len") - 1) {
       return bodies.main(context);
     }
   },
-  first: function first(context, params, bodies, helperContext) {
+  first: function first(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     if (helperContext.get("$idx") === 0) {
       return bodies.main(context);
     }
   },
-  last: function last(context, params, bodies, helperContext) {
+  last: function last(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     if (helperContext.get("$idx") === helperContext.get("$len") - 1) {
       return bodies.main(context);
     }
   },
-  eq: function eq(context, params, bodies, helperContext) {
+  eq: function eq(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left === right;
     });
   },
-  ne: function ne(context, params, bodies, helperContext) {
+  ne: function ne(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left !== right;
     });
   },
-  gt: function gt(context, params, bodies, helperContext) {
+  gt: function gt(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left > right;
     });
   },
-  lt: function lt(context, params, bodies, helperContext) {
+  lt: function lt(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left < right;
     });
   },
-  gte: function gte(context, params, bodies, helperContext) {
+  gte: function gte(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left >= right;
     });
   },
-  lte: function lte(context, params, bodies, helperContext) {
+  lte: function lte(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     return truthTest(context, params, bodies, helperContext, function (left, right) {
       return left <= right;
     });
@@ -109,7 +127,8 @@ var helpers = {
   "debugger": function _debugger() {
     debugger;
   },
-  select: function select(context, params, bodies, helperContext) {
+  select: function select(context, params, bodies, td) {
+    var helperContext = td.helperContext;
     var key = params.key;
 
     util.assert(key !== undefined, "@select helper requires a `key` parameter");
@@ -119,13 +138,16 @@ var helpers = {
     });
     return bodies.main(context);
   },
-  "default": function _default(context, params, bodies, helperContext) {
+  "default": function _default(context, params, bodies, td) {
+    var helperContext = td.helperContext;
+
     var selectState = helperContext.get("$selectState");
     if (selectState && !selectState.isResolved) {
       return bodies.main(context);
     }
   },
-  math: function math(context, params, bodies, helperContext) {
+  math: function math(context, params, bodies, td) {
+    var helperContext = td.helperContext;
     var a = params.a;
     var b = params.b;
     var operator = params.operator;
@@ -188,7 +210,8 @@ var helpers = {
       return emptyFrag().appendChild(document.createTextNode(res));
     }
   },
-  repeat: function repeat(context, params, bodies, helperContext) {
+  repeat: function repeat(context, params, bodies, td) {
+    var helperContext = td.helperContext;
     var count = params.count;
     var main = bodies.main;
 

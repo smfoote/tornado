@@ -42,47 +42,56 @@ let truthTest = function(context, params, bodies, helperContext, test) {
 };
 
 let helpers = {
-  sep(context, params, bodies, helperContext) {
+  sep(context, params, bodies, td) {
+    let {helperContext} = td;
     if (helperContext.get('$idx') < helperContext.get('$len') - 1) {
       return bodies.main(context);
     }
   },
-  first(context, params, bodies, helperContext) {
+  first(context, params, bodies, td) {
+    let {helperContext} = td;
     if (helperContext.get('$idx') === 0) {
       return bodies.main(context);
     }
   },
-  last(context, params, bodies, helperContext) {
+  last(context, params, bodies, td) {
+    let {helperContext} = td;
     if (helperContext.get('$idx') === helperContext.get('$len') - 1) {
       return bodies.main(context);
     }
   },
-  eq(context, params, bodies, helperContext) {
+  eq(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left === right;
     });
   },
-  ne(context, params, bodies, helperContext) {
+  ne(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left !== right;
     });
   },
-  gt(context, params, bodies, helperContext) {
+  gt(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left > right;
     });
   },
-  lt(context, params, bodies, helperContext) {
+  lt(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left < right;
     });
   },
-  gte(context, params, bodies, helperContext) {
+  gte(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left >= right;
     });
   },
-  lte(context, params, bodies, helperContext) {
+  lte(context, params, bodies, td) {
+    let {helperContext} = td;
     return truthTest(context, params, bodies, helperContext, (left, right) => {
       return left <= right;
     });
@@ -102,7 +111,8 @@ let helpers = {
   debugger() {
     debugger;
   },
-  select(context, params, bodies, helperContext) {
+  select(context, params, bodies, td) {
+    let {helperContext} = td;
     let {key} = params;
     util.assert(key !== undefined, '@select helper requires a `key` parameter');
     helperContext.set('selectState', {
@@ -111,13 +121,15 @@ let helpers = {
     });
     return bodies.main(context);
   },
-  default(context, params, bodies, helperContext) {
+  default(context, params, bodies, td) {
+    let {helperContext} = td;
     let selectState = helperContext.get('$selectState');
     if (selectState && !selectState.isResolved) {
       return bodies.main(context);
     }
   },
-  math(context, params, bodies, helperContext) {
+  math(context, params, bodies, td) {
+    let {helperContext} = td;
     let {a, b, operator, round} = params;
     let {main} = bodies;
     let res;
@@ -176,7 +188,8 @@ let helpers = {
       return emptyFrag().appendChild(document.createTextNode(res));
     }
   },
-  repeat(context, params, bodies, helperContext) {
+  repeat(context, params, bodies, td) {
+    let {helperContext} = td;
     let {count} = params;
     let {main} = bodies;
     util.assert(typeof count === 'number' && count >= 0, '@repeat requires the `count` param, and it must be a number 0 or greater.');
