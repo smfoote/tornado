@@ -70,13 +70,18 @@ test("adding a reference in an attribute", function (t) {
   t.deepEqual(api.entities.refs[0].from, { type: "vals", id: 0 }, "the reference should know about the placeholder");
   t.end();
 });
-// test('adding a reference in a param', function(t) {
-// var api = new Api();
-// api.addBody();
-// api.addParam({key: 'foo'});
-// api.addReference({key: 'hello'});
-// api.leaveParam();
-// api.leaveBody();
-// t.end();
-// });
+test("adding a reference in a param", function (t) {
+  var api = new Api();
+  api.addBody();
+  api.addParam({ key: "foo" });
+  api.addReference({ key: "hello" });
+  api.leaveParam();
+  api.leaveBody();
+
+  t.equal(api.entities.params.length, 1, "adding a param to the list of params");
+  t.equal(api.entities.vals[0].type, "placeholder", "should add a placeholder into vals");
+  t.equal(api.entities.bodys[0].refs.length, 1, "should add the reference to body");
+  t.deepEqual(api.entities.refs[0].from, { type: "paramVals", id: 0 }, "the reference should know about the placeholder");
+  t.end();
+});
 //# sourceMappingURL=testReference.js.map

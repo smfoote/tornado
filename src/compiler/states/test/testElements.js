@@ -123,8 +123,8 @@ test('body and elements nested', function(t) {
     api.leaveElement();
   api.leaveBody();
 
-  t.equal(api.entities.elements.filter(function(el) {return el.type === 'element';}).length, 3, 'adding 3 elements to the list of elements');
-  t.equal(api.entities.elements.filter(function(el) {return el.type === 'placeholder';}).length, 2, 'adding 2 placeholders to the list of elements');
+  t.equal(api.entities.elements.filter(function(el) {return el.type === 'element'; }).length, 3, 'adding 3 elements to the list of elements');
+  t.equal(api.entities.elements.filter(function(el) {return el.type === 'placeholder'; }).length, 2, 'adding 2 placeholders to the list of elements');
   t.equal(api.entities.fragments.length, 3, 'adding 3 fragments');
   t.deepEqual(api.entities.fragments[0].elements, [0], 'outer fragment has an element');
   t.deepEqual(api.entities.fragments[1].elements, [1], 'middle fragment has another');

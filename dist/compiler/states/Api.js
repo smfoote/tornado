@@ -57,6 +57,10 @@ var Api = function Api() {
         addAttrVal(item);
         itemIndex = meta.currentAttr;
         break;
+      case ENTITY_TYPES.PARAM_VALUE:
+        addParamVal(item);
+        itemIndex = meta.currentParam;
+        break;
     }
 
     var e = locationToEntity(to);
@@ -108,6 +112,52 @@ var Api = function Api() {
     placeholderize(stateHistory.current(), generateLocation(ENTITY_TYPES.REFERENCE, rIndex));
   }
 
+  function addParam(p) {
+    var currentBody = entities.bodys[meta.currentBody],
+        len,
+        paramIndex;
+    // add a row into the params table
+    if (entities.params) {
+      len = entities.params.push(p);
+      paramIndex = len - 1;
+    } else {
+      entities.params = [p];
+      paramIndex = 0;
+    }
+    stateHistory.enter(generateLocation(ENTITY_TYPES.PARAM_VALUE, paramIndex));
+    // attach param to the current Body
+    if (currentBody.params) {
+      currentBody.params.push(paramIndex);
+    } else {
+      currentBody.params = [paramIndex];
+    }
+
+    meta.currentParam = paramIndex;
+  }
+
+  function addParamVal(v) {
+    var valIndex,
+        len,
+        currentParam = entities.params[meta.currentParam];
+
+    if (entities.vals) {
+      len = entities.vals.push(v);
+      valIndex = len - 1;
+    } else {
+      entities.vals = [v];
+      valIndex = 0;
+    }
+
+    // add it to the current attr
+    if (currentParam) {
+      if (currentParam.vals) {
+        currentParam.vals.push(valIndex);
+      } else {
+        currentParam.vals = [valIndex];
+      }
+    }
+  }
+
   function addElement(el) {
     var elIndex;
 
@@ -124,26 +174,6 @@ var Api = function Api() {
     stateHistory.enter(generateLocation(ENTITY_TYPES.ELEMENT, elIndex));
     meta.currentElement = elIndex;
     meta.currentState = stateHistory.current();
-  }
-
-  function addParam(p) {
-    var currentBody = entities.bodys[meta.currentBody],
-        len,
-        paramIndex;
-    // add a row into the params table
-    if (entities.params) {
-      len = entities.params.push(p);
-      paramIndex = len - 1;
-    } else {
-      entities.params = [p];
-      paramIndex = 0;
-    }
-    // attach param to the current Body
-    if (currentBody.params) {
-      currentBody.params.push(paramIndex);
-    } else {
-      currentBody.params = [paramIndex];
-    }
   }
 
   function leaveElement() {
@@ -170,7 +200,6 @@ var Api = function Api() {
   function addAttrVal(v) {
     var valIndex,
         len,
-        currentEl = entities.elements[meta.currentElement],
         currentAttr = entities.attrs[meta.currentAttr];
 
     if (entities.vals) {
@@ -291,7 +320,6 @@ var Api = function Api() {
     addPlainText: function addPlainText(t) {
       var currentState = stateHistory.current(),
           type = currentState.type,
-          id = currentState.id,
           item = { type: "plaintext", content: t };
       switch (type) {
         case ENTITY_TYPES.BODY:
@@ -303,9 +331,17 @@ var Api = function Api() {
         case ENTITY_TYPES.ATTRIBUTE_VALUE:
           addAttrVal(item);
           break;
+        case ENTITY_TYPES.PARAM_VALUE:
+          addParamVal(item);
+          break;
       }
     },
     addParam: addParam,
+    addParamVal: addParamVal,
+    leaveParam: function leaveParam() {
+      stateHistory.leave();
+      meta.currentParam = null;
+    },
 
     //debugging
     _tdHistory: tdHistory,

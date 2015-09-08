@@ -16,7 +16,6 @@ test("body in element in body", function (t) {
   api.leaveElement();
   api.leaveBody();
   t.equal(api.entities.bodys[0].from, undefined, " placeholder for the outer most element");
-  debugger;
   t.deepEqual(api.entities.bodys[1].from, { type: "elements", id: 1 }, " placeholder for the inner body from an element");
   t.equal(api.entities.elements[1].type, "placeholder", "placeholder for the inner body");
   t.equal(api.entities.elements[1].to, "bodys", "placeholder for the inner body");

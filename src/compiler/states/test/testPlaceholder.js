@@ -30,7 +30,7 @@ test('reference in attr in elememt in body', function(t) {
   api.leaveAttr();
   api.leaveElement();
   api.leaveBody();
-  t.deepEqual(api.entities.vals[0], {type:'placeholder', to: 'refs', id: 0}, 'placeholder for the reference');
-  t.deepEqual(api.entities.refs[0].from, {type:'attrs', id: 0}, 'placeholder for reference from an attribute');
+  t.deepEqual(api.entities.vals[0], {type: 'placeholder', to: 'refs', id: 0}, 'placeholder for the reference');
+  t.deepEqual(api.entities.refs[0].from, {type: 'attrs', id: 0}, 'placeholder for reference from an attribute');
   t.end();
 });

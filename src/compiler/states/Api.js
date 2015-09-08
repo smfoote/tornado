@@ -8,7 +8,7 @@ var ENTITY_TYPES = {
   ATTRIBUTE: 'attrs',
   ATTRIBUTE_VALUE: 'vals',
   PARAM: 'params',
-  PARAM_VALUE: 'paramVals',
+  PARAM_VALUE: 'paramVals'
 };
 
 var Api = function() {
