@@ -39,7 +39,7 @@ test('addBody should add placeholder nodes', function(t) {
   api.addBody();
   api.leaveBody();
   t.equal(api.entities.elements[0].type, 'placeholder', 'a placeholder is added after leaving a child node');
-  t.equal(api.entities.bodys[1].element, 0, 'a placeholder reference is added on the child body');
+  t.deepEqual(api.entities.bodys[1].from, {type: 'bodys', id: 0}, 'a placeholder reference is added on the child body');
   api.leaveBody();
   t.equal(api.entities.elements.length, 1, 'leaving the outer body should not change things');
   t.end();

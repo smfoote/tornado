@@ -8,8 +8,8 @@ var History = function History() {
     return history[history.length - 1];
   }
   this.current = current;
-  this.enter = function () {
-    history.push(count++);
+  this.enter = function (item) {
+    history.push(item || count++);
   };
   this.leave = function () {
     history.pop();

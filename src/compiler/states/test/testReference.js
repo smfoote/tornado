@@ -21,7 +21,8 @@ test('adding a reference in a body', function(t) {
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
   t.equal(api.entities.refs.length, 1, 'should add a reference to the list of references');
   t.equal(api.entities.bodys[0].refs[0], 0, 'should add the reference to body');
-  t.equal(api.entities.refs[0].from, 0, 'the reference should know about the placeholder');
+  // Not sure if this from here makes sense
+  t.deepEqual(api.entities.refs[0].from, {type: 'bodys', id: 0}, 'the reference should know about the placeholder');
   t.end();
 });
 /*
@@ -41,7 +42,7 @@ test('adding a reference in an element', function(t) {
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
   t.equal(api.entities.refs.length, 1, 'should add a reference to the list of references');
   t.equal(api.entities.bodys[0].refs[0], 0, 'should add the reference to body');
-  t.equal(api.entities.refs[0].from, 0, 'the reference should know about the placeholder');
+  t.deepEqual(api.entities.refs[0].from, {type: 'elements', id:1}, 'the reference should know about the placeholder');
   t.end();
 });
 /*
@@ -64,7 +65,7 @@ test('adding a reference in an attribute', function(t) {
   t.equal(api.entities.vals[0].type, 'placeholder', 'should add a placeholder into vals');
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
   t.equal(api.entities.bodys[0].refs.length, 1, 'should add the reference to body');
-  t.equal(api.entities.bodys[0].refs[0].from, 'val', 'the reference should know about the placeholder');
+  t.deepEqual(api.entities.refs[0].from, {type: 'vals', id: 0}, 'the reference should know about the placeholder');
   t.end();
 });
 // test('adding a reference in a param', function(t) {

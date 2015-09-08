@@ -6,7 +6,9 @@ var ENTITY_TYPES = {
   FRAGMENT: 'fragments',
   ELEMENT: 'elements',
   ATTRIBUTE: 'attrs',
-  PARAM: 'params'
+  ATTRIBUTE_VALUE: 'vals',
+  PARAM: 'params',
+  PARAM_VALUE: 'paramVals'
 };
 
 var Api = function() {
@@ -47,10 +49,12 @@ var Api = function() {
       case ENTITY_TYPES.FRAGMENT:
       case ENTITY_TYPES.ELEMENT:
         addElement(item);
+        itemIndex = meta.currentElement;
         leaveElement();
         break;
-      case ENTITY_TYPES.ATTRIBUTE:
+      case ENTITY_TYPES.ATTRIBUTE_VALUE:
         addAttrVal(item);
+        itemIndex = meta.currentAttr;
         break;
     }
 
@@ -166,7 +170,7 @@ var Api = function() {
     var valIndex,
         len,
         currentEl = entities.elements[meta.currentElement],
-        currentAttr = currentEl.attrs[meta.currentAttr];
+        currentAttr = entities.attrs[meta.currentAttr];
 
     if (entities.vals) {
       len = entities.vals.push(v);
@@ -267,7 +271,7 @@ var Api = function() {
         entities.attrs = [attr];
         attrIndex = 0;
       }
-      stateHistory.enter(generateLocation(ENTITY_TYPES.ATTRIBUTE, attrIndex));
+      stateHistory.enter(generateLocation(ENTITY_TYPES.ATTRIBUTE_VALUE, attrIndex));
       // attach attr to the current element
       if (currentEl.attrs) {
         currentEl.attrs.push(attrIndex);
@@ -286,18 +290,18 @@ var Api = function() {
       var currentState = stateHistory.current(),
           type = currentState.type,
           id = currentState.id,
-          len,
-          stringIndex;
-      // add to the list of strings
-      if (entities.strings) {
-        len = entities.strings.push(t);
-        stringIndex = len - 1;
-      } else {
-        entities.strings = [t];
-        stringIndex = 0;
+          item = {type: 'plaintext', content: t};
+      switch (type) {
+        case ENTITY_TYPES.BODY:
+        case ENTITY_TYPES.FRAGMENT:
+        case ENTITY_TYPES.ELEMENT:
+          addElement(item);
+          leaveElement();
+          break;
+        case ENTITY_TYPES.ATTRIBUTE_VALUE:
+          addAttrVal(item);
+          break;
       }
-      // connect plaintext to the parent
-      entities[type][id].plaintexts = [stringIndex];
     },
     addParam: addParam,
 
