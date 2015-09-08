@@ -56,6 +56,10 @@ var Api = function() {
         addAttrVal(item);
         itemIndex = meta.currentAttr;
         break;
+      case ENTITY_TYPES.PARAM_VALUE:
+        addParamVal(item);
+        itemIndex = meta.currentParam;
+        break;
     }
 
     var e = locationToEntity(to);
