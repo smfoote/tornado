@@ -19,9 +19,13 @@ test('add one attr', function(t) {
   var api = new Api();
   api.addBody();
   api.addElement({key: 'div', type: 'element'});
-  api.addAttr({key: 'a', value: '1'});
+  api.addAttr({key: 'a'});
+  api.addPlainText('hello');
   api.leaveAttr();
   t.equal(api.entities.attrs.length, 1, 'adding an attr to the list of attrs');
+  t.equal(api.entities.attrs[0].key, 'a', 'attr should have a string key');
+  debugger;
+  t.equal(api.entities.attrs[0].vals[0], 'hello', 'attr should have an array of vals');
   t.deepEqual(api.entities.elements[0].attrs, [0], 'connect an attr to current element');
   t.end();
 });

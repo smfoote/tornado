@@ -6,6 +6,11 @@ test('adding an reference before adding a body/fragment is a no-no', function(t)
   t.throws(api.addReference);
   t.end();
 });
+/*
+ *  bodys: [{outer, references: 0}]
+ *  references: [ref, el0]
+ *  elements: [{placeholder-for-reference}]
+ */
 test('adding a reference in a body', function(t) {
   var api = new Api();
   api.addBody();
@@ -14,10 +19,16 @@ test('adding a reference in a body', function(t) {
   t.equal(api.entities.elements.length, 1, 'should add a placeholder element');
   t.equal(api.entities.fragments[0].elements[0], 0, 'the current fragment needs to know about this element');
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
-  t.equal(api.entities.bodys[0].refs.length, 1, 'should add the reference to body');
-  t.equal(api.entities.bodys[0].refs[0].element, 0, 'the reference should know about the placeholder');
+  t.equal(api.entities.refs.length, 1, 'should add a reference to the list of references');
+  t.equal(api.entities.bodys[0].refs[0], 0, 'should add the reference to body');
+  t.equal(api.entities.refs[0].from, 0, 'the reference should know about the placeholder');
   t.end();
 });
+/*
+ *  bodys: [{outer, references: 0}]
+ *  references: [ref, el1]
+ *  elements: [{outerEl}, {placeholder-for-reference}]
+ */
 test('adding a reference in an element', function(t) {
   var api = new Api();
   api.addBody();
@@ -28,10 +39,17 @@ test('adding a reference in an element', function(t) {
   t.equal(api.entities.elements.length, 2, 'should add a placeholder element');
   t.equal(api.entities.elements[0].elements[0], 1, 'the current fragment needs to know about this element');
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
-  t.equal(api.entities.bodys[0].refs.length, 1, 'should add the reference to body');
-  t.equal(api.entities.bodys[0].refs[0].element, 1, 'the reference should know about the placeholder');
+  t.equal(api.entities.refs.length, 1, 'should add a reference to the list of references');
+  t.equal(api.entities.bodys[0].refs[0], 0, 'should add the reference to body');
+  t.equal(api.entities.refs[0].from, 0, 'the reference should know about the placeholder');
   t.end();
 });
+/*
+ *  bodys: [{outer, references: 0}]
+ *  references: [ref, attr0]
+ *  elements: [{placeholder-for-reference}]
+ *  attrs: [x
+ */
 test('adding a reference in an attribute', function(t) {
   var api = new Api();
   api.addBody();
@@ -46,7 +64,7 @@ test('adding a reference in an attribute', function(t) {
   t.equal(api.entities.vals[0].type, 'placeholder', 'should add a placeholder into vals');
   t.equal(api.entities.bodys.length, 1, 'should not change the bodys length');
   t.equal(api.entities.bodys[0].refs.length, 1, 'should add the reference to body');
-  t.equal(api.entities.bodys[0].refs[0].from.type, 'val', 'the reference should know about the placeholder');
+  t.equal(api.entities.bodys[0].refs[0].from, 'val', 'the reference should know about the placeholder');
   t.end();
 });
 // test('adding a reference in a param', function(t) {

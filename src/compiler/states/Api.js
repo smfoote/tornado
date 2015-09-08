@@ -1,5 +1,14 @@
 var History = require('./History');
 
+var ENTITY_TYPES = {
+  BODY: 'bodys',
+  REFERENCE: 'refs',
+  FRAGMENT: 'fragments',
+  ELEMENT: 'elements',
+  ATTRIBUTE: 'attrs',
+  PARAM: 'params'
+};
+
 var Api = function() {
   var tdHistory = new History(),
       elHistory = new History(),
@@ -8,10 +17,50 @@ var Api = function() {
       entities = {
       };
 
+  function generateLocation(type, id) {
+    return {type: type, id: id};
+  }
+  function locationToEntity(location) {
+    var type = location.type,
+        id = location.id;
+    if (!type || typeof id !== 'number') {
+      return null;
+    }
+
+    var set = entities[type];
+    if (set) {
+      return set[id] || null;
+    }
+
+    return null;
+  }
+  function placeholderize(from, to) {
+    // add a placeholder then connect it from the `from` location and have it point to the `to` location
+    var itemIndex,
+        item = {
+          type: 'placeholder',
+          to: to.type,
+          id: to.id
+        };
+    switch (from.type) {
+      case ENTITY_TYPES.BODY:
+      case ENTITY_TYPES.FRAGMENT:
+      case ENTITY_TYPES.ELEMENT:
+        addElement(item);
+        leaveElement();
+        break;
+      case ENTITY_TYPES.ATTRIBUTE:
+        addAttrVal(item);
+        break;
+    }
+
+    var e = locationToEntity(to);
+    e.from = generateLocation(from.type, itemIndex);
+  }
+
   function addBodyAndFragment(b, f) {
     var len;
     tdHistory.enter();
-    stateHistory.enter('fragments');
     if (entities.bodys) {
       len = entities.fragments.push(f);
       b.fragment = len - 1;
@@ -22,11 +71,36 @@ var Api = function() {
       entities.fragments = [f];
     }
 
+    stateHistory.enter(generateLocation(ENTITY_TYPES.BODY, b.fragment));
     elHistory.jump();
     meta.currentElement = null;
     meta.currentState = stateHistory.current();
     meta.currentBody = tdHistory.current();
     meta.currentFragment = tdHistory.current();
+  }
+  function addReference(r) {
+    // add placeholder element
+    var tIndex = meta.currentBody,
+        currentBody,
+        len,
+        rIndex;
+
+    if (entities.refs) {
+      len = entities.refs.push(r);
+      rIndex = len - 1;
+    } else {
+      entities.refs = [r];
+      rIndex = 0;
+    }
+
+    currentBody = entities.bodys[tIndex];
+    if (currentBody.refs) {
+      currentBody.refs.push(rIndex);
+    } else {
+      currentBody.refs = [rIndex];
+    }
+
+    placeholderize(stateHistory.current(), generateLocation(ENTITY_TYPES.REFERENCE, rIndex));
   }
 
   function addElement(el) {
@@ -35,7 +109,6 @@ var Api = function() {
     el.elements = [];
     // add a new element
     elHistory.enter();
-    stateHistory.enter('elements');
     if (entities.elements) {
       entities.elements.push(el);
     } else {
@@ -43,6 +116,7 @@ var Api = function() {
     }
 
     elIndex = elHistory.current();
+    stateHistory.enter(generateLocation(ENTITY_TYPES.ELEMENT, elIndex));
     meta.currentElement = elIndex;
     meta.currentState = stateHistory.current();
   }
@@ -88,6 +162,29 @@ var Api = function() {
     meta.currentElement = parentIndex;
     meta.currentState = stateHistory.current();
   }
+  function addAttrVal(v) {
+    var valIndex,
+        len,
+        currentEl = entities.elements[meta.currentElement],
+        currentAttr = currentEl.attrs[meta.currentAttr];
+
+    if (entities.vals) {
+      len = entities.vals.push(v);
+      valIndex = len - 1;
+    } else {
+      entities.vals = [v];
+      valIndex = 0;
+    }
+
+    // add it to the current attr
+    if (currentAttr) {
+      if (currentAttr.vals) {
+        currentAttr.vals.push(valIndex);
+      } else {
+        currentAttr.vals = [valIndex];
+      }
+    }
+  }
 
   return {
     addBody: function(b) {
@@ -98,23 +195,30 @@ var Api = function() {
     },
     leaveBody: function() {
       var tIndex = tdHistory.current(),
-          elIndex,
-          childBody,
-          parentBody;
+          // elIndex,
+          // childBody,
+          parentBody,
+          childLocation,
+          parentLocation;
       tdHistory.leave();
       elHistory.drop();
+
+      childLocation = stateHistory.current();
       stateHistory.leave();
+      parentLocation = stateHistory.current();
+
       var parentIndex = tdHistory.current();
       // attach to a parent if we have one
       if (parentIndex >= 0) {
         parentBody = entities.bodys[parentIndex];
         parentBody.mains.push(tIndex);
 
-        childBody = entities.bodys[tIndex];
-        addElement({type: 'placeholder'});
-        elIndex = meta.currentElement;
-        leaveElement();
-        childBody.element = elIndex;
+        placeholderize(parentLocation, childLocation);
+        // childBody = entities.bodys[tIndex];
+        // addElement({type: 'placeholder'});
+        // elIndex = meta.currentElement;
+        // leaveElement();
+        // childBody.element = elIndex;
       }
 
       meta.currentElement = elHistory.current();
@@ -150,29 +254,11 @@ var Api = function() {
     addElement: addElement,
     leaveElement: leaveElement,
     // references
-    addReference: function(r) {
-      // add placeholder element
-      var tIndex = meta.currentBody,
-          elIndex,
-          currentBody;
-      addElement({type: 'placeholder'});
-      elIndex = meta.currentElement;
-      leaveElement();
-
-      // add reference to current body
-      r.element = elIndex;
-      currentBody = entities.bodys[tIndex];
-      if (currentBody.refs) {
-        currentBody.refs.push(r);
-      } else {
-        currentBody.refs = [r];
-      }
-    },
+    addReference: addReference,
     addAttr: function(attr) {
       var currentEl = entities.elements[meta.currentElement],
           len,
           attrIndex;
-      stateHistory.enter('attrs');
       // add a row into the attrs table
       if (entities.attrs) {
         len = entities.attrs.push(attr);
@@ -181,15 +267,37 @@ var Api = function() {
         entities.attrs = [attr];
         attrIndex = 0;
       }
+      stateHistory.enter(generateLocation(ENTITY_TYPES.ATTRIBUTE, attrIndex));
       // attach attr to the current element
       if (currentEl.attrs) {
         currentEl.attrs.push(attrIndex);
       } else {
         currentEl.attrs = [attrIndex];
       }
+
+      meta.currentAttr = attrIndex;
     },
+    addAttrVal: addAttrVal,
     leaveAttr: function() {
       stateHistory.leave();
+      meta.currentAttr = null;
+    },
+    addPlainText: function(t) {
+      var currentState = stateHistory.current(),
+          type = currentState.type,
+          id = currentState.id,
+          len,
+          stringIndex;
+      // add to the list of strings
+      if (entities.strings) {
+        len = entities.strings.push(t);
+        stringIndex = len - 1;
+      } else {
+        entities.strings = [t];
+        stringIndex = 0;
+      }
+      // connect plaintext to the parent
+      entities[type][id].plaintexts = [stringIndex];
     },
     addParam: addParam,
 
