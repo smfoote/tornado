@@ -23,12 +23,14 @@ let codeGenerator = {
 codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL(/*instruction, code*/) {
   },
-  insert_TORNADO_PARAMS(instruction) {
+  open_TORNADO_PARAM(instruction) {
     let {config, state} = instruction;
-    let params = config.params;
-    params.forEach(function(p) {
-      state.addParam(p);
-    });
+    let key = config.key;
+    state.addParam({key});
+  },
+  close_TORNADO_PARAM(instruction) {
+    let {state} = instruction;
+    state.leaveParam();
   },
   open_TORNADO_BODY(instruction) {
     let {config, state} = instruction;
@@ -60,16 +62,20 @@ codeGenerator.useCodeGeneratorFns({
     let {state} = instruction;
     state.leaveElement();
   },
-  open_HTML_ATTRIBUTE(/*instruction, code*/) {
+  open_HTML_ATTRIBUTE(instruction) {
+    let {state} = instruction;
+    state.addAttr({key: 'attr'});
   },
-  close_HTML_ATTRIBUTE(/*instruction, code*/) {
+  close_HTML_ATTRIBUTE(instruction) {
+    let {state} = instruction;
+    state.leaveAttr();
   },
   insert_HTML_COMMENT(/*instruction, code*/) {
   },
   insert_PLAIN_TEXT(instruction) {
     let {config, state} = instruction;
-    state.addElement(config);
-    state.leaveElement();
+    let val = config.content;
+    state.addPlainText(val);
   },
 
   createMethodHeaders(tdBody, code, methodName) {

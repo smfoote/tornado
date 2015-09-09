@@ -29,6 +29,9 @@ var Api = function() {
       return null;
     }
 
+    if (type === ENTITY_TYPES.PARAM_VALUE) {
+      type = ENTITY_TYPES.ATTRIBUTE_VALUE;
+    }
     var set = entities[type];
     if (set) {
       return set[id] || null;

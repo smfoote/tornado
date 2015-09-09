@@ -30,14 +30,17 @@ var codeGenerator = {
 
 codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL() {},
-  insert_TORNADO_PARAMS: function insert_TORNADO_PARAMS(instruction) {
+  open_TORNADO_PARAM: function open_TORNADO_PARAM(instruction) {
     var config = instruction.config;
     var state = instruction.state;
 
-    var params = config.params;
-    params.forEach(function (p) {
-      state.addParam(p);
-    });
+    var key = config.key;
+    state.addParam({ key: key });
+  },
+  close_TORNADO_PARAM: function close_TORNADO_PARAM(instruction) {
+    var state = instruction.state;
+
+    state.leaveParam();
   },
   open_TORNADO_BODY: function open_TORNADO_BODY(instruction) {
     var config = instruction.config;
@@ -80,15 +83,23 @@ codeGenerator.useCodeGeneratorFns({
 
     state.leaveElement();
   },
-  open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE() {},
-  close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE() {},
+  open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE(instruction) {
+    var state = instruction.state;
+
+    state.addAttr({ key: "attr" });
+  },
+  close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE(instruction) {
+    var state = instruction.state;
+
+    state.leaveAttr();
+  },
   insert_HTML_COMMENT: function insert_HTML_COMMENT() {},
   insert_PLAIN_TEXT: function insert_PLAIN_TEXT(instruction) {
     var config = instruction.config;
     var state = instruction.state;
 
-    state.addElement(config);
-    state.leaveElement();
+    var val = config.content;
+    state.addPlainText(val);
   },
 
   createMethodHeaders: function createMethodHeaders(tdBody, code, methodName) {
@@ -270,5 +281,5 @@ var generateJavascript = function generateJavascript(results) {
 };
 
 module.exports = generateJavascript;
-/*instruction, code*/ /*instruction, code*/ /*instruction, code*/ /*instruction, code*/
+/*instruction, code*/ /*instruction, code*/
 //# sourceMappingURL=generateJS.js.map

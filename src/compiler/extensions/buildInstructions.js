@@ -11,23 +11,26 @@ let generateWalker = visitor.build({
   },
   TORNADO_BODY: {
     enter(item, instructions, state) {
-      let params,
-          keyValues = [];
+      let params;
       instructions.push(new Instruction('open_TORNADO_BODY', {key: item.node[1].key, type: item.node[1].type, name: item.node[1].name}, state));
       params = item.node[1].params;
       if (params && params.length) {
         params.forEach(function(p) {
           // we currently only support a string or number or a reference
+          // TODO: move this logic into the visitor
           let val = p[1].val,
               key = p[1].key;
-          if (typeof val === 'string' || typeof val === 'number') {
-            keyValues.push({key, val});
+          instructions.push(new Instruction('open_TORNADO_PARAM', {key: key}, state));
+          if (typeof val === 'string') {
+            instructions.push(new Instruction('insert_PLAIN_TEXT', {content: val, type: 'plaintext'}, state));
+          } else if (typeof val === 'number') {
+            instructions.push(new Instruction('insert_PLAIN_TEXT', {content: val, type: 'plaintext'}, state));
           } else {
-            keyValues.push({key, val: val[1].key});
+            instructions.push(new Instruction('insert_TORNADO_REFERENCE', {key: val.val}, state));
           }
+          instructions.push(new Instruction('close_TORNADO_PARAM', {}, state));
         });
 
-        instructions.push(new Instruction('insert_TORNADO_PARAMS', {params: keyValues}, state));
       }
     },
     leave(item, instructions, state) {

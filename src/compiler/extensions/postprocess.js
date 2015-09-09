@@ -1,8 +1,37 @@
 import util from '../utils/builder';
 
+  function writeAttributeValues(attrValues, entities, out) {
+    let vals = entities.vals;
+    let allVals = [];
+    attrValues.forEach(function(ithVal) {
+      let v = vals[ithVal];
+      if (v.type === 'plaintext') {
+        allVals.push(v.content);
+      }
+    });
+    out.push(allVals.join(','));
+  }
+  function writeAttributes(attrIndexes, entities, parentEl, out) {
+    let attrs = entities.attrs;
+    attrIndexes.forEach(function(ithAttr) {
+      let a = attrs[ithAttr];
+      out.push(`el${parentEl}.setAttribute('${a.key}', `);
+      let aVals = a.vals;
+      if (aVals && aVals.length) {
+        out.push('[');
+        writeAttributeValues(a.vals, entities, out);
+        out.push(']');
+      } else {
+        out.push('${a.key}');
+      }
+      out.push(');');
+    });
+  }
 // helper method for recursively writing elements
- function writeElements(indexes, elements, parent, out) {
+ function writeElements(indexes, entities, parent, out) {
   let name = (typeof parent === 'number') ? 'el' + parent : 'frag';
+  let elements = entities.elements;
+
   indexes.forEach(function(i) {
     let el = elements[i];
     if (el.type === 'placeholder') {
@@ -13,16 +42,21 @@ import util from '../utils/builder';
       out.push(`var el${i} = td.createElement('${el.type}-${el.key}');\n`);
     }
     out.push(`${name}.appendChild(el${i});\n`);
+    // write attributes
+    let elAttrs = el.attrs;
+    if (elAttrs && elAttrs.length) {
+      writeAttributes(elAttrs, entities, i, out);
+    }
     // recurse over the children
     if (el.elements) {
-      writeElements(el.elements, elements, i, out);
+      writeElements(el.elements, entities, i, out);
     }
   });
 }
 
 function writeFragments(results) {
   let fragments = results.state.entities.fragments,
-      elements = results.state.entities.elements;
+      entities = results.state.entities;
 
   // initialize the results fragment
   results.code.fragments = [];
@@ -35,30 +69,32 @@ function writeFragments(results) {
       var frag = td.${util.getTdMethodName('createDocumentFragment')}();
       res.frag = frag;\n`);
     // add all elements of this fragment
-    writeElements(f.elements, elements, null, codeFragments);
+    writeElements(f.elements, entities, null, codeFragments);
     // add method footer
     codeFragments.push('return res;\n}');
     results.code.fragments.push(codeFragments.join(''));
   });
 }
 
-function writeBodyAlternates(indexes, bodys, out) {
+function writeBodyAlternates(indexes, entities, out) {
+  let bodys = entities.bodys;
   if (indexes && indexes.length) {
     indexes.forEach(function(i) {
       out.push(`, ${bodys[i].name}: this.r${i}.bind(this)`);
     });
   }
 }
-function writeBodyMains(indexes, bodys, params, out) {
+function writeBodyMains(indexes, entities, out) {
   indexes.forEach(function(i) {
+    let bodys = entities.bodys;
     let body = bodys[i];
     let key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
     if (body.type === 'helper') {
       // helper - key, placeholder, context, params, bodies
       out.push(`td.${body.type}(${key}, root.p${body.element}, c, `);
-      writeBodyParams(body.params, params, out);
+      writeBodyParams(body.params, entities, out);
       out.push(`, {main: this.r${i}.bind(this)`);
-      writeBodyAlternates(body.bodies, bodys, out);
+      writeBodyAlternates(body.bodies, entities, out);
       out.push('});\n');
     } else if (body.type === 'block') {
       // block - name, idx, context, template
@@ -67,42 +103,67 @@ function writeBodyMains(indexes, bodys, params, out) {
       // notexists - key, placeholder, bodies, context
       // section - key, placeholder, bodies, context
       out.push(`td.${body.type}(${key}, root.p${body.element}, {main: this.r${i}.bind(this)`);
-      writeBodyAlternates(body.bodies, bodys, out);
+      writeBodyAlternates(body.bodies, entities, out);
       out.push(', c});\n');
     }
   });
 }
-function writeBodyParams(indexes, params, out) {
-  let keyValues = [];
-  out.push('{');
+function writeBodyParamValues(indexes, entities, out) {
+  let vals = entities.vals,
+      refs = entities.refs;
+  if (indexes && indexes.length) {
+    indexes.forEach(function(i) {
+      let v = vals[i];
+      if (v.type === 'plaintext') {
+        out.push(v.content);
+      } else if (v.type === 'placeholder') {
+        // TODO: string interpolation is not supported yet e.g. param="hello {foo}"
+        //TODO: some generic resolvePlaceholder method
+        if (v.to === 'refs') {
+          // a generic writeRef Method instead?
+          let ref = refs[v.id];
+          out.push(`td.get(c, ${JSON.stringify(ref.key)})`);
+        } else {
+          throw 'NOT_IMPLEMENTED';
+        }
+      }
+
+    });
+  }
+}
+function writeBodyParams(indexes, entities, out) {
+  let params = entities.params;
+  let writtenParams = {};
   if (indexes && indexes.length) {
     indexes.forEach(function(i) {
       let p = params[i],
-          value;
-      // TODO: string interpolation is not supported yet e.g. param="hello {foo}"
-      if (typeof p.val === 'number') {
-        value = p.val;
-      } else if (typeof p.val === 'string') {
-        value = JSON.stringify(p.val);
+          vals = [];
+      if (p.vals) {
+        writeBodyParamValues(p.vals, entities, vals);
       } else {
-        value = `td.get(c, ${JSON.stringify(p.val)})`;
+        vals.push("''");
       }
-      keyValues.push(`${p.key}: ${value}`);
+      writtenParams[p.key] = vals.join(' ');
     });
-    out.push(keyValues.join(', '));
   }
-  out.push('}');
+  out.push(JSON.stringify(writtenParams));
 }
-function writeBodyRefs(references, out) {
+function writeBodyRefs(references, entities, out) {
   references.forEach(function(ref) {
     let key = typeof ref === 'string' ? key : `td.get(c, ${JSON.stringify(ref.key)})`;
+    // write references based on type
+    // switch (ref.from.type) {
+      // case 'elements':
+        // break;
+      // default:
+    // }
     out.push(`td.${util.getTdMethodName('replaceNode')}(root.p${ref.element}, td.${util.getTdMethodName('createTextNode')}(${key}));`);
   });
 }
 
 function writeBodys(results) {
-  let bodys = results.state.entities.bodys,
-      params = results.state.entities.params;
+  let entities = results.state.entities;
+  let bodys = entities.bodys;
   // initialize the results renderer
   results.code.renderers = [];
   bodys.forEach(function(b, idx) {
@@ -112,10 +173,10 @@ function writeBodys(results) {
       var root = this.f${b.fragment}();\n`);
     // add all references
     if (b.refs) {
-      writeBodyRefs(b.refs, codeRenderer);
+      writeBodyRefs(b.refs, entities, codeRenderer);
     }
     // add all mains
-    writeBodyMains(b.mains, bodys, params, codeRenderer);
+    writeBodyMains(b.mains, entities, codeRenderer);
     // add method footer
     codeRenderer.push('return root.frag;\n}');
     results.code.renderers.push(codeRenderer.join(''));
