@@ -1,45 +1,48 @@
 import util from '../utils/builder';
 
-  function writeAttributeValues(attrValues, entities, out) {
-    let vals = entities.vals;
-    let allVals = [];
-    attrValues.forEach(function(ithVal) {
-      let v = vals[ithVal];
-      if (v.type === 'plaintext') {
-        allVals.push(`'${v.content}'`);
-      }
-    });
-    out.push(allVals.join(','));
-  }
-  function writeAttributes(attrIndexes, entities, parentEl, out) {
-    let attrs = entities.attrs;
-    attrIndexes.forEach(function(ithAttr) {
-      let a = attrs[ithAttr];
-      out.push(`el${parentEl}.setAttribute('${a.key}', `);
-      let aVals = a.vals;
-      if (aVals && aVals.length) {
-        out.push('[');
-        writeAttributeValues(a.vals, entities, out);
-        out.push(']');
-      } else {
-        out.push('${a.key}');
-      }
-      out.push(');');
-    });
-  }
+function toStringLiteral(val) {
+  return `'${val.replace('\'', '\\\'')}'`;
+}
+function writeAttributeValues(attrValues, entities, out) {
+  let vals = entities.vals;
+  let allVals = [];
+  attrValues.forEach(function(ithVal) {
+    let v = vals[ithVal];
+    if (v.type === 'plaintext') {
+      allVals.push(`'${v.content}'`);
+    }
+  });
+  out.push(allVals.join(','));
+}
+function writeAttributes(attrIndexes, entities, parentEl, out) {
+  let attrs = entities.attrs;
+  attrIndexes.forEach(function(ithAttr) {
+    let a = attrs[ithAttr];
+    out.push(`el${parentEl}.setAttribute('${a.key}', `);
+    let aVals = a.vals;
+    if (aVals && aVals.length) {
+      out.push('[');
+      writeAttributeValues(a.vals, entities, out);
+      out.push(']');
+    } else {
+      out.push('${a.key}');
+    }
+    out.push(');');
+  });
+}
 // helper method for recursively writing elements
- function writeElements(indexes, entities, parent, out) {
+function writeElements(indexes, entities, parent, out) {
   let name = (typeof parent === 'number') ? 'el' + parent : 'frag';
   let elements = entities.elements;
 
   indexes.forEach(function(i) {
     let el = elements[i];
     if (el.type === 'placeholder') {
-      out.push(`var el${i} = res.p${i} = td.createTextNode('${el.type}');\n`);
+      out.push(`var el${i} = res.p${i} = td.createTextNode('');\n`);
     } else if (el.type === 'plaintext') {
-      out.push(`var el${i} = td.createTextNode('${el.type}');\n`);
+      out.push(`var el${i} = td.createTextNode(${toStringLiteral(el.content)});\n`);
     } else {
-      out.push(`var el${i} = td.createElement('${el.type}-${el.key}');\n`);
+      out.push(`var el${i} = td.createElement(${toStringLiteral(el.key)});\n`);
     }
     out.push(`${name}.appendChild(el${i});\n`);
     // write attributes

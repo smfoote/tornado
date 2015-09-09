@@ -84,9 +84,10 @@ codeGenerator.useCodeGeneratorFns({
     state.leaveElement();
   },
   open_HTML_ATTRIBUTE: function open_HTML_ATTRIBUTE(instruction) {
+    var config = instruction.config;
     var state = instruction.state;
 
-    state.addAttr({ key: "attr" });
+    state.addAttr({ key: config.key });
   },
   close_HTML_ATTRIBUTE: function close_HTML_ATTRIBUTE(instruction) {
     var state = instruction.state;

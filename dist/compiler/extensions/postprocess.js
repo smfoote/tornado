@@ -4,6 +4,9 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var util = _interopRequire(require("../utils/builder"));
 
+function toStringLiteral(val) {
+  return "'" + val.replace("'", "\\'") + "'";
+}
 function writeAttributeValues(attrValues, entities, out) {
   var vals = entities.vals;
   var allVals = [];
@@ -39,11 +42,11 @@ function writeElements(indexes, entities, parent, out) {
   indexes.forEach(function (i) {
     var el = elements[i];
     if (el.type === "placeholder") {
-      out.push("var el" + i + " = res.p" + i + " = td.createTextNode('" + el.type + "');\n");
+      out.push("var el" + i + " = res.p" + i + " = td.createTextNode('');\n");
     } else if (el.type === "plaintext") {
-      out.push("var el" + i + " = td.createTextNode('" + el.type + "');\n");
+      out.push("var el" + i + " = td.createTextNode(" + toStringLiteral(el.content) + ");\n");
     } else {
-      out.push("var el" + i + " = td.createElement('" + el.type + "-" + el.key + "');\n");
+      out.push("var el" + i + " = td.createElement(" + toStringLiteral(el.key) + ");\n");
     }
     out.push("" + name + ".appendChild(el" + i + ");\n");
     // write attributes

@@ -63,8 +63,8 @@ codeGenerator.useCodeGeneratorFns({
     state.leaveElement();
   },
   open_HTML_ATTRIBUTE(instruction) {
-    let {state} = instruction;
-    state.addAttr({key: 'attr'});
+    let {config, state} = instruction;
+    state.addAttr({key: config.key});
   },
   close_HTML_ATTRIBUTE(instruction) {
     let {state} = instruction;
