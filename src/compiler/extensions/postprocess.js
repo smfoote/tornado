@@ -6,7 +6,7 @@ import util from '../utils/builder';
     attrValues.forEach(function(ithVal) {
       let v = vals[ithVal];
       if (v.type === 'plaintext') {
-        allVals.push(v.content);
+        allVals.push(`'${v.content}'`);
       }
     });
     out.push(allVals.join(','));
@@ -91,7 +91,7 @@ function writeBodyMains(indexes, entities, out) {
     let key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
     if (body.type === 'helper') {
       // helper - key, placeholder, context, params, bodies
-      out.push(`td.${body.type}(${key}, root.p${body.element}, c, `);
+      out.push(`td.${body.type}(${key}, root.p${body.from.id}, c, `);
       writeBodyParams(body.params, entities, out);
       out.push(`, {main: this.r${i}.bind(this)`);
       writeBodyAlternates(body.bodies, entities, out);
@@ -102,9 +102,9 @@ function writeBodyMains(indexes, entities, out) {
       // exists - key, placeholder, bodies, context
       // notexists - key, placeholder, bodies, context
       // section - key, placeholder, bodies, context
-      out.push(`td.${body.type}(${key}, root.p${body.element}, {main: this.r${i}.bind(this)`);
+      out.push(`td.${body.type}(${key}, root.p${body.from.id}, {main: this.r${i}.bind(this)`);
       writeBodyAlternates(body.bodies, entities, out);
-      out.push(', c});\n');
+      out.push('}, c);\n');
     }
   });
 }
@@ -149,7 +149,9 @@ function writeBodyParams(indexes, entities, out) {
   out.push(JSON.stringify(writtenParams));
 }
 function writeBodyRefs(references, entities, out) {
-  references.forEach(function(ref) {
+  let refs = entities.refs;
+  references.forEach(function(rId) {
+    let ref = refs[rId];
     let key = typeof ref === 'string' ? key : `td.get(c, ${JSON.stringify(ref.key)})`;
     // write references based on type
     // switch (ref.from.type) {
@@ -157,7 +159,7 @@ function writeBodyRefs(references, entities, out) {
         // break;
       // default:
     // }
-    out.push(`td.${util.getTdMethodName('replaceNode')}(root.p${ref.element}, td.${util.getTdMethodName('createTextNode')}(${key}));`);
+    out.push(`td.${util.getTdMethodName('replaceNode')}(root.p${ref.from.id}, td.${util.getTdMethodName('createTextNode')}(${key}));`);
   });
 }
 
@@ -169,7 +171,7 @@ function writeBodys(results) {
   bodys.forEach(function(b, idx) {
     let codeRenderer = [];
     // add method header
-    codeRenderer.push(`r${idx}: function() {
+    codeRenderer.push(`r${idx}: function(c) {
       var root = this.f${b.fragment}();\n`);
     // add all references
     if (b.refs) {
