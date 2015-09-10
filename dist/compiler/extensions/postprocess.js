@@ -7,31 +7,48 @@ var util = _interopRequire(require("../utils/builder"));
 function toStringLiteral(val) {
   return "'" + val.replace("'", "\\'") + "'";
 }
+
+function writeVals(indexes, entities, out) {
+  var vals = entities.vals,
+      refs = entities.refs;
+  if (indexes && indexes.length) {
+    indexes.forEach(function (i) {
+      var v = vals[i];
+      if (v.type === "plaintext") {
+        out.push(toStringLiteral(v.content));
+      } else if (v.type === "placeholder") {
+        // TODO: string interpolation is not supported yet e.g. paramOrAttr="hello {foo}"
+        if (v.to === "refs") {
+          // a generic writeRef Method instead?
+          var ref = refs[v.id];
+          out.push("td.get(c, " + JSON.stringify(ref.key) + ")");
+        } else {
+          throw "NOT_IMPLEMENTED";
+        }
+      }
+    });
+  }
+}
 function writeAttributeValues(attrValues, entities, out) {
-  var vals = entities.vals;
   var allVals = [];
-  attrValues.forEach(function (ithVal) {
-    var v = vals[ithVal];
-    if (v.type === "plaintext") {
-      allVals.push("'" + v.content + "'");
-    }
-  });
+  writeVals(attrValues, entities, allVals);
   out.push(allVals.join(","));
 }
 function writeAttributes(attrIndexes, entities, parentEl, out) {
   var attrs = entities.attrs;
   attrIndexes.forEach(function (ithAttr) {
     var a = attrs[ithAttr];
-    out.push("el" + parentEl + ".setAttribute('" + a.key + "', ");
+    out.push("td." + util.getTdMethodName("setAttribute") + "(el" + parentEl + ", '" + a.key + "', ");
     var aVals = a.vals;
     if (aVals && aVals.length) {
       out.push("[");
       writeAttributeValues(a.vals, entities, out);
       out.push("]");
     } else {
+      // for boolean properties like checked="checked"
       out.push("${a.key}");
     }
-    out.push(");");
+    out.push(");\n");
   });
 }
 // helper method for recursively writing elements
@@ -71,7 +88,7 @@ function writeFragments(results) {
   fragments.forEach(function (f, idx) {
     var codeFragments = [];
     // add method header
-    codeFragments.push("f" + idx + ": function() {\n      var res = {};\n      var frag = td." + util.getTdMethodName("createDocumentFragment") + "();\n      res.frag = frag;\n");
+    codeFragments.push("f" + idx + ": function(c) {\n      var res = {};\n      var frag = td." + util.getTdMethodName("createDocumentFragment") + "();\n      res.frag = frag;\n");
     // add all elements of this fragment
     writeElements(f.elements, entities, null, codeFragments);
     // add method footer
@@ -110,28 +127,6 @@ function writeBodyMains(indexes, entities, out) {
     }
   });
 }
-function writeBodyParamValues(indexes, entities, out) {
-  var vals = entities.vals,
-      refs = entities.refs;
-  if (indexes && indexes.length) {
-    indexes.forEach(function (i) {
-      var v = vals[i];
-      if (v.type === "plaintext") {
-        out.push(v.content);
-      } else if (v.type === "placeholder") {
-        // TODO: string interpolation is not supported yet e.g. param="hello {foo}"
-        //TODO: some generic resolvePlaceholder method
-        if (v.to === "refs") {
-          // a generic writeRef Method instead?
-          var ref = refs[v.id];
-          out.push("td.get(c, " + JSON.stringify(ref.key) + ")");
-        } else {
-          throw "NOT_IMPLEMENTED";
-        }
-      }
-    });
-  }
-}
 function writeBodyParams(indexes, entities, out) {
   var params = entities.params;
   var writtenParams = {};
@@ -140,7 +135,7 @@ function writeBodyParams(indexes, entities, out) {
       var p = params[i],
           vals = [];
       if (p.vals) {
-        writeBodyParamValues(p.vals, entities, vals);
+        writeVals(p.vals, entities, vals);
       } else {
         vals.push("''");
       }
@@ -155,12 +150,12 @@ function writeBodyRefs(references, entities, out) {
     var ref = refs[rId];
     var key = typeof ref === "string" ? key : "td.get(c, " + JSON.stringify(ref.key) + ")";
     // write references based on type
-    // switch (ref.from.type) {
-    // case 'elements':
-    // break;
-    // default:
-    // }
-    out.push("td." + util.getTdMethodName("replaceNode") + "(root.p" + ref.from.id + ", td." + util.getTdMethodName("createTextNode") + "(" + key + "));");
+    switch (ref.from.type) {
+      case "bodys":
+      case "elements":
+        out.push("td." + util.getTdMethodName("replaceNode") + "(root.p" + ref.from.id + ", td." + util.getTdMethodName("createTextNode") + "(" + key + "));\n");
+        break;
+    }
   });
 }
 
@@ -172,7 +167,7 @@ function writeBodys(results) {
   bodys.forEach(function (b, idx) {
     var codeRenderer = [];
     // add method header
-    codeRenderer.push("r" + idx + ": function(c) {\n      var root = this.f" + b.fragment + "();\n");
+    codeRenderer.push("r" + idx + ": function(c) {\n      var root = this.f" + b.fragment + "(c);\n");
     // add all references
     if (b.refs) {
       writeBodyRefs(b.refs, entities, codeRenderer);

@@ -34,13 +34,16 @@ api.entities.bodys
 // Adding references
 
 > api.entities.bodys[0].refs
-[ { key: 'hello', element: 0 } ]
+[ 0 ]
+
+> api.entities.refs
+[{ key: 'hello', from: {type: 'elements', id: 0 }]
 
 > api.entities.fragments[0]
-{ elements: [ 0 ]   
+ elements: [ 0 ]   
 
 > api.entities.elements
-[ { type: 'placeholder' } ]
+[ { type: 'placeholder', to: 'refs', id: 0 } ]
 
 
 // adding param (TBD: param values can be bodies so we actually should use enter leave)
