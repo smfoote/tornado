@@ -31,7 +31,7 @@ function writeAttributeValues(attrValues, entities, out) {
   writeVals(attrValues, entities, allVals);
   out.push(allVals.join(','));
 }
-function writeAttributes(attrIndexes, entities, parentEl, out) {
+function writeAttributes(attrIndexes, entities, out, parentEl) {
   let attrs = entities.attrs;
   attrIndexes.forEach(function(ithAttr) {
     let a = attrs[ithAttr];
@@ -48,8 +48,8 @@ function writeAttributes(attrIndexes, entities, parentEl, out) {
     out.push(');\n');
   });
 }
-// helper method for recursively writing elements
-function writeElements(indexes, entities, parent, out) {
+// recursively writing elements
+function writeElements(indexes, entities, out, parent) {
   let name = (typeof parent === 'number') ? 'el' + parent : 'frag';
   let elements = entities.elements;
 
@@ -66,16 +66,16 @@ function writeElements(indexes, entities, parent, out) {
     // write attributes
     let elAttrs = el.attrs;
     if (elAttrs && elAttrs.length) {
-      writeAttributes(elAttrs, entities, i, out);
+      writeAttributes(elAttrs, entities, out, i);
     }
     // recurse over the children
     if (el.elements) {
-      writeElements(el.elements, entities, i, out);
+      writeElements(el.elements, entities, out, i);
     }
   });
 }
 
-function writeFragments(results) {
+function writeFragmentsToResults(results) {
   let fragments = results.state.entities.fragments,
       entities = results.state.entities;
 
@@ -83,17 +83,17 @@ function writeFragments(results) {
   results.code.fragments = [];
 
   fragments.forEach(function(f, idx) {
-    let codeFragments = [];
+    let out = [];
     // add method header
-    codeFragments.push(`f${idx}: function(c) {
+    out.push(`f${idx}: function(c) {
       var res = {};
       var frag = td.${util.getTdMethodName('createDocumentFragment')}();
       res.frag = frag;\n`);
     // add all elements of this fragment
-    writeElements(f.elements, entities, null, codeFragments);
+    writeElements(f.elements, entities, out);
     // add method footer
-    codeFragments.push('return res;\n}');
-    results.code.fragments.push(codeFragments.join(''));
+    out.push('return res;\n}');
+    results.code.fragments.push(out.join(''));
   });
 }
 
@@ -161,7 +161,7 @@ function writeBodyRefs(references, entities, out) {
   });
 }
 
-function writeBodys(results) {
+function writeBodysToResults(results) {
   let entities = results.state.entities;
   let bodys = entities.bodys;
   // initialize the results renderer
@@ -204,8 +204,8 @@ var frags = {},
 
 let postprocess = function(results) {
   if (results) {
-    writeFragments(results);
-    writeBodys(results);
+    writeFragmentsToResults(results);
+    writeBodysToResults(results);
     flush(results);
   }
 };
