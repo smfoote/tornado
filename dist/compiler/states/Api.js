@@ -246,23 +246,18 @@ var Api = function Api() {
       parentLocation = stateHistory.current();
 
       var parentIndex = tdHistory.current();
+      meta.currentElement = elHistory.current();
+      meta.currentState = stateHistory.current();
+      meta.currentBody = parentIndex;
+      meta.currentFragment = parentIndex;
+
       // attach to a parent if we have one
       if (parentIndex >= 0) {
         parentBody = entities.bodys[parentIndex];
         parentBody.mains.push(tIndex);
 
         placeholderize(parentLocation, childLocation);
-        // childBody = entities.bodys[tIndex];
-        // addElement({type: 'placeholder'});
-        // elIndex = meta.currentElement;
-        // leaveElement();
-        // childBody.element = elIndex;
       }
-
-      meta.currentElement = elHistory.current();
-      meta.currentState = stateHistory.current();
-      meta.currentBody = parentIndex;
-      meta.currentFragment = parentIndex;
     },
     addBodies: function addBodies(b) {
       b = b || {};
