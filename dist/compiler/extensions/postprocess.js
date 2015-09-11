@@ -34,15 +34,15 @@ function writeVals(indexes, entities, out) {
               // helper - key, placeholder, context, params, bodies
               o.push("td." + body.type + "(" + key + ", null, c, ");
               writeBodyParams(body.params, entities, o);
-              o.push(", {main: this.r" + i + ".bind(this)");
+              o.push(", {main: this.r" + v.id + ".bind(this)");
               writeBodyAlternates(body.bodies, entities, o);
               o.push("})");
             } else if (body.type === "block") {} else {
               // exists - key, placeholder, bodies, context
               // notexists - key, placeholder, bodies, context
               // section - key, placeholder, bodies, context
-              o.push("td." + body.type + "(" + key + ", null, {main: this.r" + i + ".bind(this)");
-              writeBodyAlternates(body.bodies, entities, out);
+              o.push("td." + body.type + "(" + key + ", null, {main: this.r" + v.id + ".bind(this)");
+              writeBodyAlternates(body.bodies, entities, o);
               o.push("}, c)");
             }
             out.push(o.join(""));
@@ -136,20 +136,23 @@ function writeBodyMains(indexes, entities, out) {
     var body = bodys[i];
     var key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
     var placeholderEl = typeof body.from.id === "number" ? "root.p" + body.from.id : "null";
-    if (body.type === "helper") {
-      // helper - key, placeholder, context, params, bodies
-      out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", c, ");
-      writeBodyParams(body.params, entities, out);
-      out.push(", {main: this.r" + i + ".bind(this)");
-      writeBodyAlternates(body.bodies, entities, out);
-      out.push("});\n");
-    } else if (body.type === "block") {} else {
-      // exists - key, placeholder, bodies, context
-      // notexists - key, placeholder, bodies, context
-      // section - key, placeholder, bodies, context
-      out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", {main: this.r" + i + ".bind(this)");
-      writeBodyAlternates(body.bodies, entities, out);
-      out.push("}, c);\n");
+    // avoid writing body into fragments which is handled by writeval
+    if (body.from.type !== "vals") {
+      if (body.type === "helper") {
+        // helper - key, placeholder, context, params, bodies
+        out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", c, ");
+        writeBodyParams(body.params, entities, out);
+        out.push(", {main: this.r" + i + ".bind(this)");
+        writeBodyAlternates(body.bodies, entities, out);
+        out.push("});\n");
+      } else if (body.type === "block") {} else {
+        // exists - key, placeholder, bodies, context
+        // notexists - key, placeholder, bodies, context
+        // section - key, placeholder, bodies, context
+        out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", {main: this.r" + i + ".bind(this)");
+        writeBodyAlternates(body.bodies, entities, out);
+        out.push("}, c);\n");
+      }
     }
   });
 }

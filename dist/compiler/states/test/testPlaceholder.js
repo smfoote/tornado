@@ -23,7 +23,7 @@ test("body in element in body", function (t) {
   t.deepEqual(api.entities.elements[0].elements, [1], "placeholder placed inside parent element");
   t.end();
 });
-test("reference in attr in elememt in body", function (t) {
+test("reference in attr in element in body", function (t) {
   var api = new Api();
   api.addBody();
   api.addElement({ key: "div", type: "element" });
@@ -33,7 +33,21 @@ test("reference in attr in elememt in body", function (t) {
   api.leaveElement();
   api.leaveBody();
   t.deepEqual(api.entities.vals[0], { type: "placeholder", to: "refs", id: 0 }, "placeholder for the reference");
-  t.deepEqual(api.entities.refs[0].from, { type: "attrs", id: 0 }, "placeholder for reference from an attribute");
+  t.deepEqual(api.entities.refs[0].from, { type: "vals", id: 0 }, "placeholder for reference from an attribute");
+  t.end();
+});
+test("body in attr in element in body", function (t) {
+  var api = new Api();
+  api.addBody();
+  api.addElement({ key: "div", type: "element" });
+  api.addAttr({ key: "id" });
+  api.addBody();
+  api.leaveBody();
+  api.leaveAttr();
+  api.leaveElement();
+  api.leaveBody();
+  t.deepEqual(api.entities.vals[0], { type: "placeholder", to: "bodys", id: 1 }, "placeholder for the body");
+  t.deepEqual(api.entities.bodys[1].from, { type: "vals", id: 0 }, "placeholder for reference from an attribute");
   t.end();
 });
 //# sourceMappingURL=testPlaceholder.js.map
