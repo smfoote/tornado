@@ -28,16 +28,22 @@ function writeVals(indexes, entities, out) {
           case "bodys":
             var o = [];
             var body = bodys[v.id];
-            var key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+            var key = undefined;
             /* make a generic writeBody method that can handle from fragments and renderer? */
             if (body.type === "helper") {
               // helper - key, placeholder, context, params, bodies
-              o.push("td." + body.type + "(" + key + ", null, c, ");
+              key = typeof body.key === "string" ? body.key : body.key.join(".");
+              o.push("td." + body.type + "(" + toStringLiteral(key) + ", null, c, ");
               writeBodyParams(body.params, entities, o);
               o.push(", {main: this.r" + v.id + ".bind(this)");
               writeBodyAlternates(body.bodies, entities, o);
               o.push("})");
-            } else if (body.type === "block") {} else {
+            } else if (body.type === "block") {} else if (body.type === "inlinePartial") {
+              // inline partial - name, context, parentTemplate
+              key = typeof body.key === "string" ? body.key : body.key.join(".");
+              out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", c, this);\n");
+            } else {
+              key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
               // exists - key, placeholder, bodies, context
               // notexists - key, placeholder, bodies, context
               // section - key, placeholder, bodies, context
@@ -63,7 +69,7 @@ function writeAttributes(attrIndexes, entities, out, parentEl) {
   var attrs = entities.attrs;
   attrIndexes.forEach(function (ithAttr) {
     var a = attrs[ithAttr];
-    out.push("td." + util.getTdMethodName("setAttribute") + "(el" + parentEl + ", '" + a.key + "', ");
+    out.push("td." + util.getTdMethodName("setAttribute") + "(el" + parentEl + ", " + toStringLiteral(a.key) + ", ");
     var aVals = a.vals;
     if (aVals && aVals.length) {
       out.push("[");
@@ -71,7 +77,7 @@ function writeAttributes(attrIndexes, entities, out, parentEl) {
       out.push("]");
     } else {
       // for boolean properties like checked="checked"
-      out.push("${a.key}");
+      out.push(toStringLiteral(a.key));
     }
     out.push(");\n");
   });
@@ -134,18 +140,24 @@ function writeBodyMains(indexes, entities, out) {
   indexes.forEach(function (i) {
     var bodys = entities.bodys;
     var body = bodys[i];
-    var key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+    var key = undefined;
     var placeholderEl = typeof body.from.id === "number" ? "root.p" + body.from.id : "null";
     // avoid writing body into fragments which is handled by writeval
     if (body.from.type !== "vals") {
       if (body.type === "helper") {
         // helper - key, placeholder, context, params, bodies
-        out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", c, ");
+        key = typeof body.key === "string" ? body.key : body.key.join(".");
+        out.push("td." + body.type + "(" + toStringLiteral(key) + ", " + placeholderEl + ", c, ");
         writeBodyParams(body.params, entities, out);
         out.push(", {main: this.r" + i + ".bind(this)");
         writeBodyAlternates(body.bodies, entities, out);
         out.push("});\n");
-      } else if (body.type === "block") {} else {
+      } else if (body.type === "block") {} else if (body.type === "inlinePartial") {
+        // inline partial - name, context, parentTemplate
+        key = typeof body.key === "string" ? body.key : body.key.join(".");
+        out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", c, this);\n");
+      } else {
+        key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
         // exists - key, placeholder, bodies, context
         // notexists - key, placeholder, bodies, context
         // section - key, placeholder, bodies, context
@@ -158,20 +170,19 @@ function writeBodyMains(indexes, entities, out) {
 }
 function writeBodyParams(indexes, entities, out) {
   var params = entities.params;
-  var writtenParams = {};
+  var writtenParams = [];
   if (indexes && indexes.length) {
     indexes.forEach(function (i) {
       var p = params[i],
           vals = [];
+      vals.push(toStringLiteral(p.key) + ":");
       if (p.vals) {
         writeVals(p.vals, entities, vals);
-      } else {
-        vals.push("''");
       }
-      writtenParams[p.key] = vals.join(" ");
+      writtenParams.push(vals.join(" "));
     });
   }
-  out.push(JSON.stringify(writtenParams));
+  out.push("{" + writtenParams.join(",") + "}");
 }
 function writeBodyRefs(references, entities, out) {
   var refs = entities.refs;

@@ -26,7 +26,7 @@ let generateWalker = visitor.build({
           } else if (typeof val === 'number') {
             instructions.push(new Instruction('insert_PLAIN_TEXT', {content: val, type: 'plaintext'}, state));
           } else {
-            instructions.push(new Instruction('insert_TORNADO_REFERENCE', {key: val.val}, state));
+            instructions.push(new Instruction('insert_TORNADO_REFERENCE', {key: val[1].key}, state));
           }
           instructions.push(new Instruction('close_TORNADO_PARAM', {}, state));
         });
