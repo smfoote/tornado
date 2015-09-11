@@ -83,7 +83,6 @@ let suite = {
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode(''));
         return frag;
       })()
     },
@@ -164,7 +163,6 @@ let suite = {
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
         frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode(''));
         return frag;
       })()
     },
@@ -265,6 +263,16 @@ let suite = {
         let div = document.createElement('div');
         div.setAttribute('class', 'brother sister');
         frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Not Exists using helper syntax ( {@notExists key="key"}...{/notExists} )',
+      template: '{@notExists key="name"}no name exists{/notExists}',
+      context: {name: false},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('no name exists'));
         return frag;
       })()
     }

@@ -342,6 +342,16 @@ let suite = {
         frag.appendChild(document.createTextNode('Way fun!'));
         return frag;
       })()
+    },
+    {
+      description: 'Exists using helper syntax ( {@exists key="key"}...{/exists} )',
+      template: '{@exists key="name"}name exists{/exists}',
+      context: {name: 'Dorothy'},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('name exists'));
+        return frag;
+      })()
     }
   ]
 };
