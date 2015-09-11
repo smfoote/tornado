@@ -10,7 +10,8 @@ function toStringLiteral(val) {
 
 function writeVals(indexes, entities, out) {
   var vals = entities.vals,
-      refs = entities.refs;
+      refs = entities.refs,
+      bodys = entities.bodys;
   if (indexes && indexes.length) {
     indexes.forEach(function (i) {
       var v = vals[i];
@@ -18,12 +19,36 @@ function writeVals(indexes, entities, out) {
         out.push(toStringLiteral(v.content));
       } else if (v.type === "placeholder") {
         // TODO: string interpolation is not supported yet e.g. paramOrAttr="hello {foo}"
-        if (v.to === "refs") {
-          // a generic writeRef Method instead?
-          var ref = refs[v.id];
-          out.push("td.get(c, " + JSON.stringify(ref.key) + ")");
-        } else {
-          throw "NOT_IMPLEMENTED";
+        switch (v.to) {
+          case "refs":
+            // a generic writeRef Method instead?
+            var ref = refs[v.id];
+            out.push("td.get(c, " + JSON.stringify(ref.key) + ")");
+            break;
+          case "bodys":
+            var o = [];
+            var body = bodys[v.id];
+            var key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+            /* make a generic writeBody method that can handle from fragments and renderer? */
+            if (body.type === "helper") {
+              // helper - key, placeholder, context, params, bodies
+              o.push("td." + body.type + "(" + key + ", null, c, ");
+              writeBodyParams(body.params, entities, o);
+              o.push(", {main: this.r" + i + ".bind(this)");
+              writeBodyAlternates(body.bodies, entities, o);
+              o.push("})");
+            } else if (body.type === "block") {} else {
+              // exists - key, placeholder, bodies, context
+              // notexists - key, placeholder, bodies, context
+              // section - key, placeholder, bodies, context
+              o.push("td." + body.type + "(" + key + ", null, {main: this.r" + i + ".bind(this)");
+              writeBodyAlternates(body.bodies, entities, out);
+              o.push("}, c)");
+            }
+            out.push(o.join(""));
+            break;
+          default:
+            throw "not_implemented";
         }
       }
     });
@@ -110,9 +135,10 @@ function writeBodyMains(indexes, entities, out) {
     var bodys = entities.bodys;
     var body = bodys[i];
     var key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+    var placeholderEl = typeof body.from.id === "number" ? "root.p" + body.from.id : "null";
     if (body.type === "helper") {
       // helper - key, placeholder, context, params, bodies
-      out.push("td." + body.type + "(" + key + ", root.p" + body.from.id + ", c, ");
+      out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", c, ");
       writeBodyParams(body.params, entities, out);
       out.push(", {main: this.r" + i + ".bind(this)");
       writeBodyAlternates(body.bodies, entities, out);
@@ -121,7 +147,7 @@ function writeBodyMains(indexes, entities, out) {
       // exists - key, placeholder, bodies, context
       // notexists - key, placeholder, bodies, context
       // section - key, placeholder, bodies, context
-      out.push("td." + body.type + "(" + key + ", root.p" + body.from.id + ", {main: this.r" + i + ".bind(this)");
+      out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", {main: this.r" + i + ".bind(this)");
       writeBodyAlternates(body.bodies, entities, out);
       out.push("}, c);\n");
     }
@@ -197,6 +223,8 @@ var postprocess = function postprocess(results) {
 };
 
 module.exports = postprocess;
+
+// block - name, idx, context, template
 
 // block - name, idx, context, template
 //# sourceMappingURL=postprocess.js.map
