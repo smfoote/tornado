@@ -269,18 +269,25 @@ var tornado = {
   /**
    * Render a block or inline partial based of a given name.
    * @param {String} name The name of the block
+   * @param {Node} placeholderNode The node where the pending body will be inserted
    * @param {Number} idx The index of the block (in case there are multiples)
    * @param {TornadoTemplate} template The template in which the block was found
    * @return {DocumentFragment}
    */
-  block: function block(name, idx, context, template) {
+  block: function block(name, placeholderNode, idx, context, template) {
     var renderer = this.getBlockRenderer(name, idx, template);
+    var node = undefined;
     if (!renderer) {
       var frag = this.createDocumentFragment();
       frag.appendChild(document.createTextNode(""));
-      return frag;
+      node = frag;
     }
-    return renderer(context).frag;
+    node = renderer.call(template, context);
+    if (placeholderNode) {
+      this.replaceNode(placeholderNode, node);
+    } else {
+      return this.nodeToString(node);
+    }
   },
 
   /**
@@ -295,14 +302,14 @@ var tornado = {
   getBlockRenderer: function getBlockRenderer(name, idx, template) {
     var renderer = undefined;
     while (template) {
-      renderer = template["f_i_" + name];
+      renderer = template["r_i_" + name];
 
       if (renderer && typeof renderer === "function") {
         // Prefer the inline partial renderer
         return renderer;
       } else {
         // Fall back to the block renderer
-        renderer = template["f_b_" + name + "" + idx];
+        renderer = template["r_b_" + name + "" + idx];
         if (renderer && typeof renderer === "function") {
           return renderer;
         }

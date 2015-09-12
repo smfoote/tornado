@@ -36,10 +36,12 @@ function writeVals(indexes, entities, out) {
               o.push('})');
             } else if (body.type === 'block') {
               // block - name, idx, context, template
+              key = typeof body.key === 'string' ? body.key : body.key.join('.');
+              out.push(`td.${util.getTdMethodName('block')}(${toStringLiteral(key)}, null, ${v.id}, c, this)`);
             } else if (body.type === 'inlinePartial') {
               // inline partial - name, context, parentTemplate
               key = typeof body.key === 'string' ? body.key : body.key.join('.');
-              out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, c, this);\n`);
+              out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, c, this)`);
             } else {
               key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
               // exists - key, placeholder, bodies, context
@@ -155,7 +157,9 @@ function writeBodyMains(indexes, entities, out) {
         writeBodyAlternates(body.bodies, entities, out);
         out.push('});\n');
       } else if (body.type === 'block') {
-        // block - name, idx, context, template
+        // block - name, placeholderNode, idx, context, template
+        key = typeof body.key === 'string' ? body.key : body.key.join('.');
+        out.push(`td.${util.getTdMethodName('block')}(${toStringLiteral(key)}, ${placeholderEl}, ${i}, c, this);\n`);
       } else if (body.type === 'inlinePartial') {
         // inline partial - name, context, parentTemplate
         key = typeof body.key === 'string' ? body.key : body.key.join('.');
@@ -209,9 +213,13 @@ function writeBodysToResults(results) {
   // initialize the results renderer
   results.code.renderers = [];
   bodys.forEach(function(b, idx) {
-    let codeRenderer = [];
+    let codeRenderer = [],
+        suffix = idx;
     // add method header
-    codeRenderer.push(`r${idx}: function(c) {
+    if (b.type === 'block') {
+      suffix = `_b_${b.key.join('.')}${idx}`;
+    }
+    codeRenderer.push(`r${suffix}: function(c) {
       var root = this.f${b.fragment}(c);\n`);
     // add all references
     if (b.refs) {
