@@ -23,7 +23,14 @@ var codeGenerator = {
 };
 
 codeGenerator.useCodeGeneratorFns({
-  insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL() {},
+  insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+    var key = config.key;
+
+    state.addBody({ key: key, type: "inlinePartial" });
+    state.leaveBody();
+  },
   open_TORNADO_PARAM: function open_TORNADO_PARAM(instruction) {
     var config = instruction.config;
     var state = instruction.state;
@@ -139,5 +146,5 @@ var generateJavascript = function generateJavascript(results) {
 };
 
 module.exports = generateJavascript;
-/*instruction, code*/ /*instruction, code*/
+/*instruction, code*/
 //# sourceMappingURL=generateJS.js.map

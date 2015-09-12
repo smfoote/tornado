@@ -18,7 +18,11 @@ let codeGenerator = {
 };
 
 codeGenerator.useCodeGeneratorFns({
-  insert_TORNADO_PARTIAL(/*instruction, code*/) {
+  insert_TORNADO_PARTIAL(instruction) {
+    let {config, state} = instruction;
+    let {key} = config;
+    state.addBody({key, type: 'inlinePartial'});
+    state.leaveBody();
   },
   open_TORNADO_PARAM(instruction) {
     let {config, state} = instruction;

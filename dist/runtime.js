@@ -152,23 +152,35 @@ var tornado = {
    * call td.fetchPartial (which can be user defined), and render the partial that is returned
    * when the Promise returned by td.fetchPartial resolves.
    * @param {String} name The name of the partial to be rendered and returned
+   * @param {[Node]} placeholderNode The node that will be replaced with the rendered body(ies).
    * @param {Object} context The context to be used to render the partial
    * @param {TornadoTemplate} parentTemplate The template object that the template was called from
    * @param {DocumentFragment|Promise}
    */
-  getPartial: function getPartial(name, context, parentTemplate) {
+  getPartial: function getPartial(name, placeholderNode, context, parentTemplate) {
     var _this = this;
 
-    var partial = this.templateCache[name];
+    var partial = this.templateCache[name],
+        node = undefined;
     if (partial) {
       return new Promise(function (resolve /*, reject*/) {
         partial.parentTemplate = parentTemplate;
-        resolve(partial.render(context));
+        node = partial.render(context);
+        if (placeholderNode) {
+          resolve(_this.replaceNode(placeholderNode, node));
+        } else {
+          return resolve(_this.nodeToString(node));
+        }
       });
     } else {
       return this.fetchPartial(name).then(function (partial) {
         partial.parentTemplate = parentTemplate;
-        return partial.render(context);
+        node = partial.render(context);
+        if (placeholderNode) {
+          _this.replaceNode(placeholderNode, node);
+        } else {
+          return _this.nodeToString(node);
+        }
       })["catch"](function (error) {
         return _this.throwError(error);
       });

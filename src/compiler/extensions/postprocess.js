@@ -39,9 +39,9 @@ function writeVals(indexes, entities, out) {
               key = typeof body.key === 'string' ? body.key : body.key.join('.');
               out.push(`td.${util.getTdMethodName('block')}(${toStringLiteral(key)}, null, ${v.id}, c, this)`);
             } else if (body.type === 'inlinePartial') {
-              // inline partial - name, context, parentTemplate
+              // inline partial - happens at runtime in block
               key = typeof body.key === 'string' ? body.key : body.key.join('.');
-              out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, c, this)`);
+              out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, null, c, this)`);
             } else {
               key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
               // exists - key, placeholder, bodies, context
@@ -161,9 +161,9 @@ function writeBodyMains(indexes, entities, out) {
         key = typeof body.key === 'string' ? body.key : body.key.join('.');
         out.push(`td.${util.getTdMethodName('block')}(${toStringLiteral(key)}, ${placeholderEl}, ${i}, c, this);\n`);
       } else if (body.type === 'inlinePartial') {
-        // inline partial - name, context, parentTemplate
+        // inline partial - happens at runtime in block
         key = typeof body.key === 'string' ? body.key : body.key.join('.');
-        out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, c, this);\n`);
+        out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, ${placeholderEl}, c, this);\n`);
       } else {
         key = typeof body.key === 'string' ? body.key : `td.get(c, ${JSON.stringify(body.key)})`;
         // exists - key, placeholder, bodies, context
@@ -218,6 +218,8 @@ function writeBodysToResults(results) {
     // add method header
     if (b.type === 'block') {
       suffix = `_b_${b.key.join('.')}${idx}`;
+    } else if (b.type === 'inlinePartial') {
+      suffix = `_i_${typeof b.key === 'string' ? b.key : b.key.join('.')}`;
     }
     codeRenderer.push(`r${suffix}: function(c) {
       var root = this.f${b.fragment}(c);\n`);
