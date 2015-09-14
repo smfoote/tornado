@@ -1,4 +1,4 @@
-# Comiler Architecture
+# Compiler Architecture
 
 The compiler receives an AST from the parser, then passes over that AST in 3 stages (checks, transforms, generates). Each stage may have multiple passes, and each pass is run in order. The output of this process is a set of code generation instructions that are fed to a code generator, and the code generator outputs compiled code.
 
