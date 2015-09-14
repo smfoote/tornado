@@ -1,7 +1,7 @@
 'use strict';
 import visitor from '../visitor';
 
-const BUILT_IN_HELPER_TYPES = ['exists', 'notExists'];
+const BUILT_IN_HELPER_TYPES = ['exists', 'notExists', 'section'];
 
 let generatedWalker = visitor.build({
   TORNADO_BODY(item) {

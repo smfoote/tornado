@@ -4,7 +4,7 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var visitor = _interopRequire(require("../visitor"));
 
-var BUILT_IN_HELPER_TYPES = ["exists", "notExists"];
+var BUILT_IN_HELPER_TYPES = ["exists", "notExists", "section"];
 
 var generatedWalker = visitor.build({
   TORNADO_BODY: function TORNADO_BODY(item) {
