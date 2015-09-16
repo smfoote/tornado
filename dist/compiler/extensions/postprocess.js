@@ -5,7 +5,7 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 var util = _interopRequire(require("../utils/builder"));
 
 function toStringLiteral(val) {
-  return "'" + val.replace("'", "\\'") + "'";
+  return typeof val === "string" ? "'" + val.replace("'", "\\'") + "'" : val;
 }
 
 function writeVals(indexes, entities, out) {
@@ -88,11 +88,17 @@ function writeAttributes(attrIndexes, entities, out, parentEl) {
 }
 // recursively writing elements
 function writeElements(indexes, entities, out, parent) {
-  var name = typeof parent === "number" ? "el" + parent : "frag";
   var elements = entities.elements;
 
   indexes.forEach(function (i) {
     var el = elements[i];
+    var name = "el" + i;
+    // depth first so recurse over the children
+    if (el.elements && el.elements.length) {
+      writeElements(el.elements, entities, out, i);
+    }
+
+    // write this element
     if (el.type === "placeholder") {
       out.push("var el" + i + " = res.p" + i + " = td.createTextNode('');\n");
     } else if (el.type === "plaintext") {
@@ -100,17 +106,30 @@ function writeElements(indexes, entities, out, parent) {
     } else {
       out.push("var el" + i + " = td.createElement(" + toStringLiteral(el.key) + ");\n");
     }
-    out.push("" + name + ".appendChild(el" + i + ");\n");
     // write attributes
     var elAttrs = el.attrs;
     if (elAttrs && elAttrs.length) {
       writeAttributes(elAttrs, entities, out, i);
     }
-    // recurse over the children
-    if (el.elements) {
-      writeElements(el.elements, entities, out, i);
+
+    if (el.elements && el.elements.length) {
+      if (el.escapableRaw) {
+        el.elements.forEach(function (j) {
+          out.push("" + name + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + j + ");\n");
+        });
+      } else {
+        el.elements.forEach(function (j) {
+          out.push("" + name + ".appendChild(el" + j + ");\n");
+        });
+      }
     }
   });
+  // append all indexes to fragment
+  if (!parent) {
+    indexes.forEach(function (i) {
+      out.push("frag.appendChild(el" + i + ");\n");
+    });
+  }
 }
 
 function writeFragmentsToResults(results) {

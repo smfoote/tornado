@@ -49,7 +49,11 @@ let generateWalker = visitor.build({
   },
   HTML_ELEMENT: {
     enter(item, instructions, state) {
-      instructions.push(new Instruction('open_HTML_ELEMENT', {key: item.node[1].tag_info.key, type: 'element'}, state));
+      instructions.push(new Instruction('open_HTML_ELEMENT', {
+        key: item.node[1].tag_info.key,
+        type: 'element',
+        escapableRaw: item.node[1].escapableRaw
+      }, state));
     },
     leave(item, instructions, state){
       item.state = item.previousState;
