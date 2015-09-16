@@ -43,7 +43,10 @@ function writeVals(indexes, entities, out) {
               // block - name, idx, context, template
               key = typeof body.key === "string" ? body.key : body.key.join(".");
               out.push("td." + util.getTdMethodName("block") + "(" + toStringLiteral(key) + ", null, " + v.id + ", c, this)");
-            } else if (body.type === "inlinePartial") {} else {
+            } else if (body.type === "inlinePartial") {} else if (body.type === "partial") {
+              key = typeof body.key === "string" ? body.key : body.key.join(".");
+              out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", null, c, this)");
+            } else {
               key = typeof body.key === "string" ? body.key : "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(body.key) + ")";
               // exists - key, placeholder, bodies, context
               // notexists - key, placeholder, bodies, context
@@ -188,7 +191,10 @@ function writeBodyMains(indexes, entities, out) {
         // block - name, placeholderNode, idx, context, template
         key = typeof body.key === "string" ? body.key : body.key.join(".");
         out.push("td." + util.getTdMethodName("block") + "(" + toStringLiteral(key) + ", " + placeholderEl + ", " + i + ", c, this);\n");
-      } else if (body.type === "inlinePartial") {} else {
+      } else if (body.type === "inlinePartial") {} else if (body.type === "partial") {
+        key = typeof body.key === "string" ? body.key : body.key.join(".");
+        out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", " + placeholderEl + ", c, this);\n");
+      } else {
         key = typeof body.key === "string" ? body.key : "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(body.key) + ")";
         // exists - key, placeholder, bodies, context
         // notexists - key, placeholder, bodies, context
@@ -277,10 +283,6 @@ var postprocess = function postprocess(results) {
 module.exports = postprocess;
 
 // inline partial - happens at runtime in block
-// key = typeof body.key === 'string' ? body.key : body.key.join('.');
-// out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, null, c, this)`);
 
 // inline partial - happens at runtime in block
-// key = typeof body.key === 'string' ? body.key : body.key.join('.');
-// out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, ${placeholderEl}, c, this);\n`);
 //# sourceMappingURL=postprocess.js.map

@@ -28,7 +28,7 @@ codeGenerator.useCodeGeneratorFns({
     var state = instruction.state;
     var key = config.key;
 
-    state.addBody({ key: key, type: "inlinePartial" });
+    state.addBody({ key: key, type: "partial" });
     state.leaveBody();
   },
   open_TORNADO_PARAM: function open_TORNADO_PARAM(instruction) {
