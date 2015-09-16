@@ -24,7 +24,7 @@ function writeVals(indexes, entities, out) {
           case "refs":
             // a generic writeRef Method instead?
             var ref = refs[v.id];
-            out.push("td.get(c, " + JSON.stringify(ref.key) + ")");
+            out.push("td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(ref.key) + ")");
             break;
           case "bodys":
             var o = [];
@@ -34,7 +34,7 @@ function writeVals(indexes, entities, out) {
             if (body.type === "helper") {
               // helper - key, placeholder, context, params, bodies
               key = typeof body.key === "string" ? body.key : body.key.join(".");
-              o.push("td." + body.type + "(" + toStringLiteral(key) + ", null, c, ");
+              o.push("td." + util.getTdMethodName(body.type) + "(" + toStringLiteral(key) + ", null, c, ");
               writeBodyParams(body.params, entities, o);
               o.push(", {main: this.r" + v.id + ".bind(this)");
               writeBodyAlternates(body.bodies, entities, o);
@@ -43,16 +43,12 @@ function writeVals(indexes, entities, out) {
               // block - name, idx, context, template
               key = typeof body.key === "string" ? body.key : body.key.join(".");
               out.push("td." + util.getTdMethodName("block") + "(" + toStringLiteral(key) + ", null, " + v.id + ", c, this)");
-            } else if (body.type === "inlinePartial") {
-              // inline partial - happens at runtime in block
-              key = typeof body.key === "string" ? body.key : body.key.join(".");
-              out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", null, c, this)");
-            } else {
-              key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+            } else if (body.type === "inlinePartial") {} else {
+              key = typeof body.key === "string" ? body.key : "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(body.key) + ")";
               // exists - key, placeholder, bodies, context
               // notexists - key, placeholder, bodies, context
               // section - key, placeholder, bodies, context
-              o.push("td." + body.type + "(" + key + ", null, {main: this.r" + v.id + ".bind(this)");
+              o.push("td." + util.getTdMethodName(body.type) + "(" + key + ", null, {main: this.r" + v.id + ".bind(this)");
               writeBodyAlternates(body.bodies, entities, o);
               o.push("}, c)");
             }
@@ -103,11 +99,11 @@ function writeElements(indexes, entities, out, parent) {
     var name = "el" + i;
     // write this element
     if (el.type === "placeholder") {
-      out.push("var el" + i + " = res.p" + i + " = td.createTextNode('');\n");
+      out.push("var el" + i + " = res.p" + i + " = td." + util.getTdMethodName("createTextNode") + "('');\n");
     } else if (el.type === "plaintext") {
-      out.push("var el" + i + " = td.createTextNode(" + toStringLiteral(el.content) + ");\n");
+      out.push("var el" + i + " = td." + util.getTdMethodName("createTextNode") + "(" + toStringLiteral(el.content) + ");\n");
     } else {
-      out.push("var el" + i + " = td.createElement(" + toStringLiteral(el.key));
+      out.push("var el" + i + " = td." + util.getTdMethodName("createElement") + "(" + toStringLiteral(el.key));
       if (typeof el.namespace === "number") {
         var vals = attrs[el.namespace].vals;
         var valsOut = [];
@@ -183,7 +179,7 @@ function writeBodyMains(indexes, entities, out) {
       if (body.type === "helper") {
         // helper - key, placeholder, context, params, bodies
         key = typeof body.key === "string" ? body.key : body.key.join(".");
-        out.push("td." + body.type + "(" + toStringLiteral(key) + ", " + placeholderEl + ", c, ");
+        out.push("td." + util.getTdMethodName(body.type) + "(" + toStringLiteral(key) + ", " + placeholderEl + ", c, ");
         writeBodyParams(body.params, entities, out);
         out.push(", {main: this.r" + i + ".bind(this)");
         writeBodyAlternates(body.bodies, entities, out);
@@ -192,16 +188,12 @@ function writeBodyMains(indexes, entities, out) {
         // block - name, placeholderNode, idx, context, template
         key = typeof body.key === "string" ? body.key : body.key.join(".");
         out.push("td." + util.getTdMethodName("block") + "(" + toStringLiteral(key) + ", " + placeholderEl + ", " + i + ", c, this);\n");
-      } else if (body.type === "inlinePartial") {
-        // inline partial - happens at runtime in block
-        key = typeof body.key === "string" ? body.key : body.key.join(".");
-        out.push("td." + util.getTdMethodName("getPartial") + "(" + toStringLiteral(key) + ", " + placeholderEl + ", c, this);\n");
-      } else {
-        key = typeof body.key === "string" ? body.key : "td.get(c, " + JSON.stringify(body.key) + ")";
+      } else if (body.type === "inlinePartial") {} else {
+        key = typeof body.key === "string" ? body.key : "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(body.key) + ")";
         // exists - key, placeholder, bodies, context
         // notexists - key, placeholder, bodies, context
         // section - key, placeholder, bodies, context
-        out.push("td." + body.type + "(" + key + ", " + placeholderEl + ", {main: this.r" + i + ".bind(this)");
+        out.push("td." + util.getTdMethodName(body.type) + "(" + key + ", " + placeholderEl + ", {main: this.r" + i + ".bind(this)");
         writeBodyAlternates(body.bodies, entities, out);
         out.push("}, c);\n");
       }
@@ -228,7 +220,7 @@ function writeBodyRefs(references, entities, out) {
   var refs = entities.refs;
   references.forEach(function (rId) {
     var ref = refs[rId];
-    var key = typeof ref === "string" ? key : "td.get(c, " + JSON.stringify(ref.key) + ")";
+    var key = typeof ref === "string" ? key : "td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(ref.key) + ")";
     // write references based on type
     switch (ref.from.type) {
       case "bodys":
@@ -283,4 +275,12 @@ var postprocess = function postprocess(results) {
 };
 
 module.exports = postprocess;
+
+// inline partial - happens at runtime in block
+// key = typeof body.key === 'string' ? body.key : body.key.join('.');
+// out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, null, c, this)`);
+
+// inline partial - happens at runtime in block
+// key = typeof body.key === 'string' ? body.key : body.key.join('.');
+// out.push(`td.${util.getTdMethodName('getPartial')}(${toStringLiteral(key)}, ${placeholderEl}, c, this);\n`);
 //# sourceMappingURL=postprocess.js.map
