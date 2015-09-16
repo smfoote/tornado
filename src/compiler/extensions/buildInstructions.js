@@ -62,7 +62,12 @@ let generateWalker = visitor.build({
   },
   HTML_ATTRIBUTE: {
     enter(item, instructions, state) {
-      instructions.push(new Instruction('open_HTML_ATTRIBUTE', {key: item.node[1].attrName}, state));
+      let attrName = item.node[1].attrName,
+          config = {key: attrName};
+      if (attrName === 'xmlns') {
+        config.namespaceAttr = true;
+      }
+      instructions.push(new Instruction('open_HTML_ATTRIBUTE', config, state));
     },
     leave(item, instructions, state) {
       instructions.push(new Instruction('close_HTML_ATTRIBUTE', {}, state));

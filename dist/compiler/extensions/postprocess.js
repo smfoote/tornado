@@ -88,26 +88,38 @@ function writeAttributes(attrIndexes, entities, out, parentEl) {
 }
 // recursively writing elements
 function writeElements(indexes, entities, out, parent) {
-  var elements = entities.elements;
+  var elements = entities.elements,
+      attrs = entities.attrs;
 
   indexes.forEach(function (i) {
     var el = elements[i];
-    var name = "el" + i;
     // depth first so recurse over the children
     if (el.elements && el.elements.length) {
       writeElements(el.elements, entities, out, i);
     }
 
+    var elAttrs = el.attrs;
+    var name = "el" + i;
     // write this element
     if (el.type === "placeholder") {
       out.push("var el" + i + " = res.p" + i + " = td.createTextNode('');\n");
     } else if (el.type === "plaintext") {
       out.push("var el" + i + " = td.createTextNode(" + toStringLiteral(el.content) + ");\n");
     } else {
-      out.push("var el" + i + " = td.createElement(" + toStringLiteral(el.key) + ");\n");
+      out.push("var el" + i + " = td.createElement(" + toStringLiteral(el.key));
+      if (typeof el.namespace === "number") {
+        var vals = attrs[el.namespace].vals;
+        var valsOut = [];
+        if (vals && vals.length) {
+          out.push(", ");
+          writeVals(vals, entities, valsOut);
+          out.push(valsOut.join(""));
+        }
+      }
+
+      out.push(");\n");
     }
     // write attributes
-    var elAttrs = el.attrs;
     if (elAttrs && elAttrs.length) {
       writeAttributes(elAttrs, entities, out, i);
     }

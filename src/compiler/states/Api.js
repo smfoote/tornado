@@ -15,7 +15,7 @@ var Api = function() {
   var tdHistory = new History(),
       elHistory = new History(),
       stateHistory = new History(),
-      meta = {},
+      meta = {currentNamespace: 'default'},
       entities = {
       };
 
@@ -84,7 +84,9 @@ var Api = function() {
 
     stateHistory.enter(generateLocation(ENTITY_TYPES.BODY, b.fragment));
     elHistory.jump();
-    meta.currentElement = null;
+    //  do we need to know about the element the body was contained in?
+    //  if so, then we shouldn't nullify currentElement
+    // meta.currentElement = null;
     meta.currentState = stateHistory.current();
     meta.currentBody = tdHistory.current();
     meta.currentFragment = tdHistory.current();
@@ -164,6 +166,9 @@ var Api = function() {
     var elIndex;
 
     el.elements = [];
+    if (typeof meta.currentNamespace === 'number') {
+      el.namespace = meta.currentNamespace;
+    }
     // add a new element
     elHistory.enter();
     if (entities.elements) {
@@ -181,7 +186,9 @@ var Api = function() {
 
   function leaveElement() {
     var elIndex = elHistory.current(),
-        currentFragment;
+        currentFragment,
+        leavingElement,
+        prevNS;
     elHistory.leave();
     stateHistory.leave();
     var parentIndex = elHistory.current();
@@ -197,6 +204,12 @@ var Api = function() {
       }
     }
 
+    leavingElement = entities.elements[elIndex];
+    prevNS = leavingElement.originalNamespace;
+    // revert to any previous namespaces
+    if (typeof prevNS === 'number' || prevNS === 'default') {
+      meta.currentNamespace = prevNS;
+    }
     meta.currentElement = parentIndex;
     meta.currentState = stateHistory.current();
   }
@@ -291,7 +304,8 @@ var Api = function() {
     addAttr: function(attr) {
       var currentEl = entities.elements[meta.currentElement],
           len,
-          attrIndex;
+          attrIndex,
+          prevNS;
       // add a row into the attrs table
       if (entities.attrs) {
         len = entities.attrs.push(attr);
@@ -306,6 +320,16 @@ var Api = function() {
         currentEl.attrs.push(attrIndex);
       } else {
         currentEl.attrs = [attrIndex];
+      }
+
+      // if this is a namespace attr also add the namespace to the current element
+      if (attr.key === 'xmlns') {
+        currentEl.namespace = attrIndex;
+        prevNS = meta.currentNamespace;
+        if (typeof prevNS === 'number' || prevNS === 'default') {
+          currentEl.originalNamespace = prevNS;
+        }
+        meta.currentNamespace = attrIndex;
       }
 
       meta.currentAttr = attrIndex;
