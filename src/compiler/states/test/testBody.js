@@ -2,12 +2,6 @@ var Api = require('../Api'),
     test = require('tape');
 
 
-test('initializes with basic stuff', function(t) {
-  var api = new Api();
-  t.plan(2);
-  t.deepEqual(api.meta, {}, 'meta should start as an empty object');
-  t.deepEqual(api.entities, {}, 'entities should start as an empty object');
-});
 test('addBody one level deep', function(t) {
   var api = new Api();
   // first body (open template)
@@ -131,5 +125,27 @@ test('addBodies many level deep', function(t) {
   t.deepEqual(api.entities.bodys[0].bodies, [1]);
   t.deepEqual(api.entities.bodys[1].bodies, [2]);
   t.deepEqual(api.entities.bodys[2].bodies, [3]);
+  t.end();
+});
+
+
+// inlinePartial specific
+test('inline Partial should not create a placeholder element', function (t) {
+  var api = new Api();
+  api.addBody({type: 'inlinePartial'});
+  api.leaveBody();
+  t.equal(api.entities.fragments[0].elements.length, 0, 'no placeholder');
+  t.equal(api.entities.fragments.length, 1, 'one fragments on for body');
+  t.end();
+});
+
+test('inline Partial should not create a placeholder element', function (t) {
+  var api = new Api();
+  api.addBody();
+  api.addBody({type: 'inlinePartial'});
+  api.leaveBody();
+  api.leaveBody();
+  t.equal(api.entities.elements.length, 1, 'but other bodys should have a placeholder');
+  t.equal(api.entities.fragments.length, 2, 'two fragments on for body');
   t.end();
 });

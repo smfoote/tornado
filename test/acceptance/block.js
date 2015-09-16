@@ -8,7 +8,6 @@ let suite = {
       context: {},
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode(''));
         return frag;
       })()
     },

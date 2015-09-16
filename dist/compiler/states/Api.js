@@ -52,9 +52,12 @@ var Api = function Api() {
       case ENTITY_TYPES.BODY:
       case ENTITY_TYPES.FRAGMENT:
       case ENTITY_TYPES.ELEMENT:
-        addElement(item);
-        itemIndex = meta.currentElement;
-        leaveElement();
+        // don't add a placeholder for inline partials which won't need a place
+        if (!(to.type === ENTITY_TYPES.BODY && entities.bodys[to.id].type === "inlinePartial")) {
+          addElement(item);
+          itemIndex = meta.currentElement;
+          leaveElement();
+        }
         break;
       case ENTITY_TYPES.ATTRIBUTE_VALUE:
         addAttrVal(item);
