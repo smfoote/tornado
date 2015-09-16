@@ -1,7 +1,8 @@
 import util from '../utils/builder';
 
+let SQ = /'/g;
 function toStringLiteral(val) {
-  return typeof val === 'string' ? `'${val.replace('\'', '\\\'')}'` : val;
+  return typeof val === 'string' ? `'${val.replace(SQ, '\\\'')}'` : val;
 }
 
 function writeVals(indexes, entities, out) {

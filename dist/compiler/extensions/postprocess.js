@@ -4,8 +4,9 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var util = _interopRequire(require("../utils/builder"));
 
+var SQ = /'/g;
 function toStringLiteral(val) {
-  return typeof val === "string" ? "'" + val.replace("'", "\\'") + "'" : val;
+  return typeof val === "string" ? "'" + val.replace(SQ, "\\'") + "'" : val;
 }
 
 function writeVals(indexes, entities, out) {
