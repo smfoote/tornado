@@ -12,6 +12,7 @@ function writeVals(indexes, entities, out) {
   if (indexes && indexes.length) {
     indexes.forEach(function(i) {
       let v = vals[i];
+      let outBodyMap = [];
       if (v.type === 'plaintext') {
         out.push(toStringLiteral(v.content));
       } else if (v.type === 'placeholder') {
@@ -32,9 +33,9 @@ function writeVals(indexes, entities, out) {
               key = typeof body.key === 'string' ? body.key : body.key.join('.');
               o.push(`td.${util.getTdMethodName(body.type)}(${toStringLiteral(key)}, null, c, `);
               writeBodyParams(body.params, entities, o);
-              o.push(`, {main: this.r${v.id}.bind(this)`);
-              writeBodyAlternates(body.bodies, entities, o);
-              o.push('})');
+              outBodyMap.push(`main: this.r${v.id}.bind(this)`);
+              writeBodyAlternates(body.bodies, entities, outBodyMap);
+              o.push(`, {${outBodyMap.join(',')}})`);
             } else if (body.type === 'block') {
               // block - name, idx, context, template
               key = typeof body.key === 'string' ? body.key : body.key.join('.');
@@ -49,9 +50,10 @@ function writeVals(indexes, entities, out) {
               // exists - key, placeholder, bodies, context
               // notexists - key, placeholder, bodies, context
               // section - key, placeholder, bodies, context
-              o.push(`td.${util.getTdMethodName(body.type)}(${key}, null, {main: this.r${v.id}.bind(this)`);
-              writeBodyAlternates(body.bodies, entities, o);
-              o.push('}, c)');
+              o.push(`td.${util.getTdMethodName(body.type)}(${key}, null, {`);
+              outBodyMap.push(`main: this.r${v.id}.bind(this)`);
+              writeBodyAlternates(body.bodies, entities, outBodyMap);
+              o.push('${outBodyMap.join(',')}}, c)');
             }
             out.push(o.join(''));
             break;
@@ -171,7 +173,7 @@ function writeBodyAlternates(indexes, entities, out) {
   let bodys = entities.bodys;
   if (indexes && indexes.length) {
     indexes.forEach(function(i) {
-      out.push(`, ${bodys[i].name}: this.r${i}.bind(this)`);
+      out.push(`${bodys[i].name}: this.r${i}.bind(this)`);
     });
   }
 }
@@ -180,6 +182,7 @@ function writeBodyMains(indexes, entities, out) {
     let bodys = entities.bodys;
     let body = bodys[i];
     let key;
+    let outBodyMap = [];
     let placeholderEl = typeof body.from.id === 'number' ? `root.p${body.from.id}` : 'null';
     // avoid writing body into fragments which is handled by writeval
     if (body.from.type !== 'vals') {
@@ -188,9 +191,11 @@ function writeBodyMains(indexes, entities, out) {
         key = typeof body.key === 'string' ? body.key : body.key.join('.');
         out.push(`td.${util.getTdMethodName(body.type)}(${toStringLiteral(key)}, ${placeholderEl}, c, `);
         writeBodyParams(body.params, entities, out);
-        out.push(`, {main: this.r${i}.bind(this)`);
-        writeBodyAlternates(body.bodies, entities, out);
-        out.push('});\n');
+        if (!body.isSelfClosing) {
+          outBodyMap.push(`main: this.r${i}.bind(this)`);
+        }
+        writeBodyAlternates(body.bodies, entities, outBodyMap);
+        out.push(`, {${outBodyMap.join(', ')}});\n`);
       } else if (body.type === 'block') {
         // block - name, placeholderNode, idx, context, template
         key = typeof body.key === 'string' ? body.key : body.key.join('.');
@@ -205,9 +210,12 @@ function writeBodyMains(indexes, entities, out) {
         // exists - key, placeholder, bodies, context
         // notexists - key, placeholder, bodies, context
         // section - key, placeholder, bodies, context
-        out.push(`td.${util.getTdMethodName(body.type)}(${key}, ${placeholderEl}, {main: this.r${i}.bind(this)`);
-        writeBodyAlternates(body.bodies, entities, out);
-        out.push('}, c);\n');
+        out.push(`td.${util.getTdMethodName(body.type)}(${key}, ${placeholderEl}, {`);
+        if (!body.isSelfClosing) {
+          outBodyMap.push(`main: this.r${i}.bind(this)`);
+        }
+        writeBodyAlternates(body.bodies, entities, outBodyMap);
+        out.push('${outBodyMap.join(', ')}}, c);\n');
       }
     }
   });
@@ -260,11 +268,13 @@ function writeBodysToResults(results) {
     codeRenderer.push(`r${suffix}: function(c) {
       var root = this.f${b.fragment}(c);\n`);
     // add all references
-    if (b.refs) {
+    if (b.refs && b.refs.length) {
       writeBodyRefs(b.refs, entities, codeRenderer);
     }
     // add all mains
-    writeBodyMains(b.mains, entities, codeRenderer);
+    if (b.mains && b.mains.length) {
+      writeBodyMains(b.mains, entities, codeRenderer);
+    }
     // add method footer
     codeRenderer.push('return root.frag;\n}');
     results.code.renderers.push(codeRenderer.join(''));

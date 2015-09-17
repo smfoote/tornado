@@ -11,9 +11,10 @@ let generateWalker = visitor.build({
   },
   TORNADO_BODY: {
     enter(item, instructions, state) {
-      let params;
-      instructions.push(new Instruction('open_TORNADO_BODY', {key: item.node[1].key, type: item.node[1].type, name: item.node[1].name}, state));
-      params = item.node[1].params;
+      let params,
+          bodyData = item.node[1];
+      instructions.push(new Instruction('open_TORNADO_BODY', {key: bodyData.key, type: bodyData.type, name: bodyData.name, isSelfClosing: typeof bodyData.body === 'undefined'}, state));
+      params = bodyData.params;
       if (params && params.length) {
         params.forEach(function(p) {
           // we currently only support a string or number or a reference

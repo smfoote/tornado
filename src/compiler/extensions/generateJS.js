@@ -21,7 +21,7 @@ codeGenerator.useCodeGeneratorFns({
   insert_TORNADO_PARTIAL(instruction) {
     let {config, state} = instruction;
     let {key} = config;
-    state.addBody({key, type: 'partial'});
+    state.addBody({key, type: 'partial', isSelfClosing: true});
     state.leaveBody();
   },
   open_TORNADO_PARAM(instruction) {
@@ -35,11 +35,11 @@ codeGenerator.useCodeGeneratorFns({
   },
   open_TORNADO_BODY(instruction) {
     let {config, state} = instruction;
-    let {key, type, name} = config;
+    let {key, type, name, isSelfClosing} = config;
     if (type === 'bodies') {
       state.addBodies({name});
     } else {
-      state.addBody({key, type});
+      state.addBody({key, type, isSelfClosing});
     }
   },
   close_TORNADO_BODY(instruction) {

@@ -28,7 +28,7 @@ codeGenerator.useCodeGeneratorFns({
     var state = instruction.state;
     var key = config.key;
 
-    state.addBody({ key: key, type: "partial" });
+    state.addBody({ key: key, type: "partial", isSelfClosing: true });
     state.leaveBody();
   },
   open_TORNADO_PARAM: function open_TORNADO_PARAM(instruction) {
@@ -49,11 +49,12 @@ codeGenerator.useCodeGeneratorFns({
     var key = config.key;
     var type = config.type;
     var name = config.name;
+    var isSelfClosing = config.isSelfClosing;
 
     if (type === "bodies") {
       state.addBodies({ name: name });
     } else {
-      state.addBody({ key: key, type: type });
+      state.addBody({ key: key, type: type, isSelfClosing: isSelfClosing });
     }
   },
   close_TORNADO_BODY: function close_TORNADO_BODY(instruction) {
