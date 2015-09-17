@@ -104,6 +104,8 @@ function writeElements(indexes, entities, out, parent) {
       out.push(`var el${i} = res.p${i} = td.${util.getTdMethodName('createTextNode')}('');\n`);
     } else if (el.type === 'plaintext') {
       out.push(`var el${i} = td.${util.getTdMethodName('createTextNode')}(${toStringLiteral(el.content)});\n`);
+    } else if (el.type === 'htmlComment') {
+      out.push(`var el${i} = td.${util.getTdMethodName('createHTMLComment')}(${toStringLiteral(el.content)});\n`);
     } else {
       out.push(`var el${i} = td.${util.getTdMethodName('createElement')}(${toStringLiteral(el.key)}`);
       if (typeof el.namespace === 'number') {

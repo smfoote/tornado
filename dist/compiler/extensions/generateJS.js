@@ -95,7 +95,13 @@ codeGenerator.useCodeGeneratorFns({
 
     state.leaveAttr();
   },
-  insert_HTML_COMMENT: function insert_HTML_COMMENT() {},
+  insert_HTML_COMMENT: function insert_HTML_COMMENT(instruction) {
+    var config = instruction.config;
+    var state = instruction.state;
+
+    var val = config.content;
+    state.addHtmlComment(val);
+  },
   insert_PLAIN_TEXT: function insert_PLAIN_TEXT(instruction) {
     var config = instruction.config;
     var state = instruction.state;
@@ -146,5 +152,4 @@ var generateJavascript = function generateJavascript(results) {
 };
 
 module.exports = generateJavascript;
-/*instruction, code*/
 //# sourceMappingURL=generateJS.js.map

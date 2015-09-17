@@ -71,7 +71,10 @@ codeGenerator.useCodeGeneratorFns({
     let {state} = instruction;
     state.leaveAttr();
   },
-  insert_HTML_COMMENT(/*instruction, code*/) {
+  insert_HTML_COMMENT(instruction) {
+    let {config, state} = instruction;
+    let val = config.content;
+    state.addHtmlComment(val);
   },
   insert_PLAIN_TEXT(instruction) {
     let {config, state} = instruction;

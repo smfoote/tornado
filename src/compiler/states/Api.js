@@ -342,6 +342,19 @@ var Api = function() {
       stateHistory.leave();
       meta.currentAttr = null;
     },
+    addHtmlComment: function(t) {
+      var currentState = stateHistory.current(),
+          type = currentState.type,
+          item = {type: 'htmlComment', content: t};
+      switch (type) {
+        case ENTITY_TYPES.BODY:
+        case ENTITY_TYPES.FRAGMENT:
+        case ENTITY_TYPES.ELEMENT:
+          addElement(item);
+          leaveElement();
+          break;
+      }
+    },
     addPlainText: function(t) {
       var currentState = stateHistory.current(),
           type = currentState.type,

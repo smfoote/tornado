@@ -77,7 +77,7 @@ var generateWalker = visitor.build({
   },
   HTML_COMMENT: {
     enter: function enter(item, instructions, state) {
-      instructions.push(new Instruction("insert_HTML_COMMENT", {}, state));
+      instructions.push(new Instruction("insert_HTML_COMMENT", { content: item.node[1], type: "plaintext" }, state));
     }
   },
   PLAIN_TEXT: {
