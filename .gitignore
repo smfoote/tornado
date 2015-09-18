@@ -1,5 +1,6 @@
 node_modules/
 _site/
+.sass-cache/
 test/cacceptance/
 test/sandbox/bundle.js
 benchmark/bundle.js

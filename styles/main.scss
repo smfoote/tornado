@@ -1,16 +1,16 @@
-@font-face {
-    font-family: 'MeteoconsRegular';
-    src: url('meteocons-webfont.eot');
-    src: url('meteocons-webfont.eot?#iefix') format('embedded-opentype'),
-         url('meteocons-webfont.woff') format('woff'),
-         url('meteocons-webfont.ttf') format('truetype'),
-         url('meteocons-webfont.svg#MeteoconsRegular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-}
+---
+---
+@import 'reset';
 
-html {
-  font-family: 'Helvetica-Neue', 'Helvetica', 'Arial', sans-serif;
+// Reset
+@import 'reset/fonts';
+
+// Components
+@import 'components/nav';
+@import 'components/content';
+
+body {
+  background-color: #CFDBE0;
 }
 
 textarea {

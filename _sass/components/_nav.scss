@@ -1,0 +1,64 @@
+nav {
+
+  header {
+    background-color: #808080;
+    box-shadow: #343434 0 0 5px;
+    padding: 30px;
+    margin: 20px;
+
+    &:after {
+      visibility: hidden;
+    	display: block;
+    	font-size: 0;
+    	content: " ";
+    	clear: both;
+    	height: 0;
+    }
+
+    .logo {
+      float: left;
+
+      svg {
+        color: #FFF;
+      }
+    }
+
+    h1 {
+      font-size: 64px;
+      padding: 20px;
+      margin-left: 110px;
+
+      a {
+        color: #000;
+        font-weight: 400;
+        text-decoration: none;
+      }
+    }
+  }
+
+  .main-nav {
+    height: 100%;
+    width: 205px;
+    position: absolute;
+    background-color: #808080;
+    left: 20px;
+    box-shadow: #343434 0 0 5px;
+
+    > li {
+      line-height: 26px;
+      margin-bottom: 8px;
+      padding: 0;
+      color: #999;
+      cursor: default;
+
+      a {
+        color: #FFF;
+        text-decoration: none;
+      }
+
+      li {
+        padding-left: 10px;
+      }
+    }
+  }
+}
