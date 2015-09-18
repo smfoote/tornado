@@ -1,4 +1,5 @@
 relative_permalinks: false
+baseurl: /tornado
 
 markdown: kramdown
 kramdown:
