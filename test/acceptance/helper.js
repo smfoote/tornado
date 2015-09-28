@@ -1066,6 +1066,42 @@ let suite = {
         frag.appendChild(div);
         return frag;
       })()
+    },
+    {
+      description: 'Helper context dotted reference lookup',
+      template: '{#numbers root=root}{$root.symbol}{.}{/numbers}',
+      context: {
+        root: {
+          symbol: '#'
+        },
+        numbers: [1,2]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('#'));
+        frag.appendChild(document.createTextNode('1'));
+        frag.appendChild(document.createTextNode('#'));
+        frag.appendChild(document.createTextNode('2'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Helper context dotted reference, first step doesn\'t exist',
+      template: '{#numbers root=root}{$rot.symbol}{.}{/numbers}',
+      context: {
+        root: {
+          symbol: '#'
+        },
+        numbers: [1,2]
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode(''));
+        frag.appendChild(document.createTextNode('1'));
+        frag.appendChild(document.createTextNode(''));
+        frag.appendChild(document.createTextNode('2'));
+        return frag;
+      })()
     }
   ]
 };
