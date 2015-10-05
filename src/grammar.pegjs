@@ -190,9 +190,13 @@ tornado_param
     }]
   }
   / key:key equals val:tornado_key {
+    var path = val.split('.');
+    if (val === '.') {
+      path = [];
+    }
     return ['TORNADO_PARAM', {
       key: key,
-      val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
+      val: ['TORNADO_REFERENCE', {key: path}]
     }]
   }
 

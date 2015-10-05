@@ -82,6 +82,11 @@ var section = function section(context, params, bodies, td) {
   var val = td.get(context, key);
   var body = undefined,
       ctx = undefined;
+  Object.keys(params).forEach(function (key) {
+    if (key !== "key") {
+      td.helperContext.set(key, params[key]);
+    }
+  });
   if (util.isPromise(val)) {
     return val.then(function (data) {
       if (util.isTruthy(data)) {

@@ -78,6 +78,11 @@ let section = function section(context, params, bodies, td) {
   let key = params.key.split('.');
   let val = td.get(context, key);
   let body, ctx;
+  Object.keys(params).forEach((key) => {
+    if (key !== 'key') {
+      td.helperContext.set(key, params[key]);
+    }
+  });
   if (util.isPromise(val)) {
     return val.then(data => {
       if (util.isTruthy(data)) {

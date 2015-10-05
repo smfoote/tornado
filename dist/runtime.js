@@ -8,6 +8,43 @@ var builtinHelpers = _interopRequire(require("./builtinHelpers"));
 
 var helpers = _interopRequire(require("./helpers"));
 
+var lookup = function (context, path) {
+  var pathLength = path.length;
+  var newContext = undefined;
+  if (pathLength === 1) {
+    // there is only one more item left in the path
+    var key = path.pop();
+    var res = context[key];
+    if (res !== undefined) {
+      return util.isFunction(res) ? res.bind(context)() : res;
+    }
+  } else if (pathLength === 0) {
+    // return the current context for {.}
+    return context || "";
+  } else if (!pathLength || pathLength < 0) {
+    // There is something wrong with the path (maybe it was not an array?)
+    return "";
+  }
+  // There are still more steps in the array
+  newContext = context[path.shift()];
+  if (newContext) {
+    if (util.isFunction(newContext)) {
+      newContext = newContext.bind(context)();
+    }
+
+    if (util.isPromise(newContext)) {
+      return newContext.then(function (val) {
+        return lookup(val, path);
+      });
+    }
+
+    if (util.isObject(newContext)) {
+      return lookup(newContext, path);
+    }
+  }
+  return "";
+};
+
 var tornado = {
 
   /**
@@ -40,6 +77,7 @@ var tornado = {
           return context[key];
         }
       }
+      return "";
     },
     set: function set(key, val) {
       var context = this.peek();
@@ -105,46 +143,15 @@ var tornado = {
    * @return {*} The value at the end of the path, or an empty string.
    */
   get: function get(context, path) {
-    var _this = this;
-
-    var pathLength = path.length;
-    var newContext = undefined;
-    if (pathLength === 1) {
-      // there is only one more item left in the path
-      var key = path.pop();
-      var res = context[key];
-      if (res !== undefined) {
-        return this.util.isFunction(res) ? res.bind(context)() : res;
-      } else if (key[0] === "$" && this.helperContext.get(key) !== undefined) {
-        return this.helperContext.get(key);
+    if (path[0] && path[0][0] === "$") {
+      context = this.helperContext.get(path[0]);
+      if (path.length > 1 && util.isObject(context)) {
+        path = path.slice(1);
       } else {
-        return "";
-      }
-    } else if (pathLength === 0) {
-      // return the current context for {.}
-      return context || "";
-    } else if (!pathLength || pathLength < 0) {
-      // There is something wrong with the path (maybe it was not an array?)
-      return "";
-    }
-    // There are still more steps in the array
-    newContext = context[path.shift()];
-    if (newContext) {
-      if (this.util.isFunction(newContext)) {
-        newContext = newContext.bind(context)();
-      }
-
-      if (this.util.isPromise(newContext)) {
-        return newContext.then(function (val) {
-          return _this.get(val, path);
-        });
-      }
-
-      if (this.util.isObject(newContext)) {
-        return this.get(newContext, path);
+        return context;
       }
     }
-    return "";
+    return lookup(context, path);
   },
 
   /**

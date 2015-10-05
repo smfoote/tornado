@@ -176,9 +176,13 @@ module.exports = (function() {
             }]
           },
         peg$c61 = function(key, val) {
+            var path = val.split('.');
+            if (val === '.') {
+              path = [];
+            }
             return ['TORNADO_PARAM', {
               key: key,
-              val: ['TORNADO_REFERENCE', {key: val.split('.'), filters: []}]
+              val: ['TORNADO_REFERENCE', {key: path}]
             }]
           },
         peg$c62 = /^[#?\^><+%:@\/~%]/,

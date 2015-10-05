@@ -335,6 +335,55 @@ let suite = {
         frag.appendChild(document.createTextNode('Way fun!'));
         return frag;
       })()
+    },
+    {
+      description: 'Section with params',
+      template: '{#funds nationality="American"}More {$nationality} {currency}{/funds}',
+      context: {
+        funds: {
+          currency: 'dollars'
+        }
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('More '));
+        frag.appendChild(document.createTextNode('American'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('dollars'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Section where param is an object',
+      template: '{#names root=root}{$root.greeting} {.}{/names}',
+      context: {
+        root: {
+          greeting: 'Hello!'
+        },
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello!'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('Steven'));
+        return frag;
+      })()
+    },
+    {
+      description: 'Section where param is current context',
+      template: '{#names root=.}{$root.greeting} {.}{/names}',
+      context: {
+        greeting: 'Hello!',
+        names: ['Steven']
+      },
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        frag.appendChild(document.createTextNode('Hello!'));
+        frag.appendChild(document.createTextNode(' '));
+        frag.appendChild(document.createTextNode('Steven'));
+        return frag;
+      })()
     }
   ]
 };
