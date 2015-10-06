@@ -5,145 +5,67 @@ let suite = {
       description: 'Section alone (no other HTML), with text inside, reference is not an array',
       template: '{#name}name exists{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('name exists'));
-        return frag;
-      })()
+      expectedHTML: 'name exists'
     },
     {
       description: 'Section alone (no other HTML), with text inside, reference is an array',
       template: '{#name}name exists{/name}',
       context: {name: [1, 2]},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('name exists'));
-        frag.appendChild(document.createTextNode('name exists'));
-        return frag;
-      })()
+      expectedHTML: 'name existsname exists'
     },
     {
       description: 'Section alone (no other HTML), with text and refernce inside, reference is not an array',
       template: '{#name}{.} exists{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Dorothy'));
-        frag.appendChild(document.createTextNode(' exists'));
-        return frag;
-      })()
+      expectedHTML: 'Dorothy exists'
     },
     {
       description: 'Section alone (no other HTML), with text inside, reference is an array',
       template: '{#name}{.} exists{/name}',
       context: {name: [1, 2]},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('1'));
-        frag.appendChild(document.createTextNode(' exists'));
-        frag.appendChild(document.createTextNode('2'));
-        frag.appendChild(document.createTextNode(' exists'));
-        return frag;
-      })()
+      expectedHTML: '1 exists2 exists'
     },
     {
       description: 'Section with HTML inside',
       template: '{#name}<div>Hello, <span>world</span></div>{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        let span = document.createElement('span');
-        div.appendChild(document.createTextNode('Hello, '));
-        span.appendChild(document.createTextNode('world'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, <span>world</span></div>'
     },
     {
       description: 'Section inside HTML',
       template: '<div>Hello, {#name}<span>world</span>{/name}</div>',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        let span = document.createElement('span');
-        div.appendChild(document.createTextNode('Hello, '));
-        span.appendChild(document.createTextNode('world'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, <span>world</span></div>'
     },
     {
       description: 'Section inside HTML',
       template: '<div>Hello, ({#name}{.} {/name}). Good numbers.</div>',
       context: {name: [1,2,3,4]},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Hello, ('));
-        let frag2 = document.createDocumentFragment();
-        frag2.appendChild(document.createTextNode('1'));
-        frag2.appendChild(document.createTextNode(' '));
-        frag2.appendChild(document.createTextNode('2'));
-        frag2.appendChild(document.createTextNode(' '));
-        frag2.appendChild(document.createTextNode('3'));
-        frag2.appendChild(document.createTextNode(' '));
-        frag2.appendChild(document.createTextNode('4'));
-        frag2.appendChild(document.createTextNode(' '));
-        div.appendChild(frag2);
-        div.appendChild(document.createTextNode('). Good numbers.'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, (1 2 3 4 ). Good numbers.</div>'
     },
     {
       description: 'Section in an attribute',
       template: '<div class="{#colors}{.} {/colors}"></div>',
       context: {colors: ['red', 'blue']},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'red blue ');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="red blue "></div>'
     },
     {
       description: 'Section in an attribute with an else',
       template: '<div class="{#colors}{.}{:else}colorless{/colors}"></div>',
       context: {colors: []},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'colorless');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="colorless"></div>'
     },
     {
       description: 'Section changes context',
       template: 'Hello, {#member}{lastName}{/member}',
       context: {member: { lastName: 'Smith'} },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('Smith'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, Smith'
     },
     {
       description: 'Section where reference has dots',
       template: 'Hello, {#member.lastName}{.}{/member.lastName}',
       context: {member: { lastName: 'Smith'} },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('Smith'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, Smith'
     },
     {
       description: 'Section where reference is a promise',
@@ -153,12 +75,7 @@ let suite = {
           resolve('and later');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('and later'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, and later'
     },
     {
       description: 'Section where reference is a promise that resolves to a falsy value',
@@ -168,11 +85,7 @@ let suite = {
           resolve('');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        return frag;
-      })()
+      expectedHTML: 'Hello, '
     },
     {
       description: 'Section with a pending where reference is a promise',
@@ -197,12 +110,7 @@ let suite = {
           resolve('');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('never'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, never'
     },
     {
       description: 'Section with an else where reference is a promise that rejects',
@@ -212,12 +120,7 @@ let suite = {
           reject();
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('never'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, never'
     },
     {
       description: 'Section with dotted reference where first part is a promise',
@@ -227,12 +130,7 @@ let suite = {
           resolve({now: true});
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('later'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, later'
     },
     {
       description: 'Section with sibling exists',
@@ -241,16 +139,7 @@ let suite = {
         brother: true,
         sister: true
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('brother'));
-        frag.appendChild(div);
-        div = document.createElement('div');
-        div.appendChild(document.createTextNode(' and sister'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>brother</div><div> and sister</div>'
     },
     {
       description: 'Section with sibling exists in attribute',
@@ -259,13 +148,7 @@ let suite = {
         brother: true,
         sister: true
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'brother sister');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="brother sister"></div>'
     },
     {
       description: 'Section where reference is a function',
@@ -275,11 +158,7 @@ let suite = {
           return true;
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Section where dotted reference contains a function',
@@ -291,11 +170,7 @@ let suite = {
           };
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Section where reference is a function that returns a Promise',
@@ -307,11 +182,7 @@ let suite = {
           });
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Section where dotted reference contains a function that returns a Promise',
@@ -323,60 +194,15 @@ let suite = {
           });
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
-      description: 'Section with params',
-      template: '{#funds nationality="American"}More {$nationality} {currency}{/funds}',
+      description: 'Section using the helper syntax ( {@section key="key"}...{/section})',
+      template: '<span>{@section key="names"}{.} {/section}</span>',
       context: {
-        funds: {
-          currency: 'dollars'
-        }
+        names: ['Jimmy', 'Prash', 'Steven']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('More '));
-        frag.appendChild(document.createTextNode('American'));
-        frag.appendChild(document.createTextNode(' '));
-        frag.appendChild(document.createTextNode('dollars'));
-        return frag;
-      })()
-    },
-    {
-      description: 'Section where param is an object',
-      template: '{#names root=root}{$root.greeting} {.}{/names}',
-      context: {
-        root: {
-          greeting: 'Hello!'
-        },
-        names: ['Steven']
-      },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello!'));
-        frag.appendChild(document.createTextNode(' '));
-        frag.appendChild(document.createTextNode('Steven'));
-        return frag;
-      })()
-    },
-    {
-      description: 'Section where param is current context',
-      template: '{#names root=.}{$root.greeting} {.}{/names}',
-      context: {
-        greeting: 'Hello!',
-        names: ['Steven']
-      },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello!'));
-        frag.appendChild(document.createTextNode(' '));
-        frag.appendChild(document.createTextNode('Steven'));
-        return frag;
-      })()
+      expectedHTML: '<span>Jimmy Prash Steven </span>'
     }
   ]
 };

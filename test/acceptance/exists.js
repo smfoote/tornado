@@ -5,167 +5,85 @@ let suite = {
       description: 'Exists alone (no other HTML), with text inside.',
       template: '{?name}name exists{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('name exists'));
-        return frag;
-      })()
+      expectedHTML: 'name exists'
     },
     {
       description: 'Exists alone with reference inside',
       template: '{?name}{name} exists{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Dorothy'));
-        frag.appendChild(document.createTextNode(' exists'));
-        return frag;
-      })()
+      expectedHTML: 'Dorothy exists'
     },
     {
       description: 'Exists with HTML inside',
       template: '{?name}<div>Hello, <span>world</span></div>{/name}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        let span = document.createElement('span');
-        div.appendChild(document.createTextNode('Hello, '));
-        span.appendChild(document.createTextNode('world'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, <span>world</span></div>'
     },
     {
       description: 'Exists inside HTML',
       template: '<div>Hello, {?name}<span>world</span>{/name}</div>',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        let span = document.createElement('span');
-        div.appendChild(document.createTextNode('Hello, '));
-        span.appendChild(document.createTextNode('world'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, <span>world</span></div>'
     },
     {
       description: 'Exists in an attribute',
       template: '<div class="{?isSelected}selected{/isSelected}"></div>',
       context: {isSelected: true},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'selected');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="selected"></div>'
     },
     {
       description: 'Exists in an attribute with an else',
       template: '<div class="{?isSelected}selected{:else}not-selected{/isSelected}"></div>',
       context: {isSelected: false},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'not-selected');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="not-selected"></div>'
     },
     {
       description: 'Exists where reference is 0',
       template: 'Hello, {?zero}world{/zero}',
       context: {zero: 0},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('world'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, world'
     },
     {
       description: 'Exists where reference is empty string',
       template: 'Hello, {?name}world{/name}',
       context: {name: ''},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        return frag;
-      })()
+      expectedHTML: 'Hello, '
     },
     {
       description: 'Exists where reference is empty array',
       template: 'Hello, {?name}world{/name}',
       context: {name: []},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        return frag;
-      })()
+      expectedHTML: 'Hello, '
     },
     {
       description: 'Exists where reference is false',
       template: 'Hello, {?name}world{/name}',
       context: {name: false},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        return frag;
-      })()
+      expectedHTML: 'Hello, '
     },
     {
       description: 'Exists with else where reference is truthy',
       template: 'Hello, {?name}world{:else}abyss{/name}',
       context: {name: true},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('world'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, world'
     },
     {
       description: 'Exists containing multiple HTML elements, followd by refernece',
       template: 'Hello, {?name}<span>world</span>.{/name} My name is {name}.',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        let span = document.createElement('span');
-        span.appendChild(document.createTextNode('world'));
-        frag.appendChild(span);
-        frag.appendChild(document.createTextNode('.'));
-        frag.appendChild(document.createTextNode(' My name is '));
-        frag.appendChild(document.createTextNode('Dorothy'));
-        frag.appendChild(document.createTextNode('.'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, <span>world</span>. My name is Dorothy.'
     },
     {
       description: 'Exists with else where reference is falsy',
       template: 'Hello, {?name}world{:else}abyss{/name}',
       context: {name: false},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('abyss'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, abyss'
     },
     {
       description: 'Exists where reference has dots',
       template: 'Hello, {?member.lastName}fullName{/member.lastName}',
       context: {member: { lastName: 'Smith'} },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('fullName'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, fullName'
     },
     {
       description: 'Exists where reference is a promise',
@@ -175,12 +93,7 @@ let suite = {
           resolve('and later');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('later'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, later'
     },
     {
       description: 'Exists where reference is a promise that resolves to a falsy value',
@@ -190,11 +103,7 @@ let suite = {
           resolve('');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        return frag;
-      })()
+      expectedHTML: 'Hello, '
     },
     {
       description: 'Exists with an else where reference is a promise that resolves to a falsy value',
@@ -204,12 +113,7 @@ let suite = {
           resolve('');
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('never'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, never'
     },
     {
       description: 'Exists with a pending where reference is a promise',
@@ -223,7 +127,8 @@ let suite = {
           });
         }
       },
-      expectedHTML: 'Hello, <div class="tornado-pending">coming soon</div>'
+      expectedHTML: 'Hello, <div class="tornado-pending">coming soon</div>',
+      expectedHTMLResolved: 'Hello, later'
     },
     {
       description: 'Exists with an else where reference is a promise that rejects',
@@ -233,12 +138,7 @@ let suite = {
           reject();
         })
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Hello, '));
-        frag.appendChild(document.createTextNode('never'));
-        return frag;
-      })()
+      expectedHTML: 'Hello, never'
     },
     {
       description: 'Exists with sibling exists',
@@ -247,16 +147,7 @@ let suite = {
         brother: true,
         sister: true
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('brother'));
-        frag.appendChild(div);
-        div = document.createElement('div');
-        div.appendChild(document.createTextNode(' and sister'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>brother</div><div> and sister</div>'
     },
     {
       description: 'Exists with sibling exists in attribute',
@@ -265,13 +156,7 @@ let suite = {
         brother: true,
         sister: true
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'brother sister');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="brother sister"></div>'
     },
     {
       description: 'Exists where reference is a function',
@@ -281,11 +166,7 @@ let suite = {
           return true;
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Exists where dotted reference contains a function',
@@ -297,11 +178,7 @@ let suite = {
           };
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Exists where reference is a function that returns a Promise',
@@ -313,11 +190,7 @@ let suite = {
           });
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Exists where dotted reference contains a function that returns a Promise',
@@ -329,21 +202,13 @@ let suite = {
           });
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Way fun!'));
-        return frag;
-      })()
+      expectedHTML: 'Way fun!'
     },
     {
       description: 'Exists using helper syntax ( {@exists key="key"}...{/exists} )',
       template: '{@exists key="name"}name exists{/exists}',
       context: {name: 'Dorothy'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('name exists'));
-        return frag;
-      })()
+      expectedHTML: 'name exists'
     }
   ]
 };

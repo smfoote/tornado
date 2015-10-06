@@ -12,13 +12,7 @@ let suite = {
       },
       template: '{>partial/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('I am the partial'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>I am the partial</div>'
     },
     {
       description: 'Partial between HTML',
@@ -30,19 +24,7 @@ let suite = {
       },
       template: '<span>Before</span>{>partial/}<span>After</span>',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.appendChild(document.createTextNode('Before'));
-        frag.appendChild(span);
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('I am the partial'));
-        frag.appendChild(div);
-        span = document.createElement('span');
-        span.appendChild(document.createTextNode('After'));
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span>Before</span><div>I am the partial</div><span>After</span>'
     },
     {
       description: 'Partial inside HTML body',
@@ -54,15 +36,7 @@ let suite = {
       },
       template: '<main>{>partial/}</main>',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let main = document.createElement('main');
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('I am the partial'));
-        main.appendChild(div);
-        frag.appendChild(main);
-        return frag;
-      })()
+      expectedHTML: '<main><div>I am the partial</div></main>'
     },
     {
       description: 'Partial in HTML attribute',
@@ -74,13 +48,7 @@ let suite = {
       },
       template: '<div class="{>partial/}"></div>',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', '"/&gt;<script>alert("bad stuff")</script>');
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="&quot;/&amp;gt;<script>alert(&quot;bad stuff&quot;)</script>"></div>'
     }
   ]
 };

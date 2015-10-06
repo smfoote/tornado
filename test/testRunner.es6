@@ -1,8 +1,11 @@
+/*global chai it describe */
+/*eslint no-eval: 0 */
+
 import compiler from '../dist/compiler';
 import parser from '../dist/parser';
 import simpleDom from 'simple-dom';
 
-let doc = new simpleDom.Document();
+// let doc = new simpleDom.Document();
 let serializer = new simpleDom.HTMLSerializer(simpleDom.voidMap);
 
 // Compare the attributes of two nodes for equality
@@ -49,19 +52,6 @@ function compareNodes(a, b) {
   return true;
 }
 
-function createTestOutput(test) {
-  let li = document.createElement('li');
-  let desc = document.createElement('p');
-  desc.innerHTML = test.description;
-  li.appendChild(desc);
-  if (test.fail) {
-    li.appendChild(document.createTextNode(test.fail));
-  } else {
-    li.classList.add('pass');
-  }
-  return li;
-}
-
 // FIXME: Why is this needed?
 describe('tests are about to run', function(){
   it('should initiate tests', function(){
@@ -84,14 +74,12 @@ function runSuites(suites) {
         let tl;
         eval(`tl = ${compiledTemplate};`);
         let out = tl.render(test.context);
-        let res;
-        res = false;
 
         setTimeout(function() {
           let htmlString = serializer.serialize(out);
           describe(test.description, function(){
             it(`Expected ${htmlString} to equal ${test.expectedHTML}`, function(done){
-              if (test.expectedHTML) {
+              if (test.expectedHTML !== undefined) {
                 chai.assert.equal(htmlString, test.expectedHTML);
 
                 if (test.expectedHTMLResolved) {
@@ -110,7 +98,7 @@ function runSuites(suites) {
               }
             });
           });
-        }, 0); 
+        }, 0);
       }
     });
   });

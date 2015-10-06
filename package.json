@@ -45,7 +45,7 @@
   },
   "dependencies": {
     "cli": "^0.8.0",
-    "simple-dom": "^0.3.0"
+    "simple-dom": "^0.2.0"
   },
   "repository": {
     "type": "git",
