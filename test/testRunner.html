@@ -1,22 +1,23 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Mocha Tests</title>
+  <title>Tornado Tests</title>
   <link rel="stylesheet" href="../../node_modules/mocha/mocha.css" />
 </head>
 <body>
   <div id="mocha"></div>
-  <script src="../../node_modules/mocha/mocha.js"></script>
-  <script src="../../node_modules/chai/chai.js"></script>
-  <script src="../../node_modules/chai-as-promised/lib/chai-as-promised.js"></script>
-  <script src="../../node_modules/simple-dom/dist/simple-dom.js"></script>
+  <script src="../node_modules/mocha/mocha.js"></script>
+  <script src="../node_modules/chai/chai.js"></script>
+  <script src="../node_modules/chai-as-promised/lib/chai-as-promised.js"></script>
+  <script src="../node_modules/simple-dom/dist/simple-dom.js"></script>
 
   <script>
+    // mocha setup
     mocha.setup('bdd');
     mocha.reporter('html');
   </script>
 
-  <script src="../cacceptance/bundle.js"></script>
+  <script src="cacceptance/bundle.js"></script>
 
   <script>
     // Only tests run in real browser, injected script run if options.run == true

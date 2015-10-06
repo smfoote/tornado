@@ -38,14 +38,16 @@
     "load-grunt-tasks": "^3.1.0",
     "mocha": "^2.2.5",
     "pegjs": "^0.8.0",
+    "phantomjs-polyfill": "0.0.1",
+    "simple-dom": "^0.2.0",
+    "es6-promise": "^3.0.2",
     "uglifyjs": "^2.4.10"
   },
   "directories": {
     "test": "test"
   },
   "dependencies": {
-    "cli": "^0.8.0",
-    "simple-dom": "^0.2.0"
+    "cli": "^0.8.0"
   },
   "repository": {
     "type": "git",

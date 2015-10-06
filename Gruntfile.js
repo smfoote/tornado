@@ -49,11 +49,11 @@ grunt.initConfig({
     target: ['src', 'test/acceptance/*.js']
   },
   mocha: {
-    all: {
-      src: ['test/mochaacceptance/testRunner.html'],
-    },
+    src: ['test/testRunner.html'],
     options: {
-      run: true
+      run: true,
+      logErrors: true,
+      log: true
     }
   },
   peg: {
