@@ -7,10 +7,9 @@ var generator = {
   build: function build(fns) {
     var execute = function execute(instruction, code) {
       var action = instruction.action;
-      var nodeType = instruction.nodeType;
 
-      if (fns["" + action + "_" + nodeType]) {
-        fns["" + action + "_" + nodeType](instruction, code);
+      if (fns["" + action]) {
+        fns["" + action](instruction, code);
       }
     };
 

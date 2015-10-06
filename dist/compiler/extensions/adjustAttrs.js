@@ -80,8 +80,8 @@ var generatedWalker = visitor.build({
 });
 
 var adjustAttrs = {
-  transforms: [function (ast, options) {
-    return generatedWalker(ast, options.context);
+  transforms: [function (ast) {
+    return generatedWalker(ast);
   }]
 };
 

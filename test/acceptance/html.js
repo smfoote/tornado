@@ -179,6 +179,27 @@ let suite = {
         frag.appendChild(svg);
         return frag;
       })()
+    },
+    {
+      description: 'namespace should flow into the next body',
+      template: `<svg version="1.1" baseProfile="full" width="300" height="200" xmlns="http://www.w3.org/2000/svg">{?foo}<rect width="100%" height="100%" fill="red" />{/foo}</svg>`,
+      context: {foo: true},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('version', '1.1');
+        svg.setAttribute('baseProfile', 'full');
+        svg.setAttribute('width', '300');
+        svg.setAttribute('height', '200');
+        svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        let rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('width', '100%');
+        rect.setAttribute('height', '100%');
+        rect.setAttribute('fill', 'red');
+        svg.appendChild(rect);
+        frag.appendChild(svg);
+        return frag;
+      })()
     }
   ]
 };

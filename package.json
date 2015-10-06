@@ -10,7 +10,12 @@
     "tornado": "./bin/tornado"
   },
   "keywords": [
-    "HTML", "templating", "Dust", "asynchronous", "JavaScript", "ES6"
+    "HTML",
+    "templating",
+    "Dust",
+    "asynchronous",
+    "JavaScript",
+    "ES6"
   ],
   "author": "Steven Foote",
   "license": "Apache",
@@ -29,6 +34,7 @@
     "grunt-peg": "^1.5.0",
     "load-grunt-tasks": "^3.1.0",
     "pegjs": "^0.8.0",
+    "tape": "^4.2.0",
     "uglifyjs": "^2.4.10"
   },
   "directories": {

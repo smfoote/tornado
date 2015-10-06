@@ -2,8 +2,6 @@
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
-var Context = _interopRequire(require("./compiler/context"));
-
 var escapableRaw = _interopRequire(require("./compiler/extensions/escapableRaw"));
 
 var builtinHelpers = _interopRequire(require("./compiler/extensions/builtinHelpers"));
@@ -18,6 +16,8 @@ var generateJS = _interopRequire(require("./compiler/extensions/generateJS"));
 
 var postprocess = _interopRequire(require("./compiler/extensions/postprocess"));
 
+var StateApi = _interopRequire(require("./compiler/states/Api"));
+
 var stages = ["checks", "transforms", "instructions"];
 var compiler = {
   checks: [],
@@ -30,12 +30,13 @@ var compiler = {
 
     var results = {
       name: name,
-      instructions: []
+      instructions: [],
+      state: new StateApi(),
+      code: ""
     };
     stages.forEach(function (stage) {
       _this[stage].forEach(function (pass) {
-        var context = new Context(results);
-        pass(ast, { results: results, context: context });
+        pass(ast, { results: results });
       });
     });
     // TODO Don't mutate the results object. Have each pass return its result (and consume the

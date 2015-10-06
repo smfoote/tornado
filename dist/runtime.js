@@ -159,23 +159,35 @@ var tornado = {
    * call td.fetchPartial (which can be user defined), and render the partial that is returned
    * when the Promise returned by td.fetchPartial resolves.
    * @param {String} name The name of the partial to be rendered and returned
+   * @param {[Node]} placeholderNode The node that will be replaced with the rendered body(ies).
    * @param {Object} context The context to be used to render the partial
    * @param {TornadoTemplate} parentTemplate The template object that the template was called from
    * @param {DocumentFragment|Promise}
    */
-  getPartial: function getPartial(name, context, parentTemplate) {
+  getPartial: function getPartial(name, placeholderNode, context, parentTemplate) {
     var _this = this;
 
-    var partial = this.templateCache[name];
+    var partial = this.templateCache[name],
+        node = undefined;
     if (partial) {
       return new Promise(function (resolve /*, reject*/) {
         partial.parentTemplate = parentTemplate;
-        resolve(partial.render(context));
+        node = partial.render(context);
+        if (placeholderNode) {
+          resolve(_this.replaceNode(placeholderNode, node));
+        } else {
+          return resolve(_this.nodeToString(node));
+        }
       });
     } else {
       return this.fetchPartial(name).then(function (partial) {
         partial.parentTemplate = parentTemplate;
-        return partial.render(context);
+        node = partial.render(context);
+        if (placeholderNode) {
+          _this.replaceNode(placeholderNode, node);
+        } else {
+          return _this.nodeToString(node);
+        }
       })["catch"](function (error) {
         return _this.throwError(error);
       });
@@ -276,18 +288,25 @@ var tornado = {
   /**
    * Render a block or inline partial based of a given name.
    * @param {String} name The name of the block
+   * @param {Node} placeholderNode The node where the pending body will be inserted
    * @param {Number} idx The index of the block (in case there are multiples)
    * @param {TornadoTemplate} template The template in which the block was found
    * @return {DocumentFragment}
    */
-  block: function block(name, idx, context, template) {
+  block: function block(name, placeholderNode, idx, context, template) {
     var renderer = this.getBlockRenderer(name, idx, template);
+    var node = undefined;
     if (!renderer) {
       var frag = this.createDocumentFragment();
       frag.appendChild(document.createTextNode(""));
-      return frag;
+      node = frag;
     }
-    return renderer(context).frag;
+    node = renderer.call(template, context);
+    if (placeholderNode) {
+      this.replaceNode(placeholderNode, node);
+    } else {
+      return this.nodeToString(node);
+    }
   },
 
   /**
@@ -302,14 +321,14 @@ var tornado = {
   getBlockRenderer: function getBlockRenderer(name, idx, template) {
     var renderer = undefined;
     while (template) {
-      renderer = template["f_i_" + name];
+      renderer = template["r_i_" + name];
 
       if (renderer && typeof renderer === "function") {
         // Prefer the inline partial renderer
         return renderer;
       } else {
         // Fall back to the block renderer
-        renderer = template["f_b_" + name + "" + idx];
+        renderer = template["r_b_" + name + "" + idx];
         if (renderer && typeof renderer === "function") {
           return renderer;
         }

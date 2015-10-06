@@ -1,5 +1,4 @@
 'use strict';
-import Context from './compiler/context';
 import escapableRaw from './compiler/extensions/escapableRaw';
 import builtinHelpers from './compiler/extensions/builtinHelpers';
 import htmlEntities from './compiler/extensions/htmlEntities';
@@ -7,6 +6,7 @@ import adjustAttrs from './compiler/extensions/adjustAttrs';
 import buildInstructions from './compiler/extensions/buildInstructions';
 import generateJS from './compiler/extensions/generateJS';
 import postprocess from './compiler/extensions/postprocess';
+import {default as StateApi} from './compiler/states/Api';
 
 
 const stages = ['checks', 'transforms', 'instructions'];
@@ -19,12 +19,13 @@ let compiler = {
   compile(ast, name/*, options*/) {
     let results = {
       name,
-      instructions: []
+      instructions: [],
+      state: new StateApi(),
+      code: ''
     };
     stages.forEach(stage => {
       this[stage].forEach(pass =>{
-        let context = new Context(results);
-        pass(ast, {results, context});
+        pass(ast, {results});
       });
     });
     // TODO Don't mutate the results object. Have each pass return its result (and consume the

@@ -28,8 +28,8 @@ var generatedWalker = visitor.build({
 });
 
 var htmlEntities = {
-  transforms: [function (ast, options) {
-    return generatedWalker(ast, options.context);
+  transforms: [function (ast) {
+    return generatedWalker(ast);
   }]
 };
 

@@ -8,7 +8,6 @@ let suite = {
       context: {},
       expectedDom: (() => {
         let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode(''));
         return frag;
       })()
     },
@@ -117,6 +116,24 @@ let suite = {
       description: 'Block in parent template, inline-partial in child template',
       setup(parser, compiler) {
         let parent = '<div>{+content/}</div>';
+        let ast = parser.parse(parent);
+        let compiledTemplate = compiler.compile(ast, 'parent');
+        eval(compiledTemplate);
+      },
+      template: '{>parent/}{<content}Child content{/content}',
+      context: {},
+      expectedDom: (() => {
+        let frag = document.createDocumentFragment();
+        let div = document.createElement('div');
+        div.appendChild(document.createTextNode('Child content'));
+        frag.appendChild(div);
+        return frag;
+      })()
+    },
+    {
+      description: 'Block with default in parent template, inline-partial in child template',
+      setup(parser, compiler) {
+        let parent = '<div>{+content}default{/content}</div>';
         let ast = parser.parse(parent);
         let compiledTemplate = compiler.compile(ast, 'parent');
         eval(compiledTemplate);
