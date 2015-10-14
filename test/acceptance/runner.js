@@ -1,3 +1,9 @@
+import Promise from 'es6-promise';
+if (!(window && window.Promise)) {
+  Promise.polyfill();
+}
+// Function.bind polyfill.
+import 'phantomjs-polyfill';
 import {runSuites} from '../testRunner.js';
 import htmlTests from './html';
 import helperTests from './helper';

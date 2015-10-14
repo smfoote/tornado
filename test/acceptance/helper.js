@@ -14,11 +14,7 @@ let suite = {
       },
       template: '{@createDiv/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createElement('div'));
-        return frag;
-      })()
+      expectedHTML: '<div></div>'
     },
     {
       description: 'Helper with a parameter',
@@ -31,11 +27,7 @@ let suite = {
       },
       template: '{@createEl name="div"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createElement('div'));
-        return frag;
-      })()
+      expectedHTML: '<div></div>'
     },
     {
       description: 'Helper with a parameter that is a Tornado reference',
@@ -48,11 +40,7 @@ let suite = {
       },
       template: '{@createEl name=elName/}',
       context: {elName: 'div'},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createElement('div'));
-        return frag;
-      })()
+      expectedHTML: '<div></div>'
     },
     {
       description: 'Helper with a parameter that is a Tornado reference with a promise',
@@ -67,35 +55,19 @@ let suite = {
       context: {elName: new Promise(resolve=> {
         resolve('div');
       })},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createElement('div'));
-        return frag;
-      })()
+      expectedHTML: '<div></div>'
     },
     {
       description: 'Helper with a body (tests @eq with strings)',
       template: '{@eq key="hello" val="hello"}<div>Hello, helpers!</div>{/eq}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Hello, helpers!'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Hello, helpers!</div>'
     },
     {
       description: 'Helper with an else body (tests @eq where strings are not equal)',
       template: '{@eq key="hello" val="hi"}<div>Hello, helpers!</div>{:else}<div>Not equal :(</div>{/eq}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Not equal :('));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Not equal :(</div>'
     },
     {
       description: 'Helper with a named body',
@@ -110,37 +82,19 @@ let suite = {
       },
       template: '{@waffles key="hello" val="hi"}<div>Hello, helpers!</div>{:waffles}<div>I love waffles!</div>{/waffles}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('I love waffles!'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>I love waffles!</div>'
     },
     {
       description: '@eq with equal numbers',
       template: '{@eq key=5 val=5}<div>2 + 2</div>{:else}<div>Not equal :(</div>{/eq}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('2 + 2'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>2 + 2</div>'
     },
     {
       description: '@eq with non-equal numbers',
       template: '{@eq key=5 val=6}<div>2 + 2</div>{:else}<div>Not equal :(</div>{/eq}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Not equal :('));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Not equal :(</div>'
     },
     {
       description: '@eq with dynamic values',
@@ -151,211 +105,109 @@ let suite = {
           return this.friends.length;
         }
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Just the right amount of friends'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Just the right amount of friends</div>'
     },
     {
       description: '@ne with non-equal numbers',
       template: '{@ne key=5 val=6}<div>2 + 2</div>{:else}<div>These are equal :(</div>{/ne}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('2 + 2'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>2 + 2</div>'
     },
     {
       description: '@ne with equal numbers',
       template: '{@ne key=5 val=5}<div>2 + 2</div>{:else}<div>These are equal :(</div>{/ne}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('These are equal :('));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>These are equal :(</div>'
     },
     {
-      description: '@ne with with key and val of 0',
+      description: '@ne with key and val of 0',
       template: '{@ne key=0 val=0}<div>2 + 2</div>{:else}<div>These are equal :(</div>{/ne}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('These are equal :('));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>These are equal :(</div>'
     },
     {
       description: '@ne with non-equal strings',
       template: '{@ne key="hello" val="bonjour"}<div>Bonjour, ça va?</div>{:else}<div>Huh?</div>{/ne}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Bonjour, ça va?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Bonjour, ça va?</div>'
     },
     {
       description: '@ne with equal strings',
       template: '{@ne key="Bom dia" val="Bom dia"}<div>Tudo bem, filho?</div>{:else}<div>Huh?</div>{/ne}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('Huh?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>Huh?</div>'
     },
     {
       description: '@gt where key is greater than val',
       template: '{@gt key=42 val=2}<div>This is the answer?</div>{/gt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@gt where key is less than val',
       template: '{@gt key=2 val=42}<div>This is the answer?</div>{:else}<div>What was the question?</div>{/gt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('What was the question?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>What was the question?</div>'
     },
     {
       description: '@gt where key and val are equal',
       template: '{@gt key=2 val=2}<div>This is the answer?</div>{:else}<div>They are the same</div>{/gt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('They are the same'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>They are the same</div>'
     },
     {
       description: '@gte where key is greater than val',
       template: '{@gte key=42 val=2}<div>This is the answer?</div>{/gte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@gte where key is less than val',
       template: '{@gte key=2 val=42}<div>This is the answer?</div>{:else}<div>What was the question?</div>{/gte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('What was the question?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>What was the question?</div>'
     },
     {
       description: '@gte where key and val are equal',
       template: '{@gte key=2 val=2}<div>This is the answer?</div>{:else}<div>They are the same</div>{/gte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@lt where key is greater than val',
       template: '{@lt key=42 val=2}<div>This is the answer?</div>{/lt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@lt where key is less than val',
       template: '{@lt key=2 val=42}<div>This is the answer?</div>{:else}<div>What was the question?</div>{/lt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@lt where key and val are equal',
       template: '{@lt key=2 val=2}<div>This is the answer?</div>{:else}<div>They are the same</div>{/lt}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('They are the same'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>They are the same</div>'
     },
     {
       description: '@lte where key is greater than val',
       template: '{@lte key=42 val=2}<div>This is the answer?</div>{/lte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@lte where key is less than val',
       template: '{@lte key=2 val=42}<div>This is the answer?</div>{:else}<div>What was the question?</div>{/lte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@lte where key and val are equal',
       template: '{@lte key=2 val=2}<div>This is the answer?</div>{:else}<div>They are the same</div>{/lte}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('This is the answer?'));
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>This is the answer?</div>'
     },
     {
       description: '@sep in a section-loop with just one item',
@@ -363,11 +215,7 @@ let suite = {
       context: {
         names: ['Steven']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Steven'));
-        return frag;
-      })()
+      expectedHTML: 'Steven'
     },
     {
       description: '@sep in a section-loop with multiple items',
@@ -375,15 +223,7 @@ let suite = {
       context: {
         names: ['Steven', 'Jimmy', 'Prash']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(document.createTextNode('; '));
-        frag.appendChild(document.createTextNode('Jimmy'));
-        frag.appendChild(document.createTextNode('; '));
-        frag.appendChild(document.createTextNode('Prash'));
-        return frag;
-      })()
+      expectedHTML: 'Steven; Jimmy; Prash'
     },
     {
       description: '@sep in a nested section-loop with multiple items',
@@ -394,31 +234,7 @@ let suite = {
           {first: 'Prash', last: ['J', 'a', 'i', 'n']}
         ]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(document.createTextNode(' '));
-        frag.appendChild(document.createTextNode('F'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('o'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('o'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('t'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('e'));
-        frag.appendChild(document.createTextNode('; '));
-        frag.appendChild(document.createTextNode('Prash'));
-        frag.appendChild(document.createTextNode(' '));
-        frag.appendChild(document.createTextNode('J'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('a'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('i'));
-        frag.appendChild(document.createTextNode(','));
-        frag.appendChild(document.createTextNode('n'));
-        return frag;
-      })()
+      expectedHTML: 'Steven F,o,o,t,e; Prash J,a,i,n'
     },
     {
       description: '@sep in a section-loop with no items',
@@ -426,21 +242,13 @@ let suite = {
       context: {
         names: []
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@sep outside of a loop',
       template: '<span>{@sep}artificial separation{/sep}</span>',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span></span>'
     },
     {
       description: '@first in a loop with one item',
@@ -448,14 +256,7 @@ let suite = {
       context: {
         names: ['Steven']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', 'first');
-        span.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class="first">Steven</span>'
     },
     {
       description: '@first in a loop with multiple items',
@@ -463,22 +264,7 @@ let suite = {
       context: {
         names: ['Steven', 'Jimmy', 'Prash']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', 'first');
-        span.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('Jimmy'));
-        frag.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('Prash'));
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class="first">Steven</span><span class>Jimmy</span><span class>Prash</span>'
     },
     {
       description: '@first in a nested loop with multiple items',
@@ -489,52 +275,7 @@ let suite = {
           {first: 'Prash', last: ['J', 'a', 'i', 'n']}
         ]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'container outer-first');
-        let span = document.createElement('span');
-        span.setAttribute('class', 'first');
-        span.appendChild(document.createTextNode('F'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('o'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('o'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('t'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('e'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        div = document.createElement('div');
-        div.setAttribute('class', 'container');
-        span = document.createElement('span');
-        span.setAttribute('class', 'first');
-        span.appendChild(document.createTextNode('J'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('a'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('i'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('n'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="container outer-first"><span class="first">F</span><span class>o</span><span class>o</span><span class>t</span><span class>e</span></div><div class="container"><span class="first">J</span><span class>a</span><span class>i</span><span class>n</span></div>'
     },
     {
       description: '@first in a loop with no items',
@@ -542,10 +283,7 @@ let suite = {
       context: {
         names: []
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@first outside of a loop',
@@ -553,13 +291,7 @@ let suite = {
       context: {
         names: []
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', '');
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class></span>'
     },
     {
       description: '@last in a loop with one item',
@@ -567,14 +299,7 @@ let suite = {
       context: {
         names: ['Steven']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', 'last');
-        span.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class="last">Steven</span>'
     },
     {
       description: '@last in a loop with multiple items',
@@ -582,22 +307,7 @@ let suite = {
       context: {
         names: ['Steven', 'Jimmy', 'Prash']
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('Steven'));
-        frag.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('Jimmy'));
-        frag.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', 'last');
-        span.appendChild(document.createTextNode('Prash'));
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class>Steven</span><span class>Jimmy</span><span class="last">Prash</span>'
     },
     {
       description: '@last in a nested loop with multiple items',
@@ -608,52 +318,7 @@ let suite = {
           {first: 'Prash', last: ['J', 'a', 'i', 'n']}
         ]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.setAttribute('class', 'container');
-        let span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('F'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('o'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('o'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('t'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', 'last');
-        span.appendChild(document.createTextNode('e'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        div = document.createElement('div');
-        div.setAttribute('class', 'container outer-last');
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('J'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('a'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', '');
-        span.appendChild(document.createTextNode('i'));
-        div.appendChild(span);
-        span = document.createElement('span');
-        span.setAttribute('class', 'last');
-        span.appendChild(document.createTextNode('n'));
-        div.appendChild(span);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div class="container"><span class>F</span><span class>o</span><span class>o</span><span class>t</span><span class="last">e</span></div><div class="container outer-last"><span class>J</span><span class>a</span><span class>i</span><span class="last">n</span></div>'
     },
     {
       description: '@last in a loop with no items',
@@ -661,10 +326,7 @@ let suite = {
       context: {
         names: []
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@last outside of a loop',
@@ -672,13 +334,7 @@ let suite = {
       context: {
         names: []
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let span = document.createElement('span');
-        span.setAttribute('class', '');
-        frag.appendChild(span);
-        return frag;
-      })()
+      expectedHTML: '<span class></span>'
     },
     {
       description: '@select with only @default',
@@ -686,11 +342,7 @@ let suite = {
       context: {
         type: 'green'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('Default'));
-        return frag;
-      })()
+      expectedHTML: 'Default'
     },
     {
       description: '@select with @eq that matches',
@@ -698,11 +350,7 @@ let suite = {
       context: {
         type: 'green'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('GREEN!'));
-        return frag;
-      })()
+      expectedHTML: 'GREEN!'
     },
     {
       description: '@select with multiple @eq, one that matches',
@@ -710,11 +358,7 @@ let suite = {
       context: {
         type: 'green'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('GREEN!'));
-        return frag;
-      })()
+      expectedHTML: 'GREEN!'
     },
     {
       description: '@select with multiple @eq, none match',
@@ -722,10 +366,7 @@ let suite = {
       context: {
         type: 'yellow'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        return frag;
-      })()
+      expectedHTML: ''
     },
     {
       description: '@select with multiple @eq, none match, and a @default',
@@ -733,11 +374,7 @@ let suite = {
       context: {
         type: 'yellow'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('A lack of color here'));
-        return frag;
-      })()
+      expectedHTML: 'A lack of color here'
     },
     {
       description: '@select with multiple @eq, one match, and a @default',
@@ -745,11 +382,7 @@ let suite = {
       context: {
         type: 'green'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('GREEN!'));
-        return frag;
-      })()
+      expectedHTML: 'GREEN!'
     },
     {
       description: 'Nested @select',
@@ -758,13 +391,7 @@ let suite = {
         type: 'green',
         category: 'color'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('A lack of '));
-        frag.appendChild(document.createTextNode('color'));
-        frag.appendChild(document.createTextNode(' here'));
-        return frag;
-      })()
+      expectedHTML: 'A lack of color here'
     },
     {
       description: 'Nested @select with nested @default',
@@ -773,153 +400,91 @@ let suite = {
         type: 'green',
         category: 'stuff'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('A lack of '));
-        frag.appendChild(document.createTextNode('category'));
-        frag.appendChild(document.createTextNode(' here'));
-        return frag;
-      })()
+      expectedHTML: 'A lack of category here'
     },
     {
       description: '@math with no body -- add',
       template: '{@math a=1 b=2 operator="add"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('3'));
-        return frag;
-      })()
+      expectedHTML: '3'
     },
     {
       description: '@math with no body -- (+)',
       template: '{@math a=1 b=2 operator="+"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('3'));
-        return frag;
-      })()
+      expectedHTML: '3'
     },
     {
       description: '@math with no body -- subtract',
       template: '{@math a=1 b=2 operator="subtract"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('-1'));
-        return frag;
-      })()
+      expectedHTML: '-1'
     },
     {
       description: '@math with no body -- (-))',
       template: '{@math a=1 b=2 operator="-"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('-1'));
-        return frag;
-      })()
+      expectedHTML: '-1'
     },
     {
       description: '@math with no body -- multiply',
       template: '{@math a=7 b=6 operator="multiply"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('42'));
-        return frag;
-      })()
+      expectedHTML: '42'
     },
     {
       description: '@math with no body -- (*)',
       template: '{@math a=7 b=6 operator="*"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('42'));
-        return frag;
-      })()
+      expectedHTML: '42'
     },
     {
       description: '@math with no body -- divide',
       template: '{@math a=144 b=12 operator="divide"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('12'));
-        return frag;
-      })()
+      expectedHTML: '12'
     },
     {
       description: '@math with no body -- (/)',
       template: '{@math a=144 b=12 operator="/"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('12'));
-        return frag;
-      })()
+      expectedHTML: '12'
     },
     {
       description: '@math with no body -- mod',
       template: '{@math a=15 b=12 operator="mod"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('3'));
-        return frag;
-      })()
+      expectedHTML: '3'
     },
     {
       description: '@math with no body -- (%)',
       template: '{@math a=15 b=12 operator="%"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('3'));
-        return frag;
-      })()
+      expectedHTML: '3'
     },
     {
       description: '@math with no body -- ceil',
       template: '{@math a=1.5 operator="ceil"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('2'));
-        return frag;
-      })()
+      expectedHTML: '2'
     },
     {
       description: '@math with no body -- floor',
       template: '{@math a=1.5 operator="floor"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('1'));
-        return frag;
-      })()
+      expectedHTML: '1'
     },
     {
       description: '@math with no body -- round',
       template: '{@math a=1.5 operator="round"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('2'));
-        return frag;
-      })()
+      expectedHTML: '2'
     },
     {
       description: '@math with no body -- abs',
       template: '{@math a=-15 operator="abs"/}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('15'));
-        return frag;
-      })()
+      expectedHTML: '15'
     },
     {
       description: '@math with no body -- toint',
@@ -927,11 +492,7 @@ let suite = {
       context: {
         age: '15'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('15'));
-        return frag;
-      })()
+      expectedHTML: '15'
     },
     {
       description: '@math with body and @eq',
@@ -939,11 +500,7 @@ let suite = {
       context: {
         age: '15'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('!Quinceanera!'));
-        return frag;
-      })()
+      expectedHTML: '!Quinceanera!'
     },
     {
       description: '@math with body and @gt',
@@ -951,11 +508,7 @@ let suite = {
       context: {
         hour: '17'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('It\'s past 3 o\'clock'));
-        return frag;
-      })()
+      expectedHTML: 'It\'s past 3 o\'clock'
     },
     {
       description: '@math with body and @default',
@@ -963,26 +516,13 @@ let suite = {
       context: {
         hour: '15'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('It\'s not past 3 yet'));
-        return frag;
-      })()
+      expectedHTML: 'It\'s not past 3 yet'
     },
     {
       description: '@repeat with no references in the body',
       template: '{@repeat count=2}<p>Hello!</p>{/repeat}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let p = document.createElement('p');
-        p.appendChild(document.createTextNode('Hello!'));
-        frag.appendChild(p);
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('Hello!'));
-        frag.appendChild(p);
-        return frag;
-      })()
+      expectedHTML: '<p>Hello!</p><p>Hello!</p>'
     },
     {
       description: '@repeat with references in the body',
@@ -990,39 +530,13 @@ let suite = {
       context: {
         name: 'Mundo'
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let p = document.createElement('p');
-        p.appendChild(document.createTextNode('Hello, '));
-        p.appendChild(document.createTextNode('Mundo'));
-        p.appendChild(document.createTextNode('!'));
-        frag.appendChild(p);
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('Hello, '));
-        p.appendChild(document.createTextNode('Mundo'));
-        p.appendChild(document.createTextNode('!'));
-        frag.appendChild(p);
-        return frag;
-      })()
+      expectedHTML: '<p>Hello, Mundo!</p><p>Hello, Mundo!</p>'
     },
     {
       description: '@repeat with references to $idx and $len',
       template: '{@repeat count=2}<p>{$idx} of {$len}</p>{/repeat}',
       context: {},
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let p = document.createElement('p');
-        p.appendChild(document.createTextNode('0'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        frag.appendChild(p);
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('1'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        frag.appendChild(p);
-        return frag;
-      })()
+      expectedHTML: '<p>0 of 2</p><p>1 of 2</p>'
     },
     {
       description: '@repeat nested within section with references to $idx and $len',
@@ -1030,42 +544,7 @@ let suite = {
       context: {
         numbers: [1,2]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        let div = document.createElement('div');
-        div.appendChild(document.createTextNode('0'));
-        div.appendChild(document.createTextNode(': '));
-        div.appendChild(document.createTextNode('1'));
-        div.appendChild(document.createTextNode(' '));
-        let p = document.createElement('p');
-        p.appendChild(document.createTextNode('0'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        div.appendChild(p);
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('1'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        div.appendChild(p);
-        frag.appendChild(div);
-        div = document.createElement('div');
-        div.appendChild(document.createTextNode('1'));
-        div.appendChild(document.createTextNode(': '));
-        div.appendChild(document.createTextNode('2'));
-        div.appendChild(document.createTextNode(' '));
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('0'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        div.appendChild(p);
-        p = document.createElement('p');
-        p.appendChild(document.createTextNode('1'));
-        p.appendChild(document.createTextNode(' of '));
-        p.appendChild(document.createTextNode('2'));
-        div.appendChild(p);
-        frag.appendChild(div);
-        return frag;
-      })()
+      expectedHTML: '<div>0: 1 <p>0 of 2</p><p>1 of 2</p></div><div>1: 2 <p>0 of 2</p><p>1 of 2</p></div>'
     },
     {
       description: 'Helper context dotted reference lookup',
@@ -1076,14 +555,7 @@ let suite = {
         },
         numbers: [1,2]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode('#'));
-        frag.appendChild(document.createTextNode('1'));
-        frag.appendChild(document.createTextNode('#'));
-        frag.appendChild(document.createTextNode('2'));
-        return frag;
-      })()
+      expectedHTML: '#1#2'
     },
     {
       description: 'Helper context dotted reference, first step doesn\'t exist',
@@ -1094,14 +566,7 @@ let suite = {
         },
         numbers: [1,2]
       },
-      expectedDom: (() => {
-        let frag = document.createDocumentFragment();
-        frag.appendChild(document.createTextNode(''));
-        frag.appendChild(document.createTextNode('1'));
-        frag.appendChild(document.createTextNode(''));
-        frag.appendChild(document.createTextNode('2'));
-        return frag;
-      })()
+      expectedHTML: '12'
     }
   ]
 };

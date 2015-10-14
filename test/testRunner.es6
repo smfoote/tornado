@@ -1,72 +1,22 @@
+/*global chai it describe */
+/*eslint no-eval: 0 */
+
 import compiler from '../dist/compiler';
 import parser from '../dist/parser';
+import simpleDom from 'simple-dom';
 
+let serializer = new simpleDom.HTMLSerializer(simpleDom.voidMap);
 
-// Compare the attributes of two nodes for equality
-function compareAttrs(a, b) {
-  var attr, attrName;
-  for (let i = 0, len = a.length; i < len; i++) {
-    attr = a[i];
-    attrName = attr.name;
-    if (!b[attrName] || b[attrName].value !== attr.value) {
-      return false;
-    }
-  }
-  return true;
-}
-
-// Compare DOM nodes for equality
-function compareNodes(a, b) {
-  let aChildren = a.childNodes || [];
-  let bChildren = b.childNodes || [];
-  let aAttributes = a.attributes || [];
-  let bAttributes = b.attributes || [];
-  if (a.nodeType !== b.nodeType || (a.tagName !== b.tagName)) {
-    return false;
-  }
-  if (a.nodeType === 3 && a.data !== b.data) {
-    // Compare text node values
-    return false;
-  }
-  if ((aChildren.length !== bChildren.length) ||
-      (aAttributes.length !== bAttributes.length)) {
-    return false;
-  }
-  if (!compareAttrs(aAttributes, bAttributes)) {
-    return false;
-  }
-
-  for (var i = 0, len = aChildren.length; i < len; i++) {
-    let childrenMatch = compareNodes(aChildren[i], bChildren[i]);
-    if (!childrenMatch) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function createTestOutput(test) {
-  let li = document.createElement('li');
-  let desc = document.createElement('p');
-  desc.innerHTML = test.description;
-  li.appendChild(desc);
-  if (test.fail) {
-    li.appendChild(document.createTextNode(test.fail));
-  } else {
-    li.classList.add('pass');
-  }
-  return li;
-}
+// FIXME: Why is this needed?
+describe('tests are about to run', function(){
+  it('should initiate tests', function(){
+      chai.assert.equal('x', 'x');
+  });
+});
 
 function runSuites(suites) {
   const compilerModes = ['dev', 'production'];
-  let container = document.querySelector('#output');
   suites.forEach(suite => {
-    let suiteContainer = document.createElement('div');
-    let header = document.createElement('h2');
-    header.appendChild(document.createTextNode(suite.name));
-    suiteContainer.appendChild(header);
-    container.appendChild(suiteContainer);
     suite.tests.forEach(test => {
       if (test.setup && typeof test.setup === 'function') {
         test.setup(parser, compiler);
@@ -79,18 +29,24 @@ function runSuites(suites) {
         let tl;
         eval(`tl = ${compiledTemplate};`);
         let out = tl.render(test.context);
-        let res;
-        // Wait for promises to resolve
-        setTimeout(() => {
-          res = compareNodes(out, test.expectedDom);
-          if (!res) {
-            let div = document.createElement('div');
-            div.appendChild(out);
-            let expectedDiv = document.createElement('div');
-            expectedDiv.appendChild(test.expectedDom);
-            test.fail = `Expected ${div.innerHTML} to equal ${expectedDiv.innerHTML}`;
-          }
-          suiteContainer.appendChild(createTestOutput(test, res));
+
+        setTimeout(function() {
+          let htmlString = serializer.serialize(out);
+          describe(test.description, function(){
+            it(`Expected ${htmlString} to equal ${test.expectedHTML}`, function(done) {
+              chai.assert.equal(htmlString, test.expectedHTML);
+              if (test.expectedHTMLResolved) {
+                // TODO: Either figure out chai promises or use a smaller timeout and just use mocha
+                setTimeout(function() {
+                  let resolvedHTMLString = serializer.serialize(out);
+                  chai.assert.equal(resolvedHTMLString, test.expectedHTMLResolved);
+                  done();
+                }, 200);
+              } else {
+                done();
+              }
+            });
+          });
         }, 0);
       }
     });

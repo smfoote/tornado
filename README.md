@@ -73,4 +73,4 @@ Acceptance tests are found in [test/acceptance/](test/acceptance/). If you make 
 $ grunt acceptance
 ```
 
-To see the results of the tests, open tests/acceptance/index.html in your browser.
+To see the results of the tests, open tests/testRunner.html in your browser.

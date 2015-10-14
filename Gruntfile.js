@@ -48,6 +48,14 @@ grunt.initConfig({
   eslint: {
     target: ['src', 'test/acceptance/*.js']
   },
+  mocha: {
+    src: ['test/testRunner.html'],
+    options: {
+      run: true,
+      logErrors: true,
+      log: true
+    }
+  },
   peg: {
     dist: {
       src: 'src/grammar.pegjs',
@@ -78,9 +86,10 @@ grunt.initConfig({
 });
 
 grunt.task.loadTasks('grunt-tasks/');
+grunt.loadNpmTasks('grunt-mocha');
 
 grunt.registerTask('dist', ['peg', 'eslint', 'babel:dist']);
-grunt.registerTask('acceptance', ['dist', 'babel:acceptance', 'browserify:test']);
+grunt.registerTask('test', ['dist', 'babel:acceptance', 'browserify:test', 'mocha']);
 grunt.registerTask('sandbox', ['dist', 'browserify:sandbox']);
 grunt.registerTask('benchmark', ['dist', 'bytesize', 'templateSize']);
 

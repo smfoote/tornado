@@ -10,13 +10,20 @@
     "tornado": "./bin/tornado"
   },
   "keywords": [
-    "HTML", "templating", "Dust", "asynchronous", "JavaScript", "ES6"
+    "HTML",
+    "templating",
+    "Dust",
+    "asynchronous",
+    "JavaScript",
+    "ES6"
   ],
   "author": "Steven Foote",
   "license": "Apache",
   "devDependencies": {
     "brfs": "^0.2.0",
     "bytesize": "^0.2.0",
+    "chai": "^3.2.0",
+    "chai-as-promised": "^5.1.0",
     "dustjs-linkedin": "^2.7.1",
     "grunt": "^0.4.5",
     "grunt-babel": "^4.0.0",
@@ -26,9 +33,14 @@
     "grunt-contrib-uglify": "^0.9.1",
     "grunt-contrib-watch": "^0.6.1",
     "grunt-eslint": "^13.0.0",
+    "grunt-mocha": "^0.4.13",
     "grunt-peg": "^1.5.0",
     "load-grunt-tasks": "^3.1.0",
+    "mocha": "^2.2.5",
     "pegjs": "^0.8.0",
+    "phantomjs-polyfill": "0.0.1",
+    "simple-dom": "^0.2.0",
+    "es6-promise": "^3.0.2",
     "uglifyjs": "^2.4.10"
   },
   "directories": {

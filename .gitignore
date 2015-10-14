@@ -1,6 +1,7 @@
 node_modules/
 test/cacceptance/
 test/sandbox/bundle.js
+.DS_Store
 benchmark/bundle.js
 test/testRunner.js
 *.map
