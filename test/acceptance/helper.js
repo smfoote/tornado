@@ -545,6 +545,28 @@ let suite = {
         numbers: [1,2]
       },
       expectedHTML: '<div>0: 1 <p>0 of 2</p><p>1 of 2</p></div><div>1: 2 <p>0 of 2</p><p>1 of 2</p></div>'
+    },
+    {
+      description: 'Helper context dotted reference lookup',
+      template: '{#numbers root=root}{$root.symbol}{.}{/numbers}',
+      context: {
+        root: {
+          symbol: '#'
+        },
+        numbers: [1,2]
+      },
+      expectedHTML: '#1#2'
+    },
+    {
+      description: 'Helper context dotted reference, first step doesn\'t exist',
+      template: '{#numbers root=root}{$rot.symbol}{.}{/numbers}',
+      context: {
+        root: {
+          symbol: '#'
+        },
+        numbers: [1,2]
+      },
+      expectedHTML: '12'
     }
   ]
 };
