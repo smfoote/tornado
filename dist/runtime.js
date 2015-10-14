@@ -382,12 +382,12 @@ var tornado = {
   createTextNode: function createTextNode(val) {
     if (this.util.isPromise(val)) {
       return val.then(function (data) {
-        return document.createTextNode(data);
+        return document.createTextNode(data.toString());
       })["catch"](function () {
         return document.createTextNode("");
       });
     } else {
-      return document.createTextNode(val);
+      return document.createTextNode(val.toString());
     }
   },
 

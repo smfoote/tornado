@@ -357,10 +357,10 @@ let tornado = {
    */
   createTextNode(val) {
     if (this.util.isPromise(val)) {
-      return val.then(data => document.createTextNode(data))
+      return val.then(data => document.createTextNode(data.toString()))
                 .catch(() => document.createTextNode(''));
     } else {
-      return document.createTextNode(val);
+      return document.createTextNode(val.toString());
     }
   },
 
