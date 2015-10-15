@@ -13,6 +13,20 @@ module.exports = {
       }
     },
     {
+      name: 'asyncResults',
+      str: fs.readFileSync(__dirname + '/templates/results.td', 'utf8'),
+      data: {
+        name: 'results',
+        elapsedTime: function() {
+          return new Promise(function(res, rej) {
+            setTimeout(function() {
+              res(6006);
+            }, 150);
+          });
+        }
+      }
+    },
+    {
       name: 'search',
       str: fs.readFileSync(__dirname + '/templates/search.td', 'utf8'),
       data: {
