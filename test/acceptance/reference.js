@@ -196,6 +196,17 @@ let suite = {
         }
       },
       expectedHTML: '<blockquote>The name is Bond.</blockquote>'
+    },
+    {
+      description: 'Reference with a non-dot separator, where dots in reference are not part of the path',
+      name: 'dots',
+      template: '{com.linkedin.dots.in.path|myVal sep="|"}',
+      context: {
+        'com.linkedin.dots.in.path': {
+          myVal: 'win!'
+        }
+      },
+      expectedHTML: 'win!'
     }
   ]
 };

@@ -138,12 +138,12 @@ module.exports = (function() {
         peg$c43 = function(id) {
             return {key: id};
           },
-        peg$c44 = function(r, filters) {
+        peg$c44 = function(r, p) {
             var key = r.split('.');
             if (r === '.') {
               key = [];
             }
-            return ['TORNADO_REFERENCE', {key: key, filters: filters}]
+            return ['TORNADO_REFERENCE', {key: key, params: p}]
           },
         peg$c45 = function(key, params) {
             return ['TORNADO_PARTIAL', {
@@ -151,10 +151,10 @@ module.exports = (function() {
               params: params
             }];
           },
-        peg$c46 = /^[a-zA-Z_$.]/,
-        peg$c47 = { type: "class", value: "[a-zA-Z_$.]", description: "[a-zA-Z_$.]" },
-        peg$c48 = /^[a-zA-Z0-9_$-.]/,
-        peg$c49 = { type: "class", value: "[a-zA-Z0-9_$-.]", description: "[a-zA-Z0-9_$-.]" },
+        peg$c46 = /^[a-zA-Z_$.,|]/,
+        peg$c47 = { type: "class", value: "[a-zA-Z_$.,|]", description: "[a-zA-Z_$.,|]" },
+        peg$c48 = /^[a-zA-Z0-9_$-.,|]/,
+        peg$c49 = { type: "class", value: "[a-zA-Z0-9_$-.,|]", description: "[a-zA-Z0-9_$-.,|]" },
         peg$c50 = function(first, after) {
             return first + after.join('');
           },
@@ -1760,7 +1760,7 @@ module.exports = (function() {
       if (s1 !== peg$FAILED) {
         s2 = peg$parsetornado_key();
         if (s2 !== peg$FAILED) {
-          s3 = peg$parsetornado_filters();
+          s3 = peg$parsetornado_params();
           if (s3 !== peg$FAILED) {
             s4 = peg$parserbrace();
             if (s4 !== peg$FAILED) {

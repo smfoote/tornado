@@ -22,8 +22,8 @@ function runSuites(suites) {
         test.setup(parser, compiler);
       }
       let html = test.template;
-      let ast = parser.parse(html);
       for (let i = 0; i < 2; i++) {
+        let ast = parser.parse(html);
         compiler.mode = compilerModes[i];
         let compiledTemplate = compiler.compile(ast, test.name || 'abc');
         let tl;

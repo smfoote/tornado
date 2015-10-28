@@ -1,6 +1,7 @@
 'use strict';
 import Context from './compiler/context';
 import escapableRaw from './compiler/extensions/escapableRaw';
+import references from './compiler/extensions/references';
 import builtinHelpers from './compiler/extensions/builtinHelpers';
 import htmlEntities from './compiler/extensions/htmlEntities';
 import adjustAttrs from './compiler/extensions/adjustAttrs';
@@ -48,6 +49,6 @@ let compiler = {
   }
 };
 
-compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
+compiler.useExtensions([references, builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
 
 export default compiler;
