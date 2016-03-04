@@ -34,6 +34,11 @@ codeGenerator.useCodeGeneratorFns({
       code.push(tdBody, {renderer});
     }
   },
+  insert_TORNADO_DEBUGGER(instruction, code) {
+    let {tdBody} = instruction;
+    let renderer = '      debugger;\n';
+    code.push(tdBody, {renderer});
+  },
   open_TORNADO_BODY(instruction, code) {
     let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
     if (needsOwnMethod) {

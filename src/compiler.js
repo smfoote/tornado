@@ -30,6 +30,7 @@ let compiler = {
     // TODO Don't mutate the results object. Have each pass return its result (and consume the
     // previous pass's result) instead.
     this.codeGenerator(results);
+    console.log(JSON.stringify(results.instructions, null, 2));
     this.postprocessor(results);
     return results.code;
   },

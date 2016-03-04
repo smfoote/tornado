@@ -108,9 +108,6 @@ let helpers = {
       return frag;
     }
   },
-  debugger() {
-    debugger;
-  },
   select(context, params, bodies, td) {
     let {helperContext} = td;
     let {key} = params;

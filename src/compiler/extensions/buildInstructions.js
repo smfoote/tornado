@@ -17,6 +17,11 @@ let generateWalker = visitor.build({
       ctx.pushInstruction(new Instruction('close', {item, ctx}));
     }
   },
+  TORNADO_DEBUGGER: {
+    enter(item, ctx) {
+      ctx.pushInstruction(new Instruction('insert', {key: item.node[1].key, item, ctx}));
+    }
+  },
   TORNADO_REFERENCE: {
     enter(item, ctx) {
       ctx.pushInstruction(new Instruction('insert', {key: item.node[1].key, item, ctx}));

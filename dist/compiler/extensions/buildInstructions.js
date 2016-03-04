@@ -20,6 +20,11 @@ var generateWalker = visitor.build({
       ctx.pushInstruction(new Instruction("close", { item: item, ctx: ctx }));
     }
   },
+  TORNADO_DEBUGGER: {
+    enter: function enter(item, ctx) {
+      ctx.pushInstruction(new Instruction("insert", { key: item.node[1].key, item: item, ctx: ctx }));
+    }
+  },
   TORNADO_REFERENCE: {
     enter: function enter(item, ctx) {
       ctx.pushInstruction(new Instruction("insert", { key: item.node[1].key, item: item, ctx: ctx }));

@@ -45,6 +45,12 @@ codeGenerator.useCodeGeneratorFns({
       code.push(tdBody, { renderer: renderer });
     }
   },
+  insert_TORNADO_DEBUGGER: function insert_TORNADO_DEBUGGER(instruction, code) {
+    var tdBody = instruction.tdBody;
+
+    var renderer = "      debugger;\n";
+    code.push(tdBody, { renderer: renderer });
+  },
   open_TORNADO_BODY: function open_TORNADO_BODY(instruction, code) {
     var tdBody = instruction.tdBody;
     var bodyType = instruction.bodyType;
