@@ -15,11 +15,21 @@ var generatedWalker = visitor.build({
   }
 });
 
-var escapableRaw = {
+var debuggerExtension = {
   transforms: [function (ast, options) {
     return generatedWalker(ast, options.context);
-  }]
+  }],
+  instructions: {
+    TORNADO_DEBUGGER: {
+      enter: function enter(item, ctx) {
+        return {
+          type: "insert",
+          options: { key: item.node[1].key, item: item, ctx: ctx }
+        };
+      }
+    }
+  }
 };
 
-module.exports = escapableRaw;
+module.exports = debuggerExtension;
 //# sourceMappingURL=debugger.js.map

@@ -18,13 +18,13 @@ var generateJS = _interopRequire(require("./compiler/extensions/generateJS"));
 
 var postprocess = _interopRequire(require("./compiler/extensions/postprocess"));
 
-var stages = ["checks", "transforms", "instructions"];
+var stages = ["checks", "transforms"];
 var compiler = {
   checks: [],
   transforms: [],
-  instructions: [],
   codeGenerator: generateJS,
   postprocessor: postprocess,
+  buildInstructions: buildInstructions,
   compile: function compile(ast, name /*, options*/) {
     var _this = this;
 
@@ -38,31 +38,39 @@ var compiler = {
         pass(ast, { results: results, context: context });
       });
     });
-    // TODO Don't mutate the results object. Have each pass return its result (and consume the
-    // previous pass's result) instead.
+
+    // TODO Clean up the instructions pass
+    var context = new Context(results);
+    this.buildInstructions.pass(ast, { results: results, context: context });
     this.codeGenerator(results);
-    console.log(JSON.stringify(results.instructions, null, 2));
     this.postprocessor(results);
     return results.code;
   },
-  useExtension: function useExtension(helper) {
+  useExtension: function useExtension(extension) {
     var _this = this;
 
     stages.forEach(function (passType) {
-      if (helper.hasOwnProperty(passType) && Array.isArray(helper[passType])) {
-        _this[passType] = _this[passType].concat(helper[passType]);
+      if (extension.hasOwnProperty(passType) && Array.isArray(extension[passType])) {
+        _this[passType] = _this[passType].concat(extension[passType]);
       }
     });
+    if (extension.hasOwnProperty("instructions")) {
+      var instructions = extension.instructions;
+      this.buildInstructions.addInstructions(instructions);
+    }
   },
-  useExtensions: function useExtensions(helpers) {
+  useExtensions: function useExtensions(extensions) {
     var _this = this;
 
-    helpers.forEach(function (helper) {
-      return _this.useExtension(helper);
+    extensions.forEach(function (extension) {
+      return _this.useExtension(extension);
     });
   },
   useCodeGenerator: function useCodeGenerator(generator) {
     this.codeGenerator = generator;
+  },
+  ready: function ready() {
+    this.buildInstructions.pass = this.buildInstructions.generateInstructions();
   }
 };
 

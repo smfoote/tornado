@@ -9,13 +9,13 @@ import generateJS from './compiler/extensions/generateJS';
 import postprocess from './compiler/extensions/postprocess';
 
 
-const stages = ['checks', 'transforms', 'instructions'];
+const stages = ['checks', 'transforms'];
 let compiler = {
   checks: [],
   transforms: [],
-  instructions: [],
   codeGenerator: generateJS,
   postprocessor: postprocess,
+  buildInstructions,
   compile(ast, name/*, options*/) {
     let results = {
       name,
@@ -27,25 +27,33 @@ let compiler = {
         pass(ast, {results, context});
       });
     });
-    // TODO Don't mutate the results object. Have each pass return its result (and consume the
-    // previous pass's result) instead.
+
+    // TODO Clean up the instructions pass
+    let context = new Context(results);
+    this.buildInstructions.pass(ast, {results, context});
     this.codeGenerator(results);
-    console.log(JSON.stringify(results.instructions, null, 2));
     this.postprocessor(results);
     return results.code;
   },
-  useExtension(helper) {
+  useExtension(extension) {
     stages.forEach(passType => {
-      if (helper.hasOwnProperty(passType) && Array.isArray(helper[passType])) {
-        this[passType] = this[passType].concat(helper[passType]);
+      if (extension.hasOwnProperty(passType) && Array.isArray(extension[passType])) {
+        this[passType] = this[passType].concat(extension[passType]);
       }
     });
+    if (extension.hasOwnProperty('instructions')) {
+      let instructions = extension.instructions;
+      this.buildInstructions.addInstructions(instructions);
+    }
   },
-  useExtensions(helpers) {
-    helpers.forEach(helper => this.useExtension(helper));
+  useExtensions(extensions) {
+    extensions.forEach(extension => this.useExtension(extension));
   },
   useCodeGenerator(generator) {
     this.codeGenerator = generator;
+  },
+  ready() {
+    this.buildInstructions.pass = this.buildInstructions.generateInstructions();
   }
 };
 

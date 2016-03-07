@@ -124,9 +124,6 @@ var helpers = {
       return frag;
     }
   },
-  "debugger": function _debugger() {
-    debugger;
-  },
   select: function select(context, params, bodies, td) {
     var helperContext = td.helperContext;
     var key = params.key;
