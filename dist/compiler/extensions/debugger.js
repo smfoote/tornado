@@ -1,3 +1,5 @@
+/* eslint camelcase: 0 */
+
 "use strict";
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
@@ -27,6 +29,14 @@ var debuggerExtension = {
           options: { key: item.node[1].key, item: item, ctx: ctx }
         };
       }
+    }
+  },
+  codeGen: {
+    insert_TORNADO_DEBUGGER: function insert_TORNADO_DEBUGGER(instruction, code) {
+      var tdBody = instruction.tdBody;
+
+      var renderer = "      debugger;\n";
+      code.push(tdBody, { renderer: renderer });
     }
   }
 };

@@ -31,7 +31,7 @@ let compiler = {
     // TODO Clean up the instructions pass
     let context = new Context(results);
     this.buildInstructions.pass(ast, {results, context});
-    this.codeGenerator(results);
+    this.codeGenerator.build(results);
     this.postprocessor(results);
     return results.code;
   },
@@ -42,8 +42,10 @@ let compiler = {
       }
     });
     if (extension.hasOwnProperty('instructions')) {
-      let instructions = extension.instructions;
-      this.buildInstructions.addInstructions(instructions);
+      this.buildInstructions.addInstructions(extension.instructions);
+    }
+    if (extension.hasOwnProperty('codeGen')) {
+      this.codeGenerator.useCodeGeneratorFns(extension.codeGen);
     }
   },
   useExtensions(extensions) {
@@ -54,6 +56,7 @@ let compiler = {
   },
   ready() {
     this.buildInstructions.pass = this.buildInstructions.generateInstructions();
+    this.codeGenerator.build = this.codeGenerator.prepareGenerator();
   }
 };
 

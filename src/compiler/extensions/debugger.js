@@ -1,3 +1,5 @@
+/* eslint camelcase: 0 */
+
 'use strict';
 import visitor from '../visitor';
 
@@ -23,6 +25,13 @@ let debuggerExtension = {
           options: {key: item.node[1].key, item, ctx}
         };
       }
+    }
+  },
+  codeGen: {
+    insert_TORNADO_DEBUGGER(instruction, code) {
+      let {tdBody} = instruction;
+      let renderer = '      debugger;\n';
+      code.push(tdBody, {renderer});
     }
   }
 };

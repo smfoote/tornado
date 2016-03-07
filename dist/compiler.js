@@ -42,7 +42,7 @@ var compiler = {
     // TODO Clean up the instructions pass
     var context = new Context(results);
     this.buildInstructions.pass(ast, { results: results, context: context });
-    this.codeGenerator(results);
+    this.codeGenerator.build(results);
     this.postprocessor(results);
     return results.code;
   },
@@ -55,8 +55,10 @@ var compiler = {
       }
     });
     if (extension.hasOwnProperty("instructions")) {
-      var instructions = extension.instructions;
-      this.buildInstructions.addInstructions(instructions);
+      this.buildInstructions.addInstructions(extension.instructions);
+    }
+    if (extension.hasOwnProperty("codeGen")) {
+      this.codeGenerator.useCodeGeneratorFns(extension.codeGen);
     }
   },
   useExtensions: function useExtensions(extensions) {
@@ -71,6 +73,7 @@ var compiler = {
   },
   ready: function ready() {
     this.buildInstructions.pass = this.buildInstructions.generateInstructions();
+    this.codeGenerator.build = this.codeGenerator.prepareGenerator();
   }
 };
 
