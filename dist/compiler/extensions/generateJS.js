@@ -13,24 +13,7 @@ var STATES = _utilsBuilder.STATES;
 
 var noop = function noop() {};
 
-var codeGenerator = {
-  generatorFns: {},
-  useCodeGeneratorFn: function useCodeGeneratorFn(codeGenerator) {
-    this.generatorFns[codeGenerator.name] = codeGenerator.method;
-  },
-  useCodeGeneratorFns: function useCodeGeneratorFns(codeGenerators) {
-    var _this = this;
-
-    Object.keys(codeGenerators).forEach(function (generatorName) {
-      return _this.useCodeGeneratorFn({ name: generatorName, method: codeGenerators[generatorName] });
-    });
-  },
-  build: function build() {
-    return generator.build(this.generatorFns);
-  }
-};
-
-codeGenerator.useCodeGeneratorFns({
+var generatorFns = {
   insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL(instruction, code) {
     var tdBody = instruction.tdBody;
     var key = instruction.key;
@@ -298,47 +281,64 @@ codeGenerator.useCodeGeneratorFns({
     }, []);
     return "{" + paramsHash.join(",") + "}";
   }
-});
-
-var generateJavascript = function generateJavascript(results) {
-  results.code = {
-    fragments: [],
-    renderers: [],
-    push: function push(idx, strings) {
-      var fragment = strings.fragment;
-      var renderer = strings.renderer;
-
-      if (idx >= this.fragments.length) {
-        if (fragment) {
-          this.fragments.push(fragment);
-        }
-        if (renderer) {
-          this.renderers.push(renderer);
-        }
-      } else {
-        if (fragment) {
-          this.fragments[idx] += fragment;
-        }
-        if (renderer) {
-          this.renderers[idx] += renderer;
-        }
-      }
-    },
-    /**
-     * Remove characters from the generated code.
-     * @param {String} type Either 'fragments' or 'renderers'
-     * @param {Number} idx The index of the fragment or renderer from which the characters are to be removed
-     * @param {Number} start The character position to start slicing from
-     * @param {Number} end The character position where the slice ends
-     */
-    slice: function slice(type, idx, start, end) {
-      if (this[type] && this[type][idx]) {
-        this[type][idx] = this[type][idx].slice(start, end);
-      }
-    }
-  };
-  return codeGenerator.build()(results.instructions, results.code);
 };
 
-module.exports = generateJavascript;
+var codeGenerator = {
+  generatorFns: {},
+  useCodeGeneratorFn: function useCodeGeneratorFn(codeGenerator) {
+    this.generatorFns[codeGenerator.name] = codeGenerator.method;
+  },
+  useCodeGeneratorFns: function useCodeGeneratorFns(codeGenerators) {
+    var _this = this;
+
+    Object.keys(codeGenerators).forEach(function (generatorName) {
+      return _this.useCodeGeneratorFn({ name: generatorName, method: codeGenerators[generatorName] });
+    });
+  },
+  prepareGenerator: function prepareGenerator() {
+    return function (results) {
+      results.code = {
+        fragments: [],
+        renderers: [],
+        push: function push(idx, strings) {
+          var fragment = strings.fragment;
+          var renderer = strings.renderer;
+
+          if (idx >= this.fragments.length) {
+            if (fragment) {
+              this.fragments.push(fragment);
+            }
+            if (renderer) {
+              this.renderers.push(renderer);
+            }
+          } else {
+            if (fragment) {
+              this.fragments[idx] += fragment;
+            }
+            if (renderer) {
+              this.renderers[idx] += renderer;
+            }
+          }
+        },
+        /**
+         * Remove characters from the generated code.
+         * @param {String} type Either 'fragments' or 'renderers'
+         * @param {Number} idx The index of the fragment or renderer from which the characters are to be removed
+         * @param {Number} start The character position to start slicing from
+         * @param {Number} end The character position where the slice ends
+         */
+        slice: function slice(type, idx, start, end) {
+          if (this[type] && this[type][idx]) {
+            this[type][idx] = this[type][idx].slice(start, end);
+          }
+        }
+      };
+      return generator.build(this.generatorFns)(results.instructions, results.code);
+    };
+  }
+};
+
+codeGenerator.useCodeGeneratorFns(generatorFns);
+
+module.exports = codeGenerator;
 //# sourceMappingURL=generateJS.js.map

@@ -3,63 +3,120 @@
 import visitor from '../visitor';
 import Instruction from '../utils/Instruction';
 
-let generateWalker = visitor.build({
+let instructionDefs = {
   TORNADO_PARTIAL: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('insert', {key: item.node[1].key, item, ctx}));
+      return {
+        type: 'insert',
+        options: {key: item.node[1].key, item, ctx}
+      };
     }
   },
   TORNADO_BODY: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('open', {key: item.node[1].key, item, ctx}));
+      return {
+        type: 'open',
+        options: {key: item.node[1].key, item, ctx}
+      };
     },
     leave(item, ctx) {
-      ctx.pushInstruction(new Instruction('close', {item, ctx}));
+      return {
+        type: 'close',
+        options: {item, ctx}
+      };
     }
   },
   TORNADO_REFERENCE: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('insert', {key: item.node[1].key, item, ctx}));
+      return {
+        type: 'insert',
+        options: {key: item.node[1].key, item, ctx}
+      };
     }
   },
   TORNADO_COMMENT: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('insert', {item, ctx}));
+      return {
+        type: 'insert',
+        options: {item, ctx}
+      };
     }
   },
   HTML_ELEMENT: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('open', {key: item.node[1].tag_info.key, item, ctx}));
+      return {
+        type: 'open',
+        options: {key: item.node[1].tag_info.key, item, ctx}
+      };
     },
     leave(item, ctx){
       item.state = item.previousState;
-      ctx.pushInstruction(new Instruction('close', {item, ctx}));
+      return {
+        type: 'close',
+        options: {item, ctx}
+      };
     }
   },
   HTML_ATTRIBUTE: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('open', {item, ctx}));
+      return {
+        type: 'open',
+        options: {item, ctx}
+      };
     },
     leave(item, ctx) {
-      ctx.pushInstruction(new Instruction('close', {item, ctx}));
+      return {
+        type: 'close',
+        options: {item, ctx}
+      };
     }
   },
   HTML_COMMENT: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('insert', {item, ctx}));
+      return {
+        type: 'insert',
+        options: {item, ctx}
+      };
     }
   },
   PLAIN_TEXT: {
     enter(item, ctx) {
-      ctx.pushInstruction(new Instruction('insert', {item, ctx}));
+      return {
+        type: 'insert',
+        options: {item, ctx}
+      };
     }
   }
-});
-
-let generateInstructions = {
-  instructions: [function (ast, options) {
-    return generateWalker(ast, options.context);
-  }]
 };
 
-export default generateInstructions;
+let buildInstructions = {
+  instructionDefs: {},
+  addInstruction(name, instruction) {
+    let instructionDef = {
+      enter: instruction.enter ? (item, ctx) => {
+        let enter = instruction.enter(item, ctx);
+        ctx.pushInstruction(new Instruction(enter.type, enter.options));
+      } : null,
+      leave: instruction.leave ? (item, ctx) => {
+        let leave = instruction.leave(item, ctx);
+        ctx.pushInstruction(new Instruction(leave.type, leave.options));
+      } : null
+    };
+    this.instructionDefs[name] = instructionDef;
+  },
+  addInstructions(instructions) {
+    Object.keys(instructions).forEach(instructionName => {
+      this.addInstruction(instructionName, instructions[instructionName]);
+    });
+  },
+  generateInstructions() {
+    let walker = visitor.build(this.instructionDefs);
+    return function(ast, options) {
+      return walker(ast, options.context);
+    };
+  }
+};
+
+buildInstructions.addInstructions(instructionDefs);
+
+export default buildInstructions;

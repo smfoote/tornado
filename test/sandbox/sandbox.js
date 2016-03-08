@@ -1,5 +1,6 @@
 var parser = require('../../dist/parser'),
     compiler = require('../../dist/compiler'),
+    tdDebugger = require('../../dist/compiler/extensions/debugger'),
     td = require('../../dist/runtime');
 
 window.td = td;
@@ -10,6 +11,10 @@ var astContainer = document.querySelector('#output .ast');
 var compiledContainer = document.querySelector('#output .compiled');
 var outputContainer = document.querySelector('#output .output');
 var stringContainer = document.querySelector('#output .string');
+
+// Customize compiler
+
+compiler.useExtension(tdDebugger);
 
 button.addEventListener('click', function() {
   var t = templateTextArea.value;
