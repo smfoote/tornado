@@ -16,8 +16,6 @@ var stringContainer = document.querySelector('#output .string');
 
 compiler.useExtension(tdDebugger);
 
-compiler.ready();
-
 button.addEventListener('click', function() {
   var t = templateTextArea.value;
   var c = contextTextArea.value;

@@ -47,6 +47,7 @@ let compiler = {
     if (extension.hasOwnProperty('codeGen')) {
       this.codeGenerator.useCodeGeneratorFns(extension.codeGen);
     }
+    this.ready();
   },
   useExtensions(extensions) {
     extensions.forEach(extension => this.useExtension(extension));

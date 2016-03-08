@@ -60,6 +60,7 @@ var compiler = {
     if (extension.hasOwnProperty("codeGen")) {
       this.codeGenerator.useCodeGeneratorFns(extension.codeGen);
     }
+    this.ready();
   },
   useExtensions: function useExtensions(extensions) {
     var _this = this;
