@@ -217,23 +217,6 @@ var generatorFns = {
     }
   },
 
-  tdBody_block: function tdBody_block(instruction, code) {
-    var parentTdBody = instruction.parentTdBody;
-    var state = instruction.state;
-    var key = instruction.key;
-    var blockIndex = instruction.blockIndex;
-
-    var blockName = key.join(".");
-    if (state !== STATES.HTML_ATTRIBUTE) {
-      var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
-      var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this));\n";
-      code.push(parentTdBody, { fragment: fragment, renderer: renderer });
-    } else {
-      var renderer = "td." + util.getTdMethodName("nodeToString") + "(td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this)),";
-      code.push(parentTdBody, { renderer: renderer });
-    }
-  },
-
   tdBody_helper: function tdBody_helper(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
