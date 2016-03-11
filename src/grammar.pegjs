@@ -149,12 +149,12 @@ tornado_body_tag_end
   }
 
 tornado_reference
-  = lbrace r:tornado_key filters:tornado_filters rbrace {
+  = lbrace r:tornado_key p:tornado_params rbrace {
     var key = r.split('.');
     if (r === '.') {
       key = [];
     }
-    return ['TORNADO_REFERENCE', {key: key, filters: filters}]
+    return ['TORNADO_REFERENCE', {key: key, params: p}]
   }
 
 // TODO: tornado partial key can be a reference e.g. {#"{foo}"/}
@@ -167,7 +167,7 @@ tornado_partial
   }
 
 tornado_key
-  = first:[a-zA-Z_$\.] after:[a-zA-Z0-9_$-\.]* {
+  = first:[a-zA-Z_$\.,\|] after:[a-zA-Z0-9_$-\.,\|]* {
     return first + after.join('');
   }
 

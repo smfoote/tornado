@@ -6,6 +6,8 @@ var Context = _interopRequire(require("./compiler/context"));
 
 var escapableRaw = _interopRequire(require("./compiler/extensions/escapableRaw"));
 
+var references = _interopRequire(require("./compiler/extensions/references"));
+
 var builtinHelpers = _interopRequire(require("./compiler/extensions/builtinHelpers"));
 
 var htmlEntities = _interopRequire(require("./compiler/extensions/htmlEntities"));
@@ -78,7 +80,7 @@ var compiler = {
   }
 };
 
-compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
+compiler.useExtensions([references, builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
 
 module.exports = compiler;
 //# sourceMappingURL=compiler.js.map
