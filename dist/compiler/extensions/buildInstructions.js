@@ -2,57 +2,43 @@
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
-var visitor = _interopRequire(require("../visitor"));
+var visitor = _interopRequire(require("../visitors/visitor"));
 
 var Instruction = _interopRequire(require("../utils/Instruction"));
 
 var instructionDefs = {
-  TORNADO_PARTIAL: {
-    enter: function enter(item, ctx) {
-      return {
-        type: "insert",
-        options: { key: item.node[1].key, item: item, ctx: ctx }
-      };
-    }
+  TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx) {
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, ctx: ctx }));
   },
   TORNADO_BODY: {
-    enter: function enter(item, ctx) {
+    enter: function enter(node, ctx) {
       return {
         type: "open",
-        options: { key: item.node[1].key, item: item, ctx: ctx }
+        options: { key: node[1].key, item: node.stackItem, ctx: ctx }
       };
     },
-    leave: function leave(item, ctx) {
+    leave: function leave(node, ctx) {
       return {
         type: "close",
-        options: { item: item, ctx: ctx }
+        options: { item: node.stackItem, ctx: ctx }
       };
     }
   },
-  TORNADO_REFERENCE: {
-    enter: function enter(item, ctx) {
-      return {
-        type: "insert",
-        options: { key: item.node[1].key, item: item, ctx: ctx }
-      };
-    }
+  TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx) {
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, ctx: ctx }));
   },
-  TORNADO_COMMENT: {
-    enter: function enter(item, ctx) {
-      return {
-        type: "insert",
-        options: { item: item, ctx: ctx }
-      };
-    }
+  TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx) {
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
   },
   HTML_ELEMENT: {
-    enter: function enter(item, ctx) {
+    enter: function enter(node, ctx) {
       return {
         type: "open",
-        options: { key: item.node[1].tag_info.key, item: item, ctx: ctx }
+        options: { key: node[1].tag_info.key, item: node.stackItem, ctx: ctx }
       };
     },
-    leave: function leave(item, ctx) {
+    leave: function leave(node, ctx) {
+      var item = node.stackItem;
       item.state = item.previousState;
       return {
         type: "close",
@@ -61,51 +47,45 @@ var instructionDefs = {
     }
   },
   HTML_ATTRIBUTE: {
-    enter: function enter(item, ctx) {
+    enter: function enter(node, ctx) {
       return {
         type: "open",
-        options: { item: item, ctx: ctx }
+        options: { item: node.stackItem, ctx: ctx }
       };
     },
-    leave: function leave(item, ctx) {
+    leave: function leave(node, ctx) {
       return {
         type: "close",
-        options: { item: item, ctx: ctx }
+        options: { item: node.stackItem, ctx: ctx }
       };
     }
   },
-  HTML_COMMENT: {
-    enter: function enter(item, ctx) {
-      return {
-        type: "insert",
-        options: { item: item, ctx: ctx }
-      };
-    }
+  HTML_COMMENT: function HTML_COMMENT(node, ctx) {
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
   },
-  PLAIN_TEXT: {
-    enter: function enter(item, ctx) {
-      return {
-        type: "insert",
-        options: { item: item, ctx: ctx }
-      };
-    }
+  PLAIN_TEXT: function PLAIN_TEXT(node, ctx) {
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
   }
 };
 
 var buildInstructions = {
   instructionDefs: {},
   addInstruction: function addInstruction(name, instruction) {
-    var instructionDef = {
-      enter: instruction.enter ? function (item, ctx) {
-        var enter = instruction.enter(item, ctx);
-        ctx.pushInstruction(new Instruction(enter.type, enter.options));
-      } : null,
-      leave: instruction.leave ? function (item, ctx) {
-        var leave = instruction.leave(item, ctx);
-        ctx.pushInstruction(new Instruction(leave.type, leave.options));
-      } : null
-    };
-    this.instructionDefs[name] = instructionDef;
+    if (typeof instruction === "function") {
+      this.instructionDefs[name] = instruction;
+    } else {
+      var instructionDef = {
+        enter: instruction.enter ? function (node, ctx) {
+          var enter = instruction.enter(node, ctx);
+          ctx.pushInstruction(new Instruction(enter.type, enter.options));
+        } : null,
+        leave: instruction.leave ? function (node, ctx) {
+          var leave = instruction.leave(node, ctx);
+          ctx.pushInstruction(new Instruction(leave.type, leave.options));
+        } : null
+      };
+      this.instructionDefs[name] = instructionDef;
+    }
   },
   addInstructions: function addInstructions(instructions) {
     var _this = this;

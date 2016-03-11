@@ -1,6 +1,6 @@
 'use strict';
 
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 
 const svgAdjustAttrs = {
   attributename: 'attributeName',
@@ -64,8 +64,8 @@ const svgAdjustAttrs = {
 };
 
 let generatedWalker = visitor.build({
-  HTML_ATTRIBUTE(item) {
-    let {node, namespace} = item;
+  HTML_ATTRIBUTE(node, context) {
+    let {namespace} = context;
     let attrName = node[1].attrName;
     let adjustedAttr;
     if (namespace) {

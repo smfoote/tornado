@@ -6,12 +6,10 @@ var namedEntities = _interopRequire(require("../utils/namedHTMLEntities"));
 
 var hexDecEntities = _interopRequire(require("../utils/hexDecHTMLEntities"));
 
-var visitor = _interopRequire(require("../visitor"));
+var visitor = _interopRequire(require("../visitors/visitor"));
 
 var generatedWalker = visitor.build({
-  HTML_ENTITY: function HTML_ENTITY(item) {
-    var node = item.node;
-
+  HTML_ENTITY: function HTML_ENTITY(node) {
     var entity = node[1];
     var value = undefined;
     var entityType = namedEntities[entity];

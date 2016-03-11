@@ -12,6 +12,8 @@ var htmlEntities = _interopRequire(require("./compiler/extensions/htmlEntities")
 
 var adjustAttrs = _interopRequire(require("./compiler/extensions/adjustAttrs"));
 
+var buildStackItems = _interopRequire(require("./compiler/extensions/buildStackItem"));
+
 var buildInstructions = _interopRequire(require("./compiler/extensions/buildInstructions"));
 
 var generateJS = _interopRequire(require("./compiler/extensions/generateJS"));
@@ -78,7 +80,7 @@ var compiler = {
   }
 };
 
-compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
+compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
 
 module.exports = compiler;
 //# sourceMappingURL=compiler.js.map

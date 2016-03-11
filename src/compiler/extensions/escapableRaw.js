@@ -1,10 +1,9 @@
 'use strict';
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 
 const escapableRawEls = ['textarea', 'title'];
 let generatedWalker = visitor.build({
-  HTML_ELEMENT(item) {
-    let {node} = item;
+  HTML_ELEMENT(node) {
     let key = node[1].tag_info.key;
     if (escapableRawEls.indexOf(key) > -1) {
       node[1].escapableRaw = true;

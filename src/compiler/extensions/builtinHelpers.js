@@ -1,11 +1,10 @@
 'use strict';
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 
 const BUILT_IN_HELPER_TYPES = ['exists', 'notExists', 'section'];
 
 let generatedWalker = visitor.build({
-  TORNADO_BODY(item) {
-    let {node} = item;
+  TORNADO_BODY(node) {
     node = node[1];
     if (BUILT_IN_HELPER_TYPES.indexOf(node.type) > -1) {
       node.params.push([

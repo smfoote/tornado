@@ -2,10 +2,9 @@
 import namedEntities from '../utils/namedHTMLEntities';
 import hexDecEntities from '../utils/hexDecHTMLEntities';
 
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 let generatedWalker = visitor.build({
-  HTML_ENTITY(item) {
-    let {node} = item;
+  HTML_ENTITY(node) {
     let entity = node[1];
     let value;
     let entityType = namedEntities[entity];

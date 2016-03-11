@@ -2,7 +2,7 @@
 
 var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["default"] : obj; };
 
-var visitor = _interopRequire(require("../visitor"));
+var visitor = _interopRequire(require("../visitors/visitor"));
 
 var svgAdjustAttrs = {
   attributename: "attributeName",
@@ -66,9 +66,8 @@ var svgAdjustAttrs = {
 };
 
 var generatedWalker = visitor.build({
-  HTML_ATTRIBUTE: function HTML_ATTRIBUTE(item) {
-    var node = item.node;
-    var namespace = item.namespace;
+  HTML_ATTRIBUTE: function HTML_ATTRIBUTE(node, context) {
+    var namespace = context.namespace;
 
     var attrName = node[1].attrName;
     var adjustedAttr = undefined;
