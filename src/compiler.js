@@ -4,6 +4,7 @@ import escapableRaw from './compiler/extensions/escapableRaw';
 import builtinHelpers from './compiler/extensions/builtinHelpers';
 import htmlEntities from './compiler/extensions/htmlEntities';
 import adjustAttrs from './compiler/extensions/adjustAttrs';
+import buildStackItems from './compiler/extensions/buildStackItem';
 import buildInstructions from './compiler/extensions/buildInstructions';
 import generateJS from './compiler/extensions/generateJS';
 import postprocess from './compiler/extensions/postprocess';
@@ -61,6 +62,6 @@ let compiler = {
   }
 };
 
-compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildInstructions]);
+compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
 
 export default compiler;

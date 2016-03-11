@@ -1,55 +1,41 @@
 'use strict';
 
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 import Instruction from '../utils/Instruction';
 
 let instructionDefs = {
-  TORNADO_PARTIAL: {
-    enter(item, ctx) {
-      return {
-        type: 'insert',
-        options: {key: item.node[1].key, item, ctx}
-      };
-    }
+  TORNADO_PARTIAL(node, ctx) {
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, ctx}));
   },
   TORNADO_BODY: {
-    enter(item, ctx) {
+    enter(node, ctx) {
       return {
         type: 'open',
-        options: {key: item.node[1].key, item, ctx}
+        options: {key: node[1].key, item: node.stackItem, ctx}
       };
     },
-    leave(item, ctx) {
+    leave(node, ctx) {
       return {
         type: 'close',
-        options: {item, ctx}
+        options: {item: node.stackItem, ctx}
       };
     }
   },
-  TORNADO_REFERENCE: {
-    enter(item, ctx) {
-      return {
-        type: 'insert',
-        options: {key: item.node[1].key, item, ctx}
-      };
-    }
+  TORNADO_REFERENCE(node, ctx) {
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, ctx}));
   },
-  TORNADO_COMMENT: {
-    enter(item, ctx) {
-      return {
-        type: 'insert',
-        options: {item, ctx}
-      };
-    }
+  TORNADO_COMMENT(node, ctx) {
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, ctx}));
   },
   HTML_ELEMENT: {
-    enter(item, ctx) {
+    enter(node, ctx) {
       return {
         type: 'open',
-        options: {key: item.node[1].tag_info.key, item, ctx}
+        options: {key: node[1].tag_info.key, item: node.stackItem, ctx}
       };
     },
-    leave(item, ctx){
+    leave(node, ctx){
+      var item = node.stackItem;
       item.state = item.previousState;
       return {
         type: 'close',
@@ -58,51 +44,45 @@ let instructionDefs = {
     }
   },
   HTML_ATTRIBUTE: {
-    enter(item, ctx) {
+    enter(node, ctx) {
       return {
         type: 'open',
-        options: {item, ctx}
+        options: {item: node.stackItem, ctx}
       };
     },
-    leave(item, ctx) {
+    leave(node, ctx) {
       return {
         type: 'close',
-        options: {item, ctx}
+        options: {item: node.stackItem, ctx}
       };
     }
   },
-  HTML_COMMENT: {
-    enter(item, ctx) {
-      return {
-        type: 'insert',
-        options: {item, ctx}
-      };
-    }
+  HTML_COMMENT(node, ctx) {
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, ctx}));
   },
-  PLAIN_TEXT: {
-    enter(item, ctx) {
-      return {
-        type: 'insert',
-        options: {item, ctx}
-      };
-    }
+  PLAIN_TEXT(node, ctx) {
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, ctx}));
   }
 };
 
 let buildInstructions = {
   instructionDefs: {},
   addInstruction(name, instruction) {
-    let instructionDef = {
-      enter: instruction.enter ? (item, ctx) => {
-        let enter = instruction.enter(item, ctx);
-        ctx.pushInstruction(new Instruction(enter.type, enter.options));
-      } : null,
-      leave: instruction.leave ? (item, ctx) => {
-        let leave = instruction.leave(item, ctx);
-        ctx.pushInstruction(new Instruction(leave.type, leave.options));
-      } : null
-    };
-    this.instructionDefs[name] = instructionDef;
+    if (typeof instruction === 'function') {
+      this.instructionDefs[name] = instruction;
+    } else {
+      let instructionDef = {
+        enter: instruction.enter ? (node, ctx) => {
+          let enter = instruction.enter(node, ctx);
+          ctx.pushInstruction(new Instruction(enter.type, enter.options));
+        } : null,
+        leave: instruction.leave ? (node, ctx) => {
+          let leave = instruction.leave(node, ctx);
+          ctx.pushInstruction(new Instruction(leave.type, leave.options));
+        } : null
+      };
+      this.instructionDefs[name] = instructionDef;
+    }
   },
   addInstructions(instructions) {
     Object.keys(instructions).forEach(instructionName => {

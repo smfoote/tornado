@@ -13,7 +13,7 @@
 
 start
   = n:nodes {
-    return [['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}])];
+    return ['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}]);
   }
 
 nodes
