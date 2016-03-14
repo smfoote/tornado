@@ -1,6 +1,7 @@
 let Instruction = function(action, config) {
-  let {item, key, indexPath} = config;
-  let {state, node, namespace, blockName, blockIndex, parentNodeIdx, parentTdBody, tdBody} = item;
+  let {item, key, indexPath, frameStack} = config;
+  let {state, node, namespace, blockName, blockIndex, parentNodeIdx, parentTdBody} = item;
+  let tdBody = frameStack[0] === null ? 0 : frameStack[0];
   let [nodeType] = node;
   let contents;
   let parentNodeName = (parentNodeIdx === -1) ? 'frag' : `el${parentNodeIdx}`;

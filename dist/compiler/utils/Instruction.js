@@ -6,6 +6,7 @@ var Instruction = function Instruction(action, config) {
   var item = config.item;
   var key = config.key;
   var indexPath = config.indexPath;
+  var frameStack = config.frameStack;
   var state = item.state;
   var node = item.node;
   var namespace = item.namespace;
@@ -13,7 +14,8 @@ var Instruction = function Instruction(action, config) {
   var blockIndex = item.blockIndex;
   var parentNodeIdx = item.parentNodeIdx;
   var parentTdBody = item.parentTdBody;
-  var tdBody = item.tdBody;
+
+  var tdBody = frameStack[0] === null ? 0 : frameStack[0];
 
   var _node = _slicedToArray(node, 1);
 
