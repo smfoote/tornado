@@ -10,73 +10,93 @@ let instructionDefs = {
   },
   TORNADO_PARTIAL(node, ctx, fs) {
     // we are not creating a new tdBody for partials
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx}));
+    let inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   TORNADO_BODY: {
     enter(node, ctx, fs) {
+      let outer = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.pushTd();
       }
+      let inner = fs.current();
       return {
         type: 'open',
-        options: {key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx}
+        options: {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
     leave(node, ctx, fs) {
-      let prev = fs.current();
+      let inner = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.popTd();
       }
+      let outer = fs.current();
       return {
         type: 'close',
-        options: {item: node.stackItem, frameStack: prev, ctx}
+        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     }
   },
   TORNADO_REFERENCE(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx}));
+    let inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   TORNADO_COMMENT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: fs.current(), ctx}));
+    let inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   HTML_ELEMENT: {
     enter(node, ctx, fs) {
+      let outer = fs.current();
       fs.pushEl();
+      let inner = fs.current();
       return {
         type: 'open',
-        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: fs.current(), ctx}
+        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
     leave(node, ctx, fs){
       let item = node.stackItem;
       item.state = item.previousState;
-      let prev = fs.current();
+      let inner = fs.current();
       fs.popEl();
+      let outer = fs.current();
       return {
         type: 'close',
-        options: {item, frameStack: prev, ctx}
+        options: {item, frameStack: [inner, outer], ctx}
       };
     }
   },
   HTML_ATTRIBUTE: {
     enter(node, ctx, fs) {
+      let inner = fs.current(),
+          outer = inner;
       return {
         type: 'open',
-        options: {item: node.stackItem, frameStack: fs.current(), ctx}
+        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
     leave(node, ctx, fs) {
+      let inner = fs.current(),
+          outer = inner;
       return {
         type: 'close',
-        options: {item: node.stackItem, frameStack: fs.current(), ctx}
+        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     }
   },
   HTML_COMMENT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: fs.current(), ctx}));
+    let inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   PLAIN_TEXT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: fs.current(), ctx}));
+    let inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   }
 };
 

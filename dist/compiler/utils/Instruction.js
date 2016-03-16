@@ -13,9 +13,11 @@ var Instruction = function Instruction(action, config) {
   var blockName = item.blockName;
   var blockIndex = item.blockIndex;
   var parentNodeIdx = item.parentNodeIdx;
-  var parentTdBody = item.parentTdBody;
 
-  var tdBody = frameStack[0] === null ? 0 : frameStack[0];
+  var inner = frameStack[0] === null ? 0 : frameStack[0];
+  var outer = frameStack[1] === null ? 0 : frameStack[1];
+  var tdBody = inner ? inner[0] : 0;
+  var parentTdBody = outer ? outer[0] : 0;
 
   var _node = _slicedToArray(node, 1);
 

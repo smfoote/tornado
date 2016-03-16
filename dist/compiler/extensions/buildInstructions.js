@@ -14,73 +14,93 @@ var instructionDefs = {
   },
   TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx, fs) {
     // we are not creating a new tdBody for partials
-    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx: ctx }));
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_BODY: {
     enter: function enter(node, ctx, fs) {
+      var outer = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.pushTd();
       }
+      var inner = fs.current();
       return {
         type: "open",
-        options: { key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx: ctx }
+        options: { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
     leave: function leave(node, ctx, fs) {
-      var prev = fs.current();
+      var inner = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.popTd();
       }
+      var outer = fs.current();
       return {
         type: "close",
-        options: { item: node.stackItem, frameStack: prev, ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: fs.current(), ctx: ctx }));
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: fs.current(), ctx: ctx }));
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   HTML_ELEMENT: {
     enter: function enter(node, ctx, fs) {
+      var outer = fs.current();
       fs.pushEl();
+      var inner = fs.current();
       return {
         type: "open",
-        options: { key: node[1].tag_info.key, item: node.stackItem, frameStack: fs.current(), ctx: ctx }
+        options: { key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
     leave: function leave(node, ctx, fs) {
       var item = node.stackItem;
       item.state = item.previousState;
-      var prev = fs.current();
+      var inner = fs.current();
       fs.popEl();
+      var outer = fs.current();
       return {
         type: "close",
-        options: { item: item, frameStack: prev, ctx: ctx }
+        options: { item: item, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
   HTML_ATTRIBUTE: {
     enter: function enter(node, ctx, fs) {
+      var inner = fs.current(),
+          outer = inner;
       return {
         type: "open",
-        options: { item: node.stackItem, frameStack: fs.current(), ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
     leave: function leave(node, ctx, fs) {
+      var inner = fs.current(),
+          outer = inner;
       return {
         type: "close",
-        options: { item: node.stackItem, frameStack: fs.current(), ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
   HTML_COMMENT: function HTML_COMMENT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: fs.current(), ctx: ctx }));
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   PLAIN_TEXT: function PLAIN_TEXT(node, ctx, fs) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: fs.current(), ctx: ctx }));
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   }
 };
 
