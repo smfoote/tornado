@@ -41,7 +41,7 @@ const STATES = {
 };
 
 let Context = function(results) {
-  let nodeStack = [{indexPath: []}];
+  let nodeStack = [{}];
   const defaultState = STATES.OUTER_SPACE;
 
   let context = {
@@ -72,10 +72,7 @@ let Context = function(results) {
     stack: {
       push(node, index, method) {
         let nodeType = node[0];
-        let parentIndexPath = this.stack.peek('indexPath');
         let isTornadoBody = (nodeType === 'TORNADO_BODY');
-        let isParentTdBody = (this.stack.peek('nodeType') === 'TORNADO_BODY');
-        let isAttr = (nodeType === 'HTML_ATTRIBUTE');
         let namespace = '';
         let blockName, blockIndex;
         if (nodeType === 'HTML_ELEMENT') {
@@ -84,14 +81,7 @@ let Context = function(results) {
         if (nodeType === 'HTML_ELEMENT' || nodeType === 'HTML_ATTRIBUTE') {
           namespace = this.getCurrentNamespace(namespace);
         }
-        let indexPath = parentIndexPath.slice(0);
         let state = this.getCurrentState();
-        if (isParentTdBody) {
-          indexPath = [];
-        }
-        if (!isAttr) {
-          indexPath.push(index);
-        }
 
         if (isTornadoBody) {
           let bodyType = node[1].type;
@@ -113,7 +103,6 @@ let Context = function(results) {
         let stackItem = {
           node,
           nodeType,
-          indexPath,
           state,
           previousState: this.stack.peek('state'),
           blockName,

@@ -8,6 +8,7 @@ let Instruction = function(action, config) {
   let elIdx = ( inner && inner[1] !== null ) ? inner[1] : 0;
   let parentNodeIdx = ( outer && outer[1] !== null ) ? outer[1] : -1;
   let placeHolderIdx = (inner && inner[2] !== null) ? inner[2] : 0;
+  let indexPath = '' + placeHolderIdx;
 
   let [nodeType] = node;
   let contents;
@@ -33,7 +34,6 @@ let Instruction = function(action, config) {
   } else if (nodeType === 'HTML_COMMENT' || nodeType === 'PLAIN_TEXT') {
     contents = node[1].replace(/'/g, "\\'");
   }
-  let indexPath = '' + placeHolderIdx;
   let instr = {
     action,
     nodeType,

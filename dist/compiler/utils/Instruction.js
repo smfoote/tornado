@@ -19,6 +19,7 @@ var Instruction = function Instruction(action, config) {
   var elIdx = inner && inner[1] !== null ? inner[1] : 0;
   var parentNodeIdx = outer && outer[1] !== null ? outer[1] : -1;
   var placeHolderIdx = inner && inner[2] !== null ? inner[2] : 0;
+  var indexPath = "" + placeHolderIdx;
 
   var _node = _slicedToArray(node, 1);
 
@@ -50,7 +51,6 @@ var Instruction = function Instruction(action, config) {
   } else if (nodeType === "HTML_COMMENT" || nodeType === "PLAIN_TEXT") {
     contents = node[1].replace(/'/g, "\\'");
   }
-  var indexPath = "" + placeHolderIdx;
   var instr = {
     action: action,
     nodeType: nodeType,
