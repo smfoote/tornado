@@ -166,7 +166,7 @@ var generatorFns = {
   getPlaceholderName: function getPlaceholderName(instruction) {
     var indexPath = instruction.indexPath;
 
-    return "p" + indexPath.join("");
+    return "p" + indexPath;
   },
 
   tdBody_exists: function tdBody_exists(instruction, code) {

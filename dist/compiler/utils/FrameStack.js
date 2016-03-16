@@ -27,17 +27,20 @@ var Stack = function Stack() {
 var FrameStack = function FrameStack() {
   var tdStack = new Stack();
   var elStack = new Stack();
+  var phStack = new Stack();
 
   this.current = function () {
-    return [tdStack.current(), elStack.current()];
+    return [tdStack.current(), elStack.current(), phStack.current()];
   };
   this.pushTd = function () {
     tdStack.enter();
     elStack.jump();
+    phStack.jump();
   };
   this.popTd = function () {
     tdStack.leave();
     elStack.drop();
+    phStack.drop();
   };
   this.pushEl = function () {
     elStack.enter();
@@ -45,9 +48,16 @@ var FrameStack = function FrameStack() {
   this.popEl = function () {
     elStack.leave();
   };
+  this.pushPh = function () {
+    phStack.enter();
+  };
+  this.popPh = function () {
+    phStack.leave();
+  };
   this.reset = function () {
     tdStack = new Stack();
     elStack = new Stack();
+    phStack = new Stack();
   };
   return this;
 };

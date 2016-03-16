@@ -10,8 +10,11 @@ let instructionDefs = {
   },
   TORNADO_PARTIAL(node, ctx, fs) {
     // we are not creating a new tdBody for partials
-    let inner = fs.current(),
-        outer = inner;
+    let inner, outer;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   TORNADO_BODY: {
@@ -19,6 +22,7 @@ let instructionDefs = {
       let outer = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.pushTd();
+        fs.pushPh();
       }
       let inner = fs.current();
       return {
@@ -29,6 +33,7 @@ let instructionDefs = {
     leave(node, ctx, fs) {
       let inner = fs.current();
       if (node[1].body && node[1].body.length) {
+        fs.popPh();
         fs.popTd();
       }
       let outer = fs.current();
@@ -39,13 +44,19 @@ let instructionDefs = {
     }
   },
   TORNADO_REFERENCE(node, ctx, fs) {
-    let inner = fs.current(),
-        outer = inner;
+    let inner, outer;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   TORNADO_COMMENT(node, ctx, fs) {
-    let inner = fs.current(),
-        outer = inner;
+    let inner, outer;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   HTML_ELEMENT: {
@@ -72,16 +83,18 @@ let instructionDefs = {
   },
   HTML_ATTRIBUTE: {
     enter(node, ctx, fs) {
-      let inner = fs.current(),
-          outer = inner;
+      let outer = fs.current();
+      fs.pushPh();
+      let inner = fs.current();
       return {
         type: 'open',
         options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
     leave(node, ctx, fs) {
-      let inner = fs.current(),
-          outer = inner;
+      let inner = fs.current();
+      fs.popPh();
+      let outer = fs.current();
       return {
         type: 'close',
         options: {item: node.stackItem, frameStack: [inner, outer], ctx}

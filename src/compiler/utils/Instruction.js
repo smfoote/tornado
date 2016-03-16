@@ -1,5 +1,5 @@
 let Instruction = function(action, config) {
-  let {item, key, indexPath, frameStack} = config;
+  let {item, key, frameStack} = config;
   let {state, node, namespace, blockName, blockIndex} = item;
   let inner = frameStack[0] === null ? 0 : frameStack[0];
   let outer = frameStack[1] === null ? 0 : frameStack[1];
@@ -7,6 +7,7 @@ let Instruction = function(action, config) {
   let parentTdBody = ( outer && outer[0] !== null ) ? outer[0] : 0;
   let elIdx = ( inner && inner[1] !== null ) ? inner[1] : 0;
   let parentNodeIdx = ( outer && outer[1] !== null ) ? outer[1] : -1;
+  let placeHolderIdx = (inner && inner[2] !== null) ? inner[2] : 0;
 
   let [nodeType] = node;
   let contents;
@@ -32,7 +33,7 @@ let Instruction = function(action, config) {
   } else if (nodeType === 'HTML_COMMENT' || nodeType === 'PLAIN_TEXT') {
     contents = node[1].replace(/'/g, "\\'");
   }
-  indexPath = item.indexPath;
+  let indexPath = '' + placeHolderIdx;
   let instr = {
     action,
     nodeType,

@@ -5,7 +5,6 @@ var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; }
 var Instruction = function Instruction(action, config) {
   var item = config.item;
   var key = config.key;
-  var indexPath = config.indexPath;
   var frameStack = config.frameStack;
   var state = item.state;
   var node = item.node;
@@ -19,6 +18,7 @@ var Instruction = function Instruction(action, config) {
   var parentTdBody = outer && outer[0] !== null ? outer[0] : 0;
   var elIdx = inner && inner[1] !== null ? inner[1] : 0;
   var parentNodeIdx = outer && outer[1] !== null ? outer[1] : -1;
+  var placeHolderIdx = inner && inner[2] !== null ? inner[2] : 0;
 
   var _node = _slicedToArray(node, 1);
 
@@ -50,7 +50,7 @@ var Instruction = function Instruction(action, config) {
   } else if (nodeType === "HTML_COMMENT" || nodeType === "PLAIN_TEXT") {
     contents = node[1].replace(/'/g, "\\'");
   }
-  indexPath = item.indexPath;
+  var indexPath = "" + placeHolderIdx;
   var instr = {
     action: action,
     nodeType: nodeType,

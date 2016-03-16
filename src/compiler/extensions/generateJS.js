@@ -134,7 +134,7 @@ let generatorFns = {
 
   getPlaceholderName(instruction) {
     let {indexPath} = instruction;
-    return `p${indexPath.join('')}`;
+    return `p${indexPath}`;
   },
 
   tdBody_exists(instruction, code) {

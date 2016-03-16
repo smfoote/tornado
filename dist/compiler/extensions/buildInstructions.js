@@ -14,8 +14,12 @@ var instructionDefs = {
   },
   TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx, fs) {
     // we are not creating a new tdBody for partials
-    var inner = fs.current(),
-        outer = inner;
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_BODY: {
@@ -23,6 +27,7 @@ var instructionDefs = {
       var outer = fs.current();
       if (node[1].body && node[1].body.length) {
         fs.pushTd();
+        fs.pushPh();
       }
       var inner = fs.current();
       return {
@@ -33,6 +38,7 @@ var instructionDefs = {
     leave: function leave(node, ctx, fs) {
       var inner = fs.current();
       if (node[1].body && node[1].body.length) {
+        fs.popPh();
         fs.popTd();
       }
       var outer = fs.current();
@@ -43,13 +49,21 @@ var instructionDefs = {
     }
   },
   TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx, fs) {
-    var inner = fs.current(),
-        outer = inner;
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx, fs) {
-    var inner = fs.current(),
-        outer = inner;
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
     ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   HTML_ELEMENT: {
@@ -76,16 +90,18 @@ var instructionDefs = {
   },
   HTML_ATTRIBUTE: {
     enter: function enter(node, ctx, fs) {
-      var inner = fs.current(),
-          outer = inner;
+      var outer = fs.current();
+      fs.pushPh();
+      var inner = fs.current();
       return {
         type: "open",
         options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
     leave: function leave(node, ctx, fs) {
-      var inner = fs.current(),
-          outer = inner;
+      var inner = fs.current();
+      fs.popPh();
+      var outer = fs.current();
       return {
         type: "close",
         options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
