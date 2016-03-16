@@ -44,32 +44,11 @@ var STATES = {
 
 var Context = function Context(results) {
   var nodeStack = [{ indexPath: [] }];
-  // let refCount;
-  var tornadoBodiesPointer = -1;
   var defaultState = STATES.OUTER_SPACE;
 
   var context = {
     blocks: {},
     state: defaultState,
-    getCurrentTdBody: function getCurrentTdBody(nodeType) {
-      if (nodeType === "TORNADO_BODY") {
-        return tornadoBodiesPointer;
-      } else {
-        return this.stack.peek("tdBody");
-      }
-    },
-    getElContainer: function getElContainer() {
-      var container = this.stack.peek("parentNodeIdx");
-      var nodeType = this.stack.peek("nodeType");
-      if (nodeType === "TORNADO_BODY") {
-        return -1;
-      } else if (nodeType === "HTML_ELEMENT") {
-        return container + 1;
-      }
-    },
-    incrementCurrentTdBody: function incrementCurrentTdBody() {
-      tornadoBodiesPointer++;
-    },
     pushInstruction: function pushInstruction(instruction) {
       results.instructions.push(instruction);
     },
@@ -102,8 +81,7 @@ var Context = function Context(results) {
         var isParentTdBody = this.stack.peek("nodeType") === "TORNADO_BODY";
         var isAttr = nodeType === "HTML_ATTRIBUTE";
         var namespace = "";
-        var parentTdBody = undefined,
-            blockName = undefined,
+        var blockName = undefined,
             blockIndex = undefined;
         if (nodeType === "HTML_ELEMENT") {
           namespace = this.getNamespaceFromNode(node);
@@ -122,10 +100,6 @@ var Context = function Context(results) {
 
         if (isTornadoBody) {
           var bodyType = node[1].type;
-          parentTdBody = this.stack.peek("tdBody");
-          if (node[1].body && node[1].body.length) {
-            this.incrementCurrentTdBody();
-          }
           if (bodyType === "block" || bodyType === "inlinePartial") {
             blockName = node[1].key.join(".");
             if (bodyType === "block") {
@@ -149,10 +123,7 @@ var Context = function Context(results) {
           previousState: this.stack.peek("state"),
           blockName: blockName,
           blockIndex: blockIndex,
-          namespace: namespace,
-          tdBody: this.getCurrentTdBody(nodeType),
-          parentTdBody: parentTdBody,
-          parentNodeIdx: this.getElContainer()
+          namespace: namespace
         };
         nodeStack.push(stackItem);
         method(stackItem, this);

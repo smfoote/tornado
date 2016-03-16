@@ -12,12 +12,13 @@ var Instruction = function Instruction(action, config) {
   var namespace = item.namespace;
   var blockName = item.blockName;
   var blockIndex = item.blockIndex;
-  var parentNodeIdx = item.parentNodeIdx;
 
   var inner = frameStack[0] === null ? 0 : frameStack[0];
   var outer = frameStack[1] === null ? 0 : frameStack[1];
-  var tdBody = inner ? inner[0] : 0;
-  var parentTdBody = outer ? outer[0] : 0;
+  var tdBody = inner && inner[0] !== null ? inner[0] : 0;
+  var parentTdBody = outer && outer[0] !== null ? outer[0] : 0;
+  var elIdx = inner && inner[1] !== null ? inner[1] : 0;
+  var parentNodeIdx = outer && outer[1] !== null ? outer[1] : -1;
 
   var _node = _slicedToArray(node, 1);
 
@@ -67,7 +68,7 @@ var Instruction = function Instruction(action, config) {
     state: state,
     node: node,
     namespace: namespace,
-    elCount: parentNodeIdx + 1
+    elCount: elIdx
   };
   return instr;
 };

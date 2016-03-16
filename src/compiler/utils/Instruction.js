@@ -1,10 +1,12 @@
 let Instruction = function(action, config) {
   let {item, key, indexPath, frameStack} = config;
-  let {state, node, namespace, blockName, blockIndex, parentNodeIdx} = item;
+  let {state, node, namespace, blockName, blockIndex} = item;
   let inner = frameStack[0] === null ? 0 : frameStack[0];
   let outer = frameStack[1] === null ? 0 : frameStack[1];
-  let tdBody = inner ? inner[0] : 0;
-  let parentTdBody = outer ? outer[0] : 0;
+  let tdBody = ( inner && inner[0] !== null ) ? inner[0] : 0;
+  let parentTdBody = ( outer && outer[0] !== null ) ? outer[0] : 0;
+  let elIdx = ( inner && inner[1] !== null ) ? inner[1] : 0;
+  let parentNodeIdx = ( outer && outer[1] !== null ) ? outer[1] : -1;
 
   let [nodeType] = node;
   let contents;
@@ -48,7 +50,7 @@ let Instruction = function(action, config) {
     state,
     node,
     namespace,
-    elCount: parentNodeIdx + 1
+    elCount: elIdx
   };
   return instr;
 };
