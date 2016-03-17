@@ -4,77 +4,79 @@ import visitor from '../visitors/visitor';
 import Instruction from '../utils/Instruction';
 import FrameStack from '../utils/FrameStack';
 
+function noop() {}
+
 let instructionDefs = {
-  TEMPLATE(node, ctx, fs) {
-    fs.reset();
+  TEMPLATE(node, ctx, frameStack) {
+    frameStack.reset();
   },
-  TORNADO_PARTIAL(node, ctx, fs) {
+  TORNADO_PARTIAL(node, ctx, frameStack) {
     // we are not creating a new tdBody for partials
     let inner, outer;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   TORNADO_BODY: {
-    enter(node, ctx, fs) {
-      let outer = fs.current();
+    enter(node, ctx, frameStack) {
+      let outer = frameStack.current();
       if (node[1].body && node[1].body.length) {
-        fs.pushTd();
-        fs.pushPh();
+        frameStack.pushTd();
+        frameStack.pushPh();
       }
-      let inner = fs.current();
+      let inner = frameStack.current();
       return {
         type: 'open',
         options: {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
-    leave(node, ctx, fs) {
-      let inner = fs.current();
+    leave(node, ctx, frameStack) {
+      let inner = frameStack.current();
       if (node[1].body && node[1].body.length) {
-        fs.popPh();
-        fs.popTd();
+        frameStack.popPh();
+        frameStack.popTd();
       }
-      let outer = fs.current();
+      let outer = frameStack.current();
       return {
         type: 'close',
         options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     }
   },
-  TORNADO_REFERENCE(node, ctx, fs) {
+  TORNADO_REFERENCE(node, ctx, frameStack) {
     let inner, outer;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
-  TORNADO_COMMENT(node, ctx, fs) {
+  TORNADO_COMMENT(node, ctx, frameStack) {
     let inner, outer;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
   HTML_ELEMENT: {
-    enter(node, ctx, fs) {
-      let outer = fs.current();
-      fs.pushEl();
-      let inner = fs.current();
+    enter(node, ctx, frameStack) {
+      let outer = frameStack.current();
+      frameStack.pushEl();
+      let inner = frameStack.current();
       return {
         type: 'open',
         options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
-    leave(node, ctx, fs){
+    leave(node, ctx, frameStack){
       let item = node.stackItem;
       item.state = item.previousState;
-      let inner = fs.current();
-      fs.popEl();
-      let outer = fs.current();
+      let inner = frameStack.current();
+      frameStack.popEl();
+      let outer = frameStack.current();
       return {
         type: 'close',
         options: {item, frameStack: [inner, outer], ctx}
@@ -82,32 +84,32 @@ let instructionDefs = {
     }
   },
   HTML_ATTRIBUTE: {
-    enter(node, ctx, fs) {
-      let outer = fs.current();
-      fs.pushPh();
-      let inner = fs.current();
+    enter(node, ctx, frameStack) {
+      let outer = frameStack.current();
+      frameStack.pushPh();
+      let inner = frameStack.current();
       return {
         type: 'open',
         options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     },
-    leave(node, ctx, fs) {
-      let inner = fs.current();
-      fs.popPh();
-      let outer = fs.current();
+    leave(node, ctx, frameStack) {
+      let inner = frameStack.current();
+      frameStack.popPh();
+      let outer = frameStack.current();
       return {
         type: 'close',
         options: {item: node.stackItem, frameStack: [inner, outer], ctx}
       };
     }
   },
-  HTML_COMMENT(node, ctx, fs) {
-    let inner = fs.current(),
+  HTML_COMMENT(node, ctx, frameStack) {
+    let inner = frameStack.current(),
         outer = inner;
     ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   },
-  PLAIN_TEXT(node, ctx, fs) {
-    let inner = fs.current(),
+  PLAIN_TEXT(node, ctx, frameStack) {
+    let inner = frameStack.current(),
         outer = inner;
     ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
   }
@@ -124,12 +126,12 @@ let buildInstructions = {
           let ctx = arguments[1];
           let enter = instruction.enter.apply(null, arguments);
           ctx.pushInstruction(new Instruction(enter.type, enter.options));
-        } : null,
+        } : noop,
         leave: instruction.leave ? function() {
           let ctx = arguments[1];
           let leave = instruction.leave.apply(null, arguments);
           ctx.pushInstruction(new Instruction(leave.type, leave.options));
-        } : null
+        } : noop
       };
       this.instructionDefs[name] = instructionDef;
     }
