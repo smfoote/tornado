@@ -6,65 +6,117 @@ var visitor = _interopRequire(require("../visitors/visitor"));
 
 var Instruction = _interopRequire(require("../utils/Instruction"));
 
+var FrameStack = _interopRequire(require("../utils/FrameStack"));
+
 var instructionDefs = {
-  TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx) {
-    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, ctx: ctx }));
+  TEMPLATE: function TEMPLATE(node, ctx, fs) {
+    fs.reset();
+  },
+  TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx, fs) {
+    // we are not creating a new tdBody for partials
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_BODY: {
-    enter: function enter(node, ctx) {
+    enter: function enter(node, ctx, fs) {
+      var outer = fs.current();
+      if (node[1].body && node[1].body.length) {
+        fs.pushTd();
+        fs.pushPh();
+      }
+      var inner = fs.current();
       return {
         type: "open",
-        options: { key: node[1].key, item: node.stackItem, ctx: ctx }
+        options: { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx) {
+    leave: function leave(node, ctx, fs) {
+      var inner = fs.current();
+      if (node[1].body && node[1].body.length) {
+        fs.popPh();
+        fs.popTd();
+      }
+      var outer = fs.current();
       return {
         type: "close",
-        options: { item: node.stackItem, ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
-  TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx) {
-    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, ctx: ctx }));
+  TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx, fs) {
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
+    ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
-  TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
+  TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx, fs) {
+    var inner = undefined,
+        outer = undefined;
+    fs.pushPh();
+    inner = fs.current();
+    fs.popPh();
+    outer = fs.current();
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   HTML_ELEMENT: {
-    enter: function enter(node, ctx) {
+    enter: function enter(node, ctx, fs) {
+      var outer = fs.current();
+      fs.pushEl();
+      var inner = fs.current();
       return {
         type: "open",
-        options: { key: node[1].tag_info.key, item: node.stackItem, ctx: ctx }
+        options: { key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx) {
+    leave: function leave(node, ctx, fs) {
       var item = node.stackItem;
       item.state = item.previousState;
+      var inner = fs.current();
+      fs.popEl();
+      var outer = fs.current();
       return {
         type: "close",
-        options: { item: item, ctx: ctx }
+        options: { item: item, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
   HTML_ATTRIBUTE: {
-    enter: function enter(node, ctx) {
+    enter: function enter(node, ctx, fs) {
+      var outer = fs.current();
+      fs.pushPh();
+      var inner = fs.current();
       return {
         type: "open",
-        options: { item: node.stackItem, ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx) {
+    leave: function leave(node, ctx, fs) {
+      var inner = fs.current();
+      fs.popPh();
+      var outer = fs.current();
       return {
         type: "close",
-        options: { item: node.stackItem, ctx: ctx }
+        options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
-  HTML_COMMENT: function HTML_COMMENT(node, ctx) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
+  HTML_COMMENT: function HTML_COMMENT(node, ctx, fs) {
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
-  PLAIN_TEXT: function PLAIN_TEXT(node, ctx) {
-    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, ctx: ctx }));
+  PLAIN_TEXT: function PLAIN_TEXT(node, ctx, fs) {
+    var inner = fs.current(),
+        outer = inner;
+    ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   }
 };
 
@@ -75,12 +127,14 @@ var buildInstructions = {
       this.instructionDefs[name] = instruction;
     } else {
       var instructionDef = {
-        enter: instruction.enter ? function (node, ctx) {
-          var enter = instruction.enter(node, ctx);
+        enter: instruction.enter ? function () {
+          var ctx = arguments[1];
+          var enter = instruction.enter.apply(null, arguments);
           ctx.pushInstruction(new Instruction(enter.type, enter.options));
         } : null,
-        leave: instruction.leave ? function (node, ctx) {
-          var leave = instruction.leave(node, ctx);
+        leave: instruction.leave ? function () {
+          var ctx = arguments[1];
+          var leave = instruction.leave.apply(null, arguments);
           ctx.pushInstruction(new Instruction(leave.type, leave.options));
         } : null
       };
@@ -95,9 +149,10 @@ var buildInstructions = {
     });
   },
   generateInstructions: function generateInstructions() {
+    var frameStack = new FrameStack();
     var walker = visitor.build(this.instructionDefs);
     return function (ast, options) {
-      return walker(ast, options.context);
+      return walker(ast, options.context, frameStack);
     };
   }
 };

@@ -5,15 +5,21 @@ var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; }
 var Instruction = function Instruction(action, config) {
   var item = config.item;
   var key = config.key;
-  var indexPath = config.indexPath;
+  var frameStack = config.frameStack;
   var state = item.state;
   var node = item.node;
   var namespace = item.namespace;
   var blockName = item.blockName;
   var blockIndex = item.blockIndex;
-  var parentNodeIdx = item.parentNodeIdx;
-  var parentTdBody = item.parentTdBody;
-  var tdBody = item.tdBody;
+
+  var inner = frameStack[0] === null ? 0 : frameStack[0];
+  var outer = frameStack[1] === null ? 0 : frameStack[1];
+  var tdBody = inner && inner[0] !== null ? inner[0] : 0;
+  var parentTdBody = outer && outer[0] !== null ? outer[0] : 0;
+  var elIdx = inner && inner[1] !== null ? inner[1] : 0;
+  var parentNodeIdx = outer && outer[1] !== null ? outer[1] : -1;
+  var placeHolderIdx = inner && inner[2] !== null ? inner[2] : 0;
+  var indexPath = "" + placeHolderIdx;
 
   var _node = _slicedToArray(node, 1);
 
@@ -45,7 +51,6 @@ var Instruction = function Instruction(action, config) {
   } else if (nodeType === "HTML_COMMENT" || nodeType === "PLAIN_TEXT") {
     contents = node[1].replace(/'/g, "\\'");
   }
-  indexPath = item.indexPath;
   var instr = {
     action: action,
     nodeType: nodeType,
@@ -63,7 +68,7 @@ var Instruction = function Instruction(action, config) {
     state: state,
     node: node,
     namespace: namespace,
-    elCount: parentNodeIdx + 1
+    elCount: elIdx
   };
   return instr;
 };

@@ -63,6 +63,7 @@ var visitChildren = function visitChildren(node, visit) {
 
 var visitorKeys = {
   // Current Top level stuff
+  TEMPLATE: visitChildren,
   TORNADO_BODY: visitTornadoBodyChildren,
   TORNADO_PARTIAL: visitTornadoPartialChildren,
   HTML_ELEMENT: visitHtmlElementChildren,

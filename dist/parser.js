@@ -33,7 +33,7 @@ module.exports = (function() {
         peg$startRuleFunction  = peg$parsestart,
 
         peg$c0 = function(n) {
-            return ['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}]);
+            return ['TEMPLATE', ['TORNADO_BODY'].concat([{name: null, type: 'bodies', body: n}])];
           },
         peg$c1 = [],
         peg$c2 = peg$FAILED,
