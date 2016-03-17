@@ -8,80 +8,82 @@ var Instruction = _interopRequire(require("../utils/Instruction"));
 
 var FrameStack = _interopRequire(require("../utils/FrameStack"));
 
+function noop() {}
+
 var instructionDefs = {
-  TEMPLATE: function TEMPLATE(node, ctx, fs) {
-    fs.reset();
+  TEMPLATE: function TEMPLATE(node, ctx, frameStack) {
+    frameStack.reset();
   },
-  TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx, fs) {
+  TORNADO_PARTIAL: function TORNADO_PARTIAL(node, ctx, frameStack) {
     // we are not creating a new tdBody for partials
     var inner = undefined,
         outer = undefined;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   TORNADO_BODY: {
-    enter: function enter(node, ctx, fs) {
-      var outer = fs.current();
+    enter: function enter(node, ctx, frameStack) {
+      var outer = frameStack.current();
       if (node[1].body && node[1].body.length) {
-        fs.pushTd();
-        fs.pushPh();
+        frameStack.pushTd();
+        frameStack.pushPh();
       }
-      var inner = fs.current();
+      var inner = frameStack.current();
       return {
         type: "open",
         options: { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx, fs) {
-      var inner = fs.current();
+    leave: function leave(node, ctx, frameStack) {
+      var inner = frameStack.current();
       if (node[1].body && node[1].body.length) {
-        fs.popPh();
-        fs.popTd();
+        frameStack.popPh();
+        frameStack.popTd();
       }
-      var outer = fs.current();
+      var outer = frameStack.current();
       return {
         type: "close",
         options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
-  TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx, fs) {
+  TORNADO_REFERENCE: function TORNADO_REFERENCE(node, ctx, frameStack) {
     var inner = undefined,
         outer = undefined;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction("insert", { key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
-  TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx, fs) {
+  TORNADO_COMMENT: function TORNADO_COMMENT(node, ctx, frameStack) {
     var inner = undefined,
         outer = undefined;
-    fs.pushPh();
-    inner = fs.current();
-    fs.popPh();
-    outer = fs.current();
+    frameStack.pushPh();
+    inner = frameStack.current();
+    frameStack.popPh();
+    outer = frameStack.current();
     ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
   HTML_ELEMENT: {
-    enter: function enter(node, ctx, fs) {
-      var outer = fs.current();
-      fs.pushEl();
-      var inner = fs.current();
+    enter: function enter(node, ctx, frameStack) {
+      var outer = frameStack.current();
+      frameStack.pushEl();
+      var inner = frameStack.current();
       return {
         type: "open",
         options: { key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx, fs) {
+    leave: function leave(node, ctx, frameStack) {
       var item = node.stackItem;
       item.state = item.previousState;
-      var inner = fs.current();
-      fs.popEl();
-      var outer = fs.current();
+      var inner = frameStack.current();
+      frameStack.popEl();
+      var outer = frameStack.current();
       return {
         type: "close",
         options: { item: item, frameStack: [inner, outer], ctx: ctx }
@@ -89,32 +91,32 @@ var instructionDefs = {
     }
   },
   HTML_ATTRIBUTE: {
-    enter: function enter(node, ctx, fs) {
-      var outer = fs.current();
-      fs.pushPh();
-      var inner = fs.current();
+    enter: function enter(node, ctx, frameStack) {
+      var outer = frameStack.current();
+      frameStack.pushPh();
+      var inner = frameStack.current();
       return {
         type: "open",
         options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     },
-    leave: function leave(node, ctx, fs) {
-      var inner = fs.current();
-      fs.popPh();
-      var outer = fs.current();
+    leave: function leave(node, ctx, frameStack) {
+      var inner = frameStack.current();
+      frameStack.popPh();
+      var outer = frameStack.current();
       return {
         type: "close",
         options: { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }
       };
     }
   },
-  HTML_COMMENT: function HTML_COMMENT(node, ctx, fs) {
-    var inner = fs.current(),
+  HTML_COMMENT: function HTML_COMMENT(node, ctx, frameStack) {
+    var inner = frameStack.current(),
         outer = inner;
     ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   },
-  PLAIN_TEXT: function PLAIN_TEXT(node, ctx, fs) {
-    var inner = fs.current(),
+  PLAIN_TEXT: function PLAIN_TEXT(node, ctx, frameStack) {
+    var inner = frameStack.current(),
         outer = inner;
     ctx.pushInstruction(new Instruction("insert", { item: node.stackItem, frameStack: [inner, outer], ctx: ctx }));
   }
@@ -131,12 +133,12 @@ var buildInstructions = {
           var ctx = arguments[1];
           var enter = instruction.enter.apply(null, arguments);
           ctx.pushInstruction(new Instruction(enter.type, enter.options));
-        } : null,
+        } : noop,
         leave: instruction.leave ? function () {
           var ctx = arguments[1];
           var leave = instruction.leave.apply(null, arguments);
           ctx.pushInstruction(new Instruction(leave.type, leave.options));
-        } : null
+        } : noop
       };
       this.instructionDefs[name] = instructionDef;
     }

@@ -1,11 +1,10 @@
 /* eslint camelcase: 0 */
 
 'use strict';
-import visitor from '../visitor';
+import visitor from '../visitors/visitor';
 
 let generatedWalker = visitor.build({
-  TORNADO_BODY(item) {
-    let {node} = item;
+  TORNADO_BODY(node) {
     let nodeInfo = node[1];
     if (nodeInfo.type === 'helper' && nodeInfo.key.join('') === 'debugger') {
       node[0] = 'TORNADO_DEBUGGER';
@@ -19,10 +18,12 @@ let debuggerExtension = {
   }],
   instructions: {
     TORNADO_DEBUGGER: {
-      enter(item, ctx) {
+      enter(node, ctx, frameStack) {
+        let inner = frameStack.current(),
+            outer = inner;
         return {
           type: 'insert',
-          options: {key: item.node[1].key, item, ctx}
+          options: {key: node[1].key, frameStack: [inner, outer], item: node.stackItem, ctx}
         };
       }
     }
