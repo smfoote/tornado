@@ -47,7 +47,6 @@ var Context = function Context(results) {
   var defaultState = STATES.OUTER_SPACE;
 
   var context = {
-    blocks: {},
     state: defaultState,
     pushInstruction: function pushInstruction(instruction) {
       results.instructions.push(instruction);
@@ -76,10 +75,7 @@ var Context = function Context(results) {
     stack: {
       push: function push(node, index, method) {
         var nodeType = node[0];
-        var isTornadoBody = nodeType === "TORNADO_BODY";
         var namespace = "";
-        var blockName = undefined,
-            blockIndex = undefined;
         if (nodeType === "HTML_ELEMENT") {
           namespace = this.getNamespaceFromNode(node);
         }
@@ -87,20 +83,6 @@ var Context = function Context(results) {
           namespace = this.getCurrentNamespace(namespace);
         }
         var state = this.getCurrentState();
-
-        if (isTornadoBody) {
-          var bodyType = node[1].type;
-          if (bodyType === "block" || bodyType === "inlinePartial") {
-            blockName = node[1].key.join(".");
-            if (bodyType === "block") {
-              if (this.blocks.hasOwnProperty(blockName)) {
-                blockIndex = ++this.blocks[blockName];
-              } else {
-                blockIndex = this.blocks[blockName] = 0;
-              }
-            }
-          }
-        }
 
         if (node[1].escapableRaw) {
           state = STATES.ESCAPABLE_RAW;
@@ -110,8 +92,6 @@ var Context = function Context(results) {
           nodeType: nodeType,
           state: state,
           previousState: this.stack.peek("state"),
-          blockName: blockName,
-          blockIndex: blockIndex,
           namespace: namespace
         };
         nodeStack.push(stackItem);

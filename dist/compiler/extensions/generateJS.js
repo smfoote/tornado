@@ -31,10 +31,16 @@ var generatorFns = {
   open_TORNADO_BODY: function open_TORNADO_BODY(instruction, code) {
     var tdBody = instruction.tdBody;
     var bodyType = instruction.bodyType;
-    var tdMethodName = instruction.tdMethodName;
+    var key = instruction.key;
     var needsOwnMethod = instruction.needsOwnMethod;
 
+    var tdMethodName = undefined;
     if (needsOwnMethod) {
+      if (bodyType === "block") {
+        tdMethodName = "_" + bodyType.substring(0, 1) + "_" + key.join(".") + "" + tdBody;
+      } else if (bodyType === "inlinePartial") {
+        tdMethodName = "_" + bodyType.substring(0, 1) + "_" + key.join(".");
+      }
       this.createMethodHeaders(tdBody, code, tdMethodName);
     }
     var buildTdBodyCode = (this["tdBody_" + bodyType] || noop).bind(this);
@@ -43,10 +49,9 @@ var generatorFns = {
   close_TORNADO_BODY: function close_TORNADO_BODY(instruction, code) {
     var tdBody = instruction.tdBody;
     var needsOwnMethod = instruction.needsOwnMethod;
-    var tdMethodName = instruction.tdMethodName;
 
     if (needsOwnMethod) {
-      this.createMethodFooters(tdBody, code, tdMethodName);
+      this.createMethodFooters(tdBody, code);
     }
   },
   insert_TORNADO_REFERENCE: function insert_TORNADO_REFERENCE(instruction, code) {
@@ -221,15 +226,15 @@ var generatorFns = {
     var parentTdBody = instruction.parentTdBody;
     var state = instruction.state;
     var key = instruction.key;
-    var blockIndex = instruction.blockIndex;
+    var tdBody = instruction.tdBody;
 
     var blockName = key.join(".");
     if (state !== STATES.HTML_ATTRIBUTE) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
-      var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this));\n";
+      var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + tdBody + ", c, this));\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
     } else {
-      var renderer = "td." + util.getTdMethodName("nodeToString") + "(td." + util.getTdMethodName("block") + "('" + blockName + "', " + blockIndex + ", c, this)),";
+      var renderer = "td." + util.getTdMethodName("nodeToString") + "(td." + util.getTdMethodName("block") + "('" + blockName + "', " + tdBody + ", c, this)),";
       code.push(parentTdBody, { renderer: renderer });
     }
   },

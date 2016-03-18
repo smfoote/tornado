@@ -21,17 +21,23 @@ let generatorFns = {
     }
   },
   open_TORNADO_BODY(instruction, code) {
-    let {tdBody, bodyType, tdMethodName, needsOwnMethod} = instruction;
+    let {tdBody, bodyType, key, needsOwnMethod} = instruction;
+    let tdMethodName;
     if (needsOwnMethod) {
+      if (bodyType === 'block') {
+        tdMethodName = `_${bodyType.substring(0,1)}_${key.join('.')}${tdBody}`;
+      } else if (bodyType === 'inlinePartial') {
+        tdMethodName = `_${bodyType.substring(0,1)}_${key.join('.')}`;
+      }
       this.createMethodHeaders(tdBody, code, tdMethodName);
     }
     let buildTdBodyCode = (this[`tdBody_${bodyType}`] || noop).bind(this);
     buildTdBodyCode(instruction, code);
   },
   close_TORNADO_BODY(instruction, code) {
-    let {tdBody, needsOwnMethod, tdMethodName} = instruction;
+    let {tdBody, needsOwnMethod} = instruction;
     if (needsOwnMethod) {
-      this.createMethodFooters(tdBody, code, tdMethodName);
+      this.createMethodFooters(tdBody, code);
     }
   },
   insert_TORNADO_REFERENCE(instruction, code) {
@@ -175,14 +181,14 @@ let generatorFns = {
   },
 
   tdBody_block(instruction, code) {
-    let {parentTdBody, state, key, blockIndex} = instruction;
+    let {parentTdBody, state, key, tdBody} = instruction;
     let blockName = key.join('.');
     if (state !== STATES.HTML_ATTRIBUTE) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
-      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this));\n`;
+      let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${tdBody}, c, this));\n`;
       code.push(parentTdBody, {fragment, renderer});
     } else {
-      let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${blockIndex}, c, this)),`;
+      let renderer = `td.${util.getTdMethodName('nodeToString')}(td.${util.getTdMethodName('block')}('${blockName}', ${tdBody}, c, this)),`;
       code.push(parentTdBody, {renderer});
     }
   },
