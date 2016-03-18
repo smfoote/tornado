@@ -1,6 +1,6 @@
 let Instruction = function(action, config) {
   let {item, key, frameStack} = config;
-  let {state, node, namespace, blockName, blockIndex} = item;
+  let {state, node, namespace} = item;
   let inner = frameStack[0] === null ? 0 : frameStack[0];
   let outer = frameStack[1] === null ? 0 : frameStack[1];
   let tdBody = ( inner && inner[0] !== null ) ? inner[0] : 0;
@@ -13,18 +13,10 @@ let Instruction = function(action, config) {
   let [nodeType] = node;
   let contents;
   let parentNodeName = (parentNodeIdx === -1) ? 'frag' : `el${parentNodeIdx}`;
-  let bodyType, tdMethodName, needsOwnMethod, hasTornadoRef;
+  let bodyType, needsOwnMethod, hasTornadoRef;
   if (nodeType === 'TORNADO_BODY') {
     bodyType = node[1].type || '';
     needsOwnMethod = !!(node[1].body && node[1].body.length);
-
-    if (blockName) {
-      tdMethodName = `_${bodyType.substring(0,1)}_${blockName}`;
-
-      if (blockIndex !== undefined) {
-        tdMethodName += blockIndex;
-      }
-    }
   } else if (nodeType === 'HTML_ATTRIBUTE') {
     let attrVal = node[1].value;
     hasTornadoRef = attrVal && attrVal.some(val => {
@@ -38,10 +30,8 @@ let Instruction = function(action, config) {
     action,
     nodeType,
     bodyType,
-    blockIndex,
     needsOwnMethod,
     hasTornadoRef,
-    tdMethodName,
     parentTdBody,
     tdBody,
     contents,
