@@ -1,20 +1,6 @@
+//TODO: instead of using helper methods this should be an API that does things.
 "use strict";
 
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-//TODO: instead of using helper methods this should be an API that does things.
-var STATES = {
-  OUTER_SPACE: "OUTER_SPACE",
-  HTML_TAG: "HTML_TAG",
-  HTML_BODY: "HTML_BODY",
-  HTML_ELEMENT: "HTML_BODY",
-  HTML_ATTRIBUTE: "HTML_ATTRIBUTE",
-  ESCAPABLE_RAW: "ESCAPABLE_RAW",
-  TORNADO_TAG: "TORNADO_TAG",
-  TORNADO_BODY: "TORNADO_BODY"
-};
-exports.STATES = STATES;
 var methodNameMap = {
   register: "r",
   get: "g",
@@ -34,7 +20,7 @@ var methodNameMap = {
 var PRODUCTION = "production";
 var mode = "dev"; //TODO: this should be an option in the compiler
 
-exports["default"] = {
+module.exports = {
   /**
    * Return a method name based on whether we are compiling for production or dev
    * @param {String} fullName The full name of the method
@@ -60,10 +46,6 @@ exports["default"] = {
       attrName = this.svgAdjustAttrs[attrName] || attrName;
     }
     return attrName;
-  },
-
-  elTypes: {
-    escapableRaw: ["textarea", "title"]
   }
 };
 //# sourceMappingURL=builder.js.map

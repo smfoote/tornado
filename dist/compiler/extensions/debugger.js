@@ -22,11 +22,11 @@ var debuggerExtension = {
   instructions: {
     TORNADO_DEBUGGER: {
       enter: function enter(node, ctx, frameStack) {
-        var inner = frameStack.current(),
-            outer = inner;
+        var child = frameStack.current(),
+            parent = child;
         return {
           type: "insert",
-          options: { key: node[1].key, frameStack: [inner, outer], item: node.stackItem, ctx: ctx }
+          options: { key: node[1].key, frameStack: [child, parent], item: node.stackItem, ctx: ctx }
         };
       }
     }

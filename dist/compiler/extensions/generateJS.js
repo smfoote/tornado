@@ -5,11 +5,7 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var generator = _interopRequire(require("../codeGenerator"));
 
-var _utilsBuilder = require("../utils/builder");
-
-var util = _interopRequire(_utilsBuilder);
-
-var STATES = _utilsBuilder.STATES;
+var util = _interopRequire(require("../utils/builder"));
 
 var noop = function noop() {};
 
@@ -17,9 +13,10 @@ var generatorFns = {
   insert_TORNADO_PARTIAL: function insert_TORNADO_PARTIAL(instruction, code) {
     var tdBody = instruction.tdBody;
     var key = instruction.key;
+    var attrIdx = instruction.attrIdx;
 
     var context = "c";
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("getPartial") + "('" + key + "', " + context + ", this));\n";
       code.push(tdBody, { fragment: fragment, renderer: renderer });
@@ -57,9 +54,9 @@ var generatorFns = {
   insert_TORNADO_REFERENCE: function insert_TORNADO_REFERENCE(instruction, code) {
     var tdBody = instruction.tdBody;
     var key = instruction.key;
-    var state = instruction.state;
+    var attrIdx = instruction.attrIdx;
 
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("createTextNode") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + ")));\n";
       code.push(tdBody, { fragment: fragment, renderer: renderer });
@@ -70,28 +67,29 @@ var generatorFns = {
   },
 
   open_HTML_ELEMENT: function open_HTML_ELEMENT(instruction, code) {
-    var state = instruction.state;
     var tdBody = instruction.tdBody;
     var elCount = instruction.elCount;
+    var attrIdx = instruction.attrIdx;
     var key = instruction.key;
     var namespace = instruction.namespace;
 
     namespace = namespace ? ", '" + namespace + "'" : "";
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      var el" + elCount + " = td." + util.getTdMethodName("createElement") + "('" + key + "'" + namespace + ");\n";
       code.push(tdBody, { fragment: fragment });
     }
   },
   close_HTML_ELEMENT: function close_HTML_ELEMENT(instruction, code) {
-    var state = instruction.state;
     var parentNodeName = instruction.parentNodeName;
     var elCount = instruction.elCount;
     var tdBody = instruction.tdBody;
+    var attrIdx = instruction.attrIdx;
+    var node = instruction.node;
 
-    if (state === STATES.ESCAPABLE_RAW) {
-      var fragment = "      el" + (elCount - 1) + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
+    if (node[1].escapableRaw) {
+      var fragment = "      el" + elCount + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
       code.push(tdBody, { fragment: fragment });
-    } else if (state !== STATES.HTML_ATTRIBUTE) {
+    } else if (attrIdx === null) {
       var fragment = "      " + parentNodeName + ".appendChild(el" + elCount + ");\n";
       code.push(tdBody, { fragment: fragment });
     }
@@ -140,8 +138,9 @@ var generatorFns = {
     var tdBody = instruction.tdBody;
     var parentNodeName = instruction.parentNodeName;
     var contents = instruction.contents;
+    var attrIdx = instruction.attrIdx;
 
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + parentNodeName + ".appendChild(td." + util.getTdMethodName("createTextNode") + "('" + contents + "'));\n";
       code.push(tdBody, { fragment: fragment });
     } else {
@@ -177,14 +176,14 @@ var generatorFns = {
   tdBody_exists: function tdBody_exists(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
-    var state = instruction.state;
+    var attrIdx = instruction.attrIdx;
     var key = instruction.key;
     var node = instruction.node;
     var bodyType = instruction.bodyType;
 
     var bodies = node[1].bodies;
     var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName(bodyType) + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "), root." + this.getPlaceholderName(instruction) + ", " + bodiesHash + ", c);\n";
       code.push(parentTdBody, { renderer: renderer, fragment: fragment });
@@ -201,13 +200,13 @@ var generatorFns = {
   tdBody_section: function tdBody_section(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
-    var state = instruction.state;
+    var attrIdx = instruction.attrIdx;
     var key = instruction.key;
     var node = instruction.node;
 
     var bodies = node[1].bodies;
     var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    var isInHtmlAttribute = state === STATES.HTML_ATTRIBUTE;
+    var isInHtmlAttribute = attrIdx !== null;
     var placeholderNode = isInHtmlAttribute ? "null" : "root." + this.getPlaceholderName(instruction);
 
     var output = "td." + util.getTdMethodName("section") + "(td." + util.getTdMethodName("get") + "(c, " + JSON.stringify(key) + "), " + placeholderNode + ", " + bodiesHash + ", c)";
@@ -224,12 +223,12 @@ var generatorFns = {
 
   tdBody_block: function tdBody_block(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
-    var state = instruction.state;
+    var attrIdx = instruction.attrIdx;
     var key = instruction.key;
     var tdBody = instruction.tdBody;
 
     var blockName = key.join(".");
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("replaceNode") + "(root." + this.getPlaceholderName(instruction) + ", td." + util.getTdMethodName("block") + "('" + blockName + "', " + tdBody + ", c, this));\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });
@@ -242,7 +241,7 @@ var generatorFns = {
   tdBody_helper: function tdBody_helper(instruction, code) {
     var parentTdBody = instruction.parentTdBody;
     var tdBody = instruction.tdBody;
-    var state = instruction.state;
+    var attrIdx = instruction.attrIdx;
     var key = instruction.key;
     var node = instruction.node;
 
@@ -250,7 +249,7 @@ var generatorFns = {
     var bodies = node[1].bodies;
     var paramsHash = this.createParamsHash(params);
     var bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (attrIdx === null) {
       var fragment = "      " + this.createPlaceholder(instruction) + ";\n";
       var renderer = "      td." + util.getTdMethodName("helper") + "('" + key.join(".") + "', root." + this.getPlaceholderName(instruction) + ", c, " + paramsHash + ", " + bodiesHash + ");\n";
       code.push(parentTdBody, { fragment: fragment, renderer: renderer });

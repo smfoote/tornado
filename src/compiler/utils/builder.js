@@ -1,14 +1,4 @@
 //TODO: instead of using helper methods this should be an API that does things.
-export const STATES = {
-  OUTER_SPACE: 'OUTER_SPACE',
-  HTML_TAG: 'HTML_TAG',
-  HTML_BODY: 'HTML_BODY',
-  HTML_ELEMENT: 'HTML_BODY',
-  HTML_ATTRIBUTE: 'HTML_ATTRIBUTE',
-  ESCAPABLE_RAW: 'ESCAPABLE_RAW',
-  TORNADO_TAG: 'TORNADO_TAG',
-  TORNADO_BODY: 'TORNADO_BODY'
-};
 const methodNameMap = {
   register: 'r',
   get: 'g',
@@ -54,10 +44,5 @@ export default {
       attrName = this.svgAdjustAttrs[attrName] || attrName;
     }
     return attrName;
-  },
-
-
-  elTypes: {
-    escapableRaw: ['textarea', 'title']
   }
 };

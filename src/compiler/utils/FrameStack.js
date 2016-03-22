@@ -26,19 +26,22 @@ let FrameStack = function() {
   let tdStack = new Stack();
   let elStack = new Stack();
   let phStack = new Stack();
+  let attrStack = new Stack();
 
   this.current = function() {
-    return [tdStack.current(), elStack.current(), phStack.current()];
+    return [tdStack.current(), elStack.current(), phStack.current(), attrStack.current()];
   };
   this.pushTd = function() {
     tdStack.enter();
     elStack.jump();
     phStack.jump();
+    attrStack.jump();
   };
   this.popTd = function() {
     tdStack.leave();
     elStack.drop();
     phStack.drop();
+    attrStack.drop();
   };
   this.pushEl = function() {
     elStack.enter();
@@ -52,10 +55,17 @@ let FrameStack = function() {
   this.popPh = function() {
     phStack.leave();
   };
+  this.pushAttr = function() {
+    attrStack.enter();
+  };
+  this.popAttr = function() {
+    attrStack.leave();
+  };
   this.reset = function() {
     tdStack = new Stack();
     elStack = new Stack();
     phStack = new Stack();
+    attrStack = new Stack();
   };
   return this;
 };
