@@ -12,106 +12,108 @@ let instructionDefs = {
   },
   TORNADO_PARTIAL(node, ctx, frameStack) {
     // we are not creating a new tdBody for partials
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   TORNADO_BODY: {
     enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+      let parent = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.pushTd();
         frameStack.pushPh();
       }
-      let inner = frameStack.current();
+      let child = frameStack.current();
       return {
         type: 'open',
-        options: {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}
       };
     },
     leave(node, ctx, frameStack) {
-      let inner = frameStack.current();
+      let child = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.popPh();
         frameStack.popTd();
       }
-      let outer = frameStack.current();
+      let parent = frameStack.current();
       return {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx}
       };
     }
   },
   TORNADO_REFERENCE(node, ctx, frameStack) {
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   TORNADO_COMMENT(node, ctx, frameStack) {
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   HTML_ELEMENT: {
     enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+      let parent = frameStack.current();
       frameStack.pushEl();
-      let inner = frameStack.current();
+      let child = frameStack.current();
       return {
         type: 'open',
-        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx}
       };
     },
     leave(node, ctx, frameStack){
       let item = node.stackItem;
       item.state = item.previousState;
-      let inner = frameStack.current();
+      let child = frameStack.current();
       frameStack.popEl();
-      let outer = frameStack.current();
+      let parent = frameStack.current();
       return {
         type: 'close',
-        options: {item, frameStack: [inner, outer], ctx}
+        options: {item, frameStack: [child, parent], ctx}
       };
     }
   },
   HTML_ATTRIBUTE: {
     enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+      let parent = frameStack.current();
+      frameStack.pushAttr();
       frameStack.pushPh();
-      let inner = frameStack.current();
+      let child = frameStack.current();
       return {
         type: 'open',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx}
       };
     },
     leave(node, ctx, frameStack) {
-      let inner = frameStack.current();
+      let child = frameStack.current();
       frameStack.popPh();
-      let outer = frameStack.current();
+      frameStack.popAttr();
+      let parent = frameStack.current();
       return {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx}
       };
     }
   },
   HTML_COMMENT(node, ctx, frameStack) {
-    let inner = frameStack.current(),
-        outer = inner;
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    let child = frameStack.current(),
+        parent = child;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   PLAIN_TEXT(node, ctx, frameStack) {
-    let inner = frameStack.current(),
-        outer = inner;
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    let child = frameStack.current(),
+        parent = child;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   }
 };
 
