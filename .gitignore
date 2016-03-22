@@ -5,3 +5,4 @@ test/sandbox/bundle.js
 benchmark/bundle.js
 test/testRunner.js
 *.map
+dist

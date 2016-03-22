@@ -1,13 +1,13 @@
 let Instruction = function(action, config) {
-  let {item, key, frameStack} = config;
-  let {state, node, namespace} = item;
-  let inner = frameStack[0] === null ? 0 : frameStack[0];
-  let outer = frameStack[1] === null ? 0 : frameStack[1];
-  let tdBody = ( inner && inner[0] !== null ) ? inner[0] : 0;
-  let parentTdBody = ( outer && outer[0] !== null ) ? outer[0] : 0;
-  let elIdx = ( inner && inner[1] !== null ) ? inner[1] : 0;
-  let parentNodeIdx = ( outer && outer[1] !== null ) ? outer[1] : -1;
-  let placeHolderIdx = (inner && inner[2] !== null) ? inner[2] : 0;
+  let {item, key, frameStack, stateStack} = config;
+  let {node, namespace} = item;
+  let child = frameStack[0] === null ? 0 : frameStack[0];
+  let parent = frameStack[1] === null ? 0 : frameStack[1];
+  let tdBody = ( child && child[0] !== null ) ? child[0] : 0;
+  let parentTdBody = ( parent && parent[0] !== null ) ? parent[0] : 0;
+  let elIdx = ( child && child[1] !== null ) ? child[1] : 0;
+  let parentNodeIdx = ( parent && parent[1] !== null ) ? parent[1] : -1;
+  let placeHolderIdx = (child && child[2] !== null) ? child[2] : 0;
   let indexPath = '' + placeHolderIdx;
 
   let [nodeType] = node;
@@ -38,7 +38,7 @@ let Instruction = function(action, config) {
     parentNodeName: parentNodeName,
     indexPath,
     key,
-    state,
+    state: stateStack || [],
     node,
     namespace,
     elCount: elIdx

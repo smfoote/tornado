@@ -59,5 +59,32 @@ export default {
 
   elTypes: {
     escapableRaw: ['textarea', 'title']
+  },
+
+  /**
+   * whether we are in an html_attribute given the current state
+   * NOTE: when we see a tornado body previous states are reset.
+   * @param {Array} state  the current stateStack
+   * @return {Boolean}
+   */
+  inHtmlAttribute: function(state) {
+    let lastTornadoBodyIdx = state.lastIndexOf(STATES.TORNADO_BODY),
+        lastHtmlAttributeIdx = state.lastIndexOf(STATES.HTML_ATTRIBUTE);
+    return lastHtmlAttributeIdx > lastTornadoBodyIdx;
+  },
+
+  /**
+   * whether we are in an escapable_raw given the current state
+   * NOTE: when we see a tornado body previous states are reset.
+   * @param {Array} state  the current stateStack
+   * @return {Boolean}
+   */
+  inEscapableRaw: function(state) {
+    let lastTornadoBodyIdx = state.lastIndexOf(STATES.TORNADO_BODY),
+        lastEscapableRawIdx = state.lastIndexOf(STATES.ESCAPABLE_RAW);
+    return lastEscapableRawIdx > lastTornadoBodyIdx;
   }
+
+
+
 };

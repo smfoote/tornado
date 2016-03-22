@@ -2,6 +2,16 @@ import assign from 'lodash.assign';
 let EMPTY_NODE_TYPE = 'NIL';
 
 let api = {
+  setState: function(node, state) {
+    if (node.__states && node.__states.length) {
+      node.__states.push(state);
+    } else {
+      node.__states = [state];
+    }
+  },
+  getStates: function(node) {
+    return node.__states || [];
+  },
   rename: function(node, newName) {
     node[0] = newName;
   },
