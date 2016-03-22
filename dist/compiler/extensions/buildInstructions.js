@@ -80,7 +80,6 @@ var instructionDefs = {
     },
     leave: function leave(node, ctx, frameStack) {
       var item = node.stackItem;
-      item.state = item.previousState;
       var child = frameStack.current();
       frameStack.popEl();
       var parent = frameStack.current();

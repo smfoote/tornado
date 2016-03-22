@@ -3,7 +3,6 @@
 import generator from '../codeGenerator';
 
 import util from '../utils/builder';
-import {STATES} from '../utils/builder';
 
 const noop = function() {};
 
@@ -61,9 +60,9 @@ let generatorFns = {
     }
   },
   close_HTML_ELEMENT(instruction, code) {
-    let {state, parentNodeName, elCount, tdBody, attrIdx} = instruction;
-    if (state === STATES.ESCAPABLE_RAW) {
-      let fragment = `      el${elCount - 1}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
+    let {parentNodeName, elCount, tdBody, attrIdx, node} = instruction;
+    if (node[1].escapableRaw) {
+      let fragment = `      el${elCount}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
       code.push(tdBody, {fragment});
     } else if (attrIdx === null) {
       let fragment = `      ${parentNodeName}.appendChild(el${elCount});\n`;

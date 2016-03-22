@@ -5,11 +5,7 @@ var _interopRequire = function (obj) { return obj && obj.__esModule ? obj["defau
 
 var generator = _interopRequire(require("../codeGenerator"));
 
-var _utilsBuilder = require("../utils/builder");
-
-var util = _interopRequire(_utilsBuilder);
-
-var STATES = _utilsBuilder.STATES;
+var util = _interopRequire(require("../utils/builder"));
 
 var noop = function noop() {};
 
@@ -84,14 +80,14 @@ var generatorFns = {
     }
   },
   close_HTML_ELEMENT: function close_HTML_ELEMENT(instruction, code) {
-    var state = instruction.state;
     var parentNodeName = instruction.parentNodeName;
     var elCount = instruction.elCount;
     var tdBody = instruction.tdBody;
     var attrIdx = instruction.attrIdx;
+    var node = instruction.node;
 
-    if (state === STATES.ESCAPABLE_RAW) {
-      var fragment = "      el" + (elCount - 1) + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
+    if (node[1].escapableRaw) {
+      var fragment = "      el" + elCount + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
       code.push(tdBody, { fragment: fragment });
     } else if (attrIdx === null) {
       var fragment = "      " + parentNodeName + ".appendChild(el" + elCount + ");\n";

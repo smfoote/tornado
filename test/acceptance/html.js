@@ -79,6 +79,12 @@ let suite = {
       expectedHTML: '<textarea>&lt;script&gt;alert("Hacked!");&lt;/script&gt;</textarea>'
     },
     {
+      description: 'Textarea with tornado markup inside',
+      template: '<textarea>{markups}</textarea>',
+      context: {markup: '<h1>should be raw text</h1>'},
+      expectedHTML: '<textarea>&lt;h1&gt;should be raw text&lt;/h1&gt;</textarea>'
+    },
+    {
       description: 'SVG created with a namespace',
       template: `<svg version="1.1" baseProfile="full" width="300" height="200" xmlns="http://www.w3.org/2000/svg"><rect width="100%" height="100%" fill="red"/></svg>`,
       context: {},

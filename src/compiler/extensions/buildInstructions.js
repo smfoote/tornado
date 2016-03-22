@@ -73,7 +73,6 @@ let instructionDefs = {
     },
     leave(node, ctx, frameStack){
       let item = node.stackItem;
-      item.state = item.previousState;
       let child = frameStack.current();
       frameStack.popEl();
       let parent = frameStack.current();
