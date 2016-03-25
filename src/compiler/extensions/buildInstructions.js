@@ -45,7 +45,7 @@ let instructionDefs = {
         type: 'open',
         options: {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
-      enterAll(this.getStates(node, 'enter'), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave(node, ctx, frameStack, stateStack) {
@@ -55,7 +55,7 @@ let instructionDefs = {
         frameStack.popTd();
       }
       let parent = frameStack.current();
-      leaveAll(this.getStates(node, 'leave'), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       let out = {
         type: 'close',
         options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
@@ -88,7 +88,7 @@ let instructionDefs = {
         type: 'open',
         options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
-      enterAll(this.getStates(node, 'enter'), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave(node, ctx, frameStack, stateStack){
@@ -97,7 +97,7 @@ let instructionDefs = {
       let child = frameStack.current();
       frameStack.popEl();
       let parent = frameStack.current();
-      leaveAll(this.getStates(node, 'leave'), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       let out = {
         type: 'close',
         options: {item, frameStack: [child, parent], ctx, stateStack}
@@ -115,7 +115,7 @@ let instructionDefs = {
         type: 'open',
         options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
-      enterAll(this.getStates(node, 'enter'), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave(node, ctx, frameStack, stateStack) {
@@ -123,7 +123,7 @@ let instructionDefs = {
       frameStack.popPh();
       frameStack.popAttr();
       let parent = frameStack.current();
-      leaveAll(this.getStates(node, 'leave'), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       let out = {
         type: 'close',
         options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}

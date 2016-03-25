@@ -50,7 +50,7 @@ var instructionDefs = {
         type: "open",
         options: { key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
       };
-      enterAll(this.getStates(node, "enter"), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave: function leave(node, ctx, frameStack, stateStack) {
@@ -60,7 +60,7 @@ var instructionDefs = {
         frameStack.popTd();
       }
       var parent = frameStack.current();
-      leaveAll(this.getStates(node, "leave"), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       var out = {
         type: "close",
         options: { item: node.stackItem, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
@@ -95,7 +95,7 @@ var instructionDefs = {
         type: "open",
         options: { key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
       };
-      enterAll(this.getStates(node, "enter"), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave: function leave(node, ctx, frameStack, stateStack) {
@@ -104,7 +104,7 @@ var instructionDefs = {
       var child = frameStack.current();
       frameStack.popEl();
       var parent = frameStack.current();
-      leaveAll(this.getStates(node, "leave"), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       var out = {
         type: "close",
         options: { item: item, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
@@ -122,7 +122,7 @@ var instructionDefs = {
         type: "open",
         options: { item: node.stackItem, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
       };
-      enterAll(this.getStates(node, "enter"), stateStack);
+      enterAll(this.getStates(node), stateStack);
       return out;
     },
     leave: function leave(node, ctx, frameStack, stateStack) {
@@ -130,7 +130,7 @@ var instructionDefs = {
       frameStack.popPh();
       frameStack.popAttr();
       var parent = frameStack.current();
-      leaveAll(this.getStates(node, "leave"), stateStack);
+      leaveAll(this.getStates(node), stateStack);
       var out = {
         type: "close",
         options: { item: node.stackItem, frameStack: [child, parent], ctx: ctx, stateStack: stateStack }
