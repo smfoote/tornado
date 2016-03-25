@@ -3,11 +3,25 @@
 import visitor from '../visitors/visitor';
 import Instruction from '../utils/Instruction';
 import FrameStack from '../utils/FrameStack';
+import Stack from '../utils/Stack';
 
 function noop() {}
 
+
+function enterAll(stateStack, states) {
+  states.forEach(function(s) {
+    stateStack.enter(s);
+  });
+}
+function leaveAll(stateStack, states) {
+  states.forEach(function(s) {
+    stateStack.leave(s);
+  });
+}
+
 let instructionDefs = {
-  TEMPLATE(node, ctx, frameStack) {
+  TEMPLATE(node, ctx, frameStack, stateStack) {
+    stateStack = new Stack();
     frameStack.reset();
   },
   TORNADO_PARTIAL(node, ctx, frameStack) {
@@ -145,9 +159,10 @@ let buildInstructions = {
   },
   generateInstructions() {
     let frameStack = new FrameStack();
+    let stateStack = new Stack();
     let walker = visitor.build(this.instructionDefs);
     return function(ast, options) {
-      return walker(ast, options.context, frameStack);
+      return walker(ast, options.context, frameStack, stateStack);
     };
   }
 };
