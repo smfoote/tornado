@@ -32,32 +32,12 @@ if (!Object.assign) {
   });
 }
 
-var STATES = {
-  OUTER_SPACE: "OUTER_SPACE",
-  HTML_TAG: "HTML_TAG",
-  HTML_BODY: "HTML_BODY",
-  HTML_ATTRIBUTE: "HTML_ATTRIBUTE",
-  ESCAPABLE_RAW: "ESCAPABLE_RAW",
-  TORNADO_TAG: "TORNADO_TAG",
-  TORNADO_BODY: "TORNADO_BODY"
-};
-
 var Context = function Context(results) {
   var nodeStack = [{}];
-  var defaultState = STATES.OUTER_SPACE;
 
   var context = {
-    state: defaultState,
     pushInstruction: function pushInstruction(instruction) {
       results.instructions.push(instruction);
-    },
-    getCurrentState: function getCurrentState() {
-      var state = STATES[this.stack.peek("nodeType")] || this.stack.peek("state");
-      if (!state) {
-        return STATES.OUTER_SPACE;
-      } else {
-        return state;
-      }
     },
     getNamespaceFromNode: function getNamespaceFromNode(node) {
       var nodeInfo = node[1].tag_info;
@@ -82,16 +62,10 @@ var Context = function Context(results) {
         if (nodeType === "HTML_ELEMENT" || nodeType === "HTML_ATTRIBUTE") {
           namespace = this.getCurrentNamespace(namespace);
         }
-        var state = this.getCurrentState();
 
-        if (node[1].escapableRaw) {
-          state = STATES.ESCAPABLE_RAW;
-        }
         var stackItem = {
           node: node,
           nodeType: nodeType,
-          state: state,
-          previousState: this.stack.peek("state"),
           namespace: namespace
         };
         nodeStack.push(stackItem);
