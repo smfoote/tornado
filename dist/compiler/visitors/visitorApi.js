@@ -7,6 +7,16 @@ var assign = _interopRequire(require("lodash.assign"));
 var EMPTY_NODE_TYPE = "NIL";
 
 var api = {
+  setState: function setState(node, state) {
+    if (node.__states && node.__states.length) {
+      node.__states.push(state);
+    } else {
+      node.__states = [state];
+    }
+  },
+  getStates: function getStates(node) {
+    return node.__states || [];
+  },
   rename: function rename(node, newName) {
     node[0] = newName;
   },

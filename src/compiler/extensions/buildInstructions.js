@@ -3,115 +3,143 @@
 import visitor from '../visitors/visitor';
 import Instruction from '../utils/Instruction';
 import FrameStack from '../utils/FrameStack';
+import Stack from '../utils/Stack';
 
 function noop() {}
 
+
+function enterAll(states, stateStack) {
+  states.forEach(function(s) {
+    stateStack.enter(s);
+  });
+}
+function leaveAll(states, stateStack) {
+  states.forEach(function(s) {
+    stateStack.leave(s);
+  });
+}
+
 let instructionDefs = {
-  TEMPLATE(node, ctx, frameStack) {
+  TEMPLATE(node, ctx, frameStack, stateStack) {
+    stateStack.clear();
     frameStack.reset();
   },
-  TORNADO_PARTIAL(node, ctx, frameStack) {
+  TORNADO_PARTIAL(node, ctx, frameStack, stateStack) {
     // we are not creating a new tdBody for partials
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}));
   },
   TORNADO_BODY: {
-    enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+    enter(node, ctx, frameStack, stateStack) {
+      let parent = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.pushTd();
         frameStack.pushPh();
       }
-      let inner = frameStack.current();
-      return {
+      let child = frameStack.current();
+      let out = {
         type: 'open',
-        options: {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack) {
-      let inner = frameStack.current();
+    leave(node, ctx, frameStack, stateStack) {
+      let child = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.popPh();
         frameStack.popTd();
       }
-      let outer = frameStack.current();
-      return {
+      let parent = frameStack.current();
+      leaveAll(this.getStates(node), stateStack);
+      let out = {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   TORNADO_REFERENCE(node, ctx, frameStack) {
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   TORNADO_COMMENT(node, ctx, frameStack) {
-    let inner, outer;
+    let child, parent;
     frameStack.pushPh();
-    inner = frameStack.current();
+    child = frameStack.current();
     frameStack.popPh();
-    outer = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    parent = frameStack.current();
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   HTML_ELEMENT: {
-    enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+    enter(node, ctx, frameStack, stateStack) {
+      let parent = frameStack.current();
       frameStack.pushEl();
-      let inner = frameStack.current();
-      return {
+      let child = frameStack.current();
+      let out = {
         type: 'open',
-        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack){
+    leave(node, ctx, frameStack, stateStack){
       let item = node.stackItem;
       item.state = item.previousState;
-      let inner = frameStack.current();
+      let child = frameStack.current();
       frameStack.popEl();
-      let outer = frameStack.current();
-      return {
+      let parent = frameStack.current();
+      leaveAll(this.getStates(node), stateStack);
+      let out = {
         type: 'close',
-        options: {item, frameStack: [inner, outer], ctx}
+        options: {item, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   HTML_ATTRIBUTE: {
-    enter(node, ctx, frameStack) {
-      let outer = frameStack.current();
+    enter(node, ctx, frameStack, stateStack) {
+      let parent = frameStack.current();
+      frameStack.pushAttr();
       frameStack.pushPh();
-      let inner = frameStack.current();
-      return {
+      let child = frameStack.current();
+      let out = {
         type: 'open',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack) {
-      let inner = frameStack.current();
+    leave(node, ctx, frameStack, stateStack) {
+      let child = frameStack.current();
       frameStack.popPh();
-      let outer = frameStack.current();
-      return {
+      frameStack.popAttr();
+      let parent = frameStack.current();
+      leaveAll(this.getStates(node), stateStack);
+      let out = {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [inner, outer], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   HTML_COMMENT(node, ctx, frameStack) {
-    let inner = frameStack.current(),
-        outer = inner;
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    let child = frameStack.current(),
+        parent = child;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   PLAIN_TEXT(node, ctx, frameStack) {
-    let inner = frameStack.current(),
-        outer = inner;
-    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [inner, outer], ctx}));
+    let child = frameStack.current(),
+        parent = child;
+    ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   }
 };
 
@@ -124,12 +152,12 @@ let buildInstructions = {
       let instructionDef = {
         enter: instruction.enter ? function() {
           let ctx = arguments[1];
-          let enter = instruction.enter.apply(null, arguments);
+          let enter = instruction.enter.apply(this, arguments);
           ctx.pushInstruction(new Instruction(enter.type, enter.options));
         } : noop,
         leave: instruction.leave ? function() {
           let ctx = arguments[1];
-          let leave = instruction.leave.apply(null, arguments);
+          let leave = instruction.leave.apply(this, arguments);
           ctx.pushInstruction(new Instruction(leave.type, leave.options));
         } : noop
       };
@@ -143,9 +171,10 @@ let buildInstructions = {
   },
   generateInstructions() {
     let frameStack = new FrameStack();
+    let stateStack = new Stack();
     let walker = visitor.build(this.instructionDefs);
     return function(ast, options) {
-      return walker(ast, options.context, frameStack);
+      return walker(ast, options.context, frameStack, stateStack);
     };
   }
 };
