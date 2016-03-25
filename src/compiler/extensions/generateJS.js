@@ -62,7 +62,7 @@ let generatorFns = {
   },
   close_HTML_ELEMENT(instruction, code) {
     let {state, parentNodeName, elCount, tdBody, attrIdx} = instruction;
-    if (state === STATES.ESCAPABLE_RAW) {
+    if (state.indexOf(STATES.ESCAPABLE_RAW) > -1) {
       let fragment = `      el${elCount - 1}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
       code.push(tdBody, {fragment});
     } else if (attrIdx === null) {

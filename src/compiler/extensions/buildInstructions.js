@@ -8,12 +8,12 @@ import Stack from '../utils/Stack';
 function noop() {}
 
 
-function enterAll(stateStack, states) {
+function enterAll(states, stateStack) {
   states.forEach(function(s) {
     stateStack.enter(s);
   });
 }
-function leaveAll(stateStack, states) {
+function leaveAll(states, stateStack) {
   states.forEach(function(s) {
     stateStack.leave(s);
   });
@@ -21,42 +21,46 @@ function leaveAll(stateStack, states) {
 
 let instructionDefs = {
   TEMPLATE(node, ctx, frameStack, stateStack) {
-    stateStack = new Stack();
+    stateStack.clear();
     frameStack.reset();
   },
-  TORNADO_PARTIAL(node, ctx, frameStack) {
+  TORNADO_PARTIAL(node, ctx, frameStack, stateStack) {
     // we are not creating a new tdBody for partials
     let child, parent;
     frameStack.pushPh();
     child = frameStack.current();
     frameStack.popPh();
     parent = frameStack.current();
-    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}));
+    ctx.pushInstruction(new Instruction('insert', {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}));
   },
   TORNADO_BODY: {
-    enter(node, ctx, frameStack) {
+    enter(node, ctx, frameStack, stateStack) {
       let parent = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.pushTd();
         frameStack.pushPh();
       }
       let child = frameStack.current();
-      return {
+      let out = {
         type: 'open',
-        options: {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx}
+        options: {key: node[1].key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node, 'enter'), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack) {
+    leave(node, ctx, frameStack, stateStack) {
       let child = frameStack.current();
       if (node[1].body && node[1].body.length) {
         frameStack.popPh();
         frameStack.popTd();
       }
       let parent = frameStack.current();
-      return {
+      leaveAll(this.getStates(node, 'leave'), stateStack);
+      let out = {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [child, parent], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   TORNADO_REFERENCE(node, ctx, frameStack) {
@@ -76,47 +80,55 @@ let instructionDefs = {
     ctx.pushInstruction(new Instruction('insert', {item: node.stackItem, frameStack: [child, parent], ctx}));
   },
   HTML_ELEMENT: {
-    enter(node, ctx, frameStack) {
+    enter(node, ctx, frameStack, stateStack) {
       let parent = frameStack.current();
       frameStack.pushEl();
       let child = frameStack.current();
-      return {
+      let out = {
         type: 'open',
-        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx}
+        options: {key: node[1].tag_info.key, item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node, 'enter'), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack){
+    leave(node, ctx, frameStack, stateStack){
       let item = node.stackItem;
       item.state = item.previousState;
       let child = frameStack.current();
       frameStack.popEl();
       let parent = frameStack.current();
-      return {
+      leaveAll(this.getStates(node, 'leave'), stateStack);
+      let out = {
         type: 'close',
-        options: {item, frameStack: [child, parent], ctx}
+        options: {item, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   HTML_ATTRIBUTE: {
-    enter(node, ctx, frameStack) {
+    enter(node, ctx, frameStack, stateStack) {
       let parent = frameStack.current();
       frameStack.pushAttr();
       frameStack.pushPh();
       let child = frameStack.current();
-      return {
+      let out = {
         type: 'open',
-        options: {item: node.stackItem, frameStack: [child, parent], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      enterAll(this.getStates(node, 'enter'), stateStack);
+      return out;
     },
-    leave(node, ctx, frameStack) {
+    leave(node, ctx, frameStack, stateStack) {
       let child = frameStack.current();
       frameStack.popPh();
       frameStack.popAttr();
       let parent = frameStack.current();
-      return {
+      leaveAll(this.getStates(node, 'leave'), stateStack);
+      let out = {
         type: 'close',
-        options: {item: node.stackItem, frameStack: [child, parent], ctx}
+        options: {item: node.stackItem, frameStack: [child, parent], ctx, stateStack}
       };
+      return out;
     }
   },
   HTML_COMMENT(node, ctx, frameStack) {
@@ -140,12 +152,12 @@ let buildInstructions = {
       let instructionDef = {
         enter: instruction.enter ? function() {
           let ctx = arguments[1];
-          let enter = instruction.enter.apply(null, arguments);
+          let enter = instruction.enter.apply(this, arguments);
           ctx.pushInstruction(new Instruction(enter.type, enter.options));
         } : noop,
         leave: instruction.leave ? function() {
           let ctx = arguments[1];
-          let leave = instruction.leave.apply(null, arguments);
+          let leave = instruction.leave.apply(this, arguments);
           ctx.pushInstruction(new Instruction(leave.type, leave.options));
         } : noop
       };

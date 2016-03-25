@@ -2,21 +2,22 @@ import assign from 'lodash.assign';
 let EMPTY_NODE_TYPE = 'NIL';
 
 let api = {
-  addState: function(node, state) {
-    node.__states = node.__states && node.__states.length ? node.__states.push(state) : node.__states = [state];
-  },
-  removeState: function(node, state) {
-    let idx;
-    if (node.__states && node.__states.length) {
-      idx = node.__states.indexOf(state);
-      if (idx > -1) {
-        // remove the found state
-        node.__states.splice(idx, 1);
-      }
+  enterState: function(node, state) {
+    if (node.__enterStates && node.__enterStates.length) {
+      node.__enterStates.push(state);
+    } else {
+      node.__enterStates = [state];
     }
   },
-  getState: function(node) {
-    return node.__states || [];
+  leaveState: function(node, state) {
+    if (node.__leaveStates && node.__leaveStates.length) {
+      node.__leaveStates.push(state);
+    } else {
+      node.__leaveStates = [state];
+    }
+  },
+  getStates: function(node, direction) {
+    return node['__' + direction + 'States'] || [];
   },
   rename: function(node, newName) {
     node[0] = newName;

@@ -1,6 +1,6 @@
 let Instruction = function(action, config) {
-  let {item, key, frameStack} = config;
-  let {state, node, namespace} = item;
+  let {item, key, frameStack, stateStack} = config;
+  let {node, namespace} = item;
   let child = frameStack[0] === null ? 0 : frameStack[0];
   let parent = frameStack[1] === null ? 0 : frameStack[1];
   let tdBody = ( child && child[0] !== null ) ? child[0] : 0;
@@ -39,7 +39,7 @@ let Instruction = function(action, config) {
     parentNodeName: parentNodeName,
     indexPath,
     key,
-    state,
+    state: stateStack ? stateStack.current() || [] : [],
     node,
     namespace,
     elCount: elIdx,

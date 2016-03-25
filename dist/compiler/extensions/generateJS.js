@@ -90,7 +90,7 @@ var generatorFns = {
     var tdBody = instruction.tdBody;
     var attrIdx = instruction.attrIdx;
 
-    if (state === STATES.ESCAPABLE_RAW) {
+    if (state.indexOf(STATES.ESCAPABLE_RAW) > -1) {
       var fragment = "      el" + (elCount - 1) + ".defaultValue += td." + util.getTdMethodName("nodeToString") + "(el" + elCount + ");\n";
       code.push(tdBody, { fragment: fragment });
     } else if (attrIdx === null) {

@@ -1,6 +1,6 @@
 'use strict';
 import visitor from '../visitors/visitor';
-import {STATES} form '../utils/builder';
+import {STATES} from '../utils/builder';
 
 const escapableRawEls = ['textarea', 'title'];
 let generatedWalker = visitor.build({
@@ -8,13 +8,13 @@ let generatedWalker = visitor.build({
     enter(node) {
       let key = node[1].tag_info.key;
       if (escapableRawEls.indexOf(key) > -1) {
-        this.addState(node, STATES.ESCAPABLE_RAW);
+        this.enterState(node, STATES.ESCAPABLE_RAW);
       }
     },
     leave(node) {
       let key = node[1].tag_info.key;
       if (escapableRawEls.indexOf(key) > -1) {
-        this.removeState(node, STATES.ESCAPABLE_RAW);
+        this.leaveState(node, STATES.ESCAPABLE_RAW);
       }
     }
   }

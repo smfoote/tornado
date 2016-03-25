@@ -6,7 +6,7 @@ var Instruction = function Instruction(action, config) {
   var item = config.item;
   var key = config.key;
   var frameStack = config.frameStack;
-  var state = item.state;
+  var stateStack = config.stateStack;
   var node = item.node;
   var namespace = item.namespace;
 
@@ -53,7 +53,7 @@ var Instruction = function Instruction(action, config) {
     parentNodeName: parentNodeName,
     indexPath: indexPath,
     key: key,
-    state: state,
+    state: stateStack ? stateStack.current() || [] : [],
     node: node,
     namespace: namespace,
     elCount: elIdx,

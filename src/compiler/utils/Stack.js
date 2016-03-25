@@ -19,6 +19,10 @@ let Stack = function() {
   this.drop = function() {
     history = memory.pop();
   };
+  this.clear = function() {
+    history = [];
+    memory = [];
+  };
   return this;
 };
 
