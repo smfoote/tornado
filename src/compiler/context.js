@@ -30,32 +30,12 @@ if (!Object.assign) {
   });
 }
 
-const STATES = {
-  OUTER_SPACE: 'OUTER_SPACE',
-  HTML_TAG: 'HTML_TAG',
-  HTML_BODY: 'HTML_BODY',
-  HTML_ATTRIBUTE: 'HTML_ATTRIBUTE',
-  ESCAPABLE_RAW: 'ESCAPABLE_RAW',
-  TORNADO_TAG: 'TORNADO_TAG',
-  TORNADO_BODY: 'TORNADO_BODY'
-};
-
 let Context = function(results) {
   let nodeStack = [{}];
-  const defaultState = STATES.OUTER_SPACE;
 
   let context = {
-    state: defaultState,
     pushInstruction(instruction) {
       results.instructions.push(instruction);
-    },
-    getCurrentState() {
-      let state = STATES[this.stack.peek('nodeType')] || this.stack.peek('state');
-      if (!state) {
-        return STATES.OUTER_SPACE;
-      } else {
-        return state;
-      }
     },
     getNamespaceFromNode(node) {
       let nodeInfo = node[1].tag_info;
@@ -78,16 +58,10 @@ let Context = function(results) {
         if (nodeType === 'HTML_ELEMENT' || nodeType === 'HTML_ATTRIBUTE') {
           namespace = this.getCurrentNamespace(namespace);
         }
-        let state = this.getCurrentState();
 
-        if (node[1].escapableRaw) {
-          state = STATES.ESCAPABLE_RAW;
-        }
         let stackItem = {
           node,
           nodeType,
-          state,
-          previousState: this.stack.peek('state'),
           namespace
         };
         nodeStack.push(stackItem);

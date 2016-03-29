@@ -4,7 +4,9 @@
   "description": "\"Asynchronous HTML templating\"",
   "main": "tornado.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "build": "grunt",
+    "prepublish": "npm run build"
   },
   "bin": {
     "tornado": "./bin/tornado"

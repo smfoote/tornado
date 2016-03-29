@@ -3,15 +3,14 @@
 import generator from '../codeGenerator';
 
 import util from '../utils/builder';
-import {STATES} from '../utils/builder';
 
 const noop = function() {};
 
 let generatorFns = {
   insert_TORNADO_PARTIAL(instruction, code) {
-    let {tdBody, key} = instruction;
+    let {tdBody, key, state} = instruction;
     let context = 'c';
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('getPartial')}('${key}', ${context}, this));\n`;
       code.push(tdBody, {fragment, renderer});
@@ -42,7 +41,7 @@ let generatorFns = {
   },
   insert_TORNADO_REFERENCE(instruction, code) {
     let {tdBody, key, state} = instruction;
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('createTextNode')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)})));\n`;
       code.push(tdBody, {fragment, renderer});
@@ -53,19 +52,19 @@ let generatorFns = {
   },
 
   open_HTML_ELEMENT(instruction, code) {
-    let {state, tdBody, elCount, key, namespace} = instruction;
+    let {tdBody, elCount, state, key, namespace} = instruction;
     namespace = namespace ? `, '${namespace}'` : '';
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      var el${elCount} = td.${util.getTdMethodName('createElement')}('${key}'${namespace});\n`;
       code.push(tdBody, {fragment});
     }
   },
   close_HTML_ELEMENT(instruction, code) {
     let {state, parentNodeName, elCount, tdBody} = instruction;
-    if (state === STATES.ESCAPABLE_RAW) {
+    if (util.inEscapableRaw(state)) {
       let fragment = `      el${elCount - 1}.defaultValue += td.${util.getTdMethodName('nodeToString')}(el${elCount});\n`;
       code.push(tdBody, {fragment});
-    } else if (state !== STATES.HTML_ATTRIBUTE) {
+    } else if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${parentNodeName}.appendChild(el${elCount});\n`;
       code.push(tdBody, {fragment});
     }
@@ -102,8 +101,8 @@ let generatorFns = {
     code.push(tdBody, {fragment});
   },
   insert_PLAIN_TEXT(instruction, code) {
-    let {tdBody, parentNodeName, contents} = instruction;
-    if (instruction.state !== STATES.HTML_ATTRIBUTE) {
+    let {tdBody, parentNodeName, contents, state} = instruction;
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${parentNodeName}.appendChild(td.${util.getTdMethodName('createTextNode')}('${contents}'));\n`;
       code.push(tdBody, {fragment});
     } else {
@@ -147,7 +146,7 @@ let generatorFns = {
     let {parentTdBody, tdBody, state, key, node, bodyType} = instruction;
     let bodies = node[1].bodies;
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName(bodyType)}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), root.${this.getPlaceholderName(instruction)}, ${bodiesHash}, c);\n`;
       code.push((parentTdBody), {renderer, fragment});
@@ -165,7 +164,7 @@ let generatorFns = {
     let {parentTdBody, tdBody, state, key, node} = instruction;
     let bodies = node[1].bodies;
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    let isInHtmlAttribute = (state === STATES.HTML_ATTRIBUTE);
+    let isInHtmlAttribute = util.inHtmlAttribute(state);
     let placeholderNode = isInHtmlAttribute ? 'null' : `root.${this.getPlaceholderName(instruction)}`;
 
     let output = `td.${util.getTdMethodName('section')}(td.${util.getTdMethodName('get')}(c, ${JSON.stringify(key)}), ${placeholderNode}, ${bodiesHash}, c)`;
@@ -183,7 +182,7 @@ let generatorFns = {
   tdBody_block(instruction, code) {
     let {parentTdBody, state, key, tdBody} = instruction;
     let blockName = key.join('.');
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName('replaceNode')}(root.${this.getPlaceholderName(instruction)}, td.${util.getTdMethodName('block')}('${blockName}', ${tdBody}, c, this));\n`;
       code.push(parentTdBody, {fragment, renderer});
@@ -199,7 +198,7 @@ let generatorFns = {
     let bodies = node[1].bodies;
     let paramsHash = this.createParamsHash(params);
     let bodiesHash = this.createBodiesHash(tdBody, bodies, node[1].body);
-    if (state !== STATES.HTML_ATTRIBUTE) {
+    if (!util.inHtmlAttribute(state)) {
       let fragment = `      ${this.createPlaceholder(instruction)};\n`;
       let renderer = `      td.${util.getTdMethodName('helper')}('${key.join('.')}', root.${this.getPlaceholderName(instruction)}, c, ${paramsHash}, ${bodiesHash});\n`;
       code.push(parentTdBody, {fragment, renderer});

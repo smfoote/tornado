@@ -19,11 +19,11 @@ let debuggerExtension = {
   instructions: {
     TORNADO_DEBUGGER: {
       enter(node, ctx, frameStack) {
-        let inner = frameStack.current(),
-            outer = inner;
+        let child = frameStack.current(),
+            parent = child;
         return {
           type: 'insert',
-          options: {key: node[1].key, frameStack: [inner, outer], item: node.stackItem, ctx}
+          options: {key: node[1].key, frameStack: [child, parent], item: node.stackItem, ctx}
         };
       }
     }

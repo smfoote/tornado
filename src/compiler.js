@@ -1,9 +1,9 @@
 'use strict';
 import Context from './compiler/context';
-import escapableRaw from './compiler/extensions/escapableRaw';
 import builtinHelpers from './compiler/extensions/builtinHelpers';
 import htmlEntities from './compiler/extensions/htmlEntities';
 import adjustAttrs from './compiler/extensions/adjustAttrs';
+import setStateChange from './compiler/extensions/setStateChange';
 import buildStackItems from './compiler/extensions/buildStackItem';
 import buildInstructions from './compiler/extensions/buildInstructions';
 import generateJS from './compiler/extensions/generateJS';
@@ -62,6 +62,6 @@ let compiler = {
   }
 };
 
-compiler.useExtensions([builtinHelpers, escapableRaw, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
+compiler.useExtensions([setStateChange, builtinHelpers, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
 
 export default compiler;
