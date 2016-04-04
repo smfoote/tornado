@@ -20,9 +20,9 @@ button.addEventListener('click', function() {
   var t = templateTextArea.value;
   var c = contextTextArea.value;
   var ast = parser.parse(t);
-  astContainer.innerHTML = JSON.stringify(ast, null, 2);
+  astContainer.textContent = JSON.stringify(ast, null, 2);
   var compiled = compiler.compile(ast, 'test');
-  compiledContainer.innerHTML = compiled;
+  compiledContainer.textContent = compiled;
   var tl = eval(compiled);
   var data = {};
   eval('data = ' + c + ';');
