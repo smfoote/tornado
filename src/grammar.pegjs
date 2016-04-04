@@ -20,13 +20,24 @@ nodes
   = (part / plain_text)*
 
 part
-  = element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
+  = escapable_raw_element / element / comment / html_entity / tornado_comment / tornado_body / tornado_partial / tornado_reference
+
+tornado_part
+  = tornado_comment / tornado_body / tornado_partial / tornado_reference / escapable_raw_text
 
 attr_part
   = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / attr_text
 
 single_quote_attr_part
   = tornado_comment / tornado_body / tornado_reference / tornado_partial / html_entity / single_quote_attr_text
+
+escapable_raw_element
+  = e:start_escapable_raw_tag contents:tornado_part* end_escapable_raw_tag {
+  	return ['HTML_ELEMENT', {
+      tag_info: e,
+      tag_contents: contents
+    }];
+  }
 
 element
   = e:start_tag contents:nodes end_tag {
@@ -46,6 +57,11 @@ start_tag
     return {key: k, attributes: a};
   }
 
+start_escapable_raw_tag
+  = langle k:('textarea' / 'title') a:attributes ws* rangle {
+    return {key: k, attributes: a};
+  }
+
 self_closing_tag
   = langle k:key a:attributes ws* "/" rangle {
     return {key: k, attributes: a};
@@ -53,6 +69,9 @@ self_closing_tag
 
 end_tag
   = langleslash key ws* rangle
+
+end_escapable_raw_tag
+  = langleslash ('textarea' / 'title') ws* rangle
 
 key
   = k:[a-zA-Z0-9\-]+ {
@@ -223,6 +242,11 @@ integer "integer"
 
 plain_text
   = b:(!comment !tornado_comment !start_tag !end_tag !self_closing_tag !html_entity !tornado_tag c:. {return c;})+ {
+    return ['PLAIN_TEXT', b.join('').replace(/\n/g, '\\n')];
+  }
+
+escapable_raw_text
+  = b:(!tornado_comment !tornado_body !tornado_reference !tornado_partial !html_entity !end_escapable_raw_tag c:. {return c;})+ {
     return ['PLAIN_TEXT', b.join('').replace(/\n/g, '\\n')];
   }
 
