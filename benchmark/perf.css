@@ -1,0 +1,14 @@
+#tornado-container,
+#dust-container {
+  float: left;
+  margin: 25px;
+  padding: 36px;
+  width: 250px;
+  background: #E8E8E8;
+}
+
+.loading {
+  height: 25px;
+  width: 100%;
+  background: #888;
+}
