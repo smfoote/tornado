@@ -8,9 +8,9 @@
   </head>
   <body>
     <div id="input">
-      <textarea id="template" placeholder="Template goes here"><textarea><div>{?hello}yes{/hello}</div></textarea&gt;</textarea>
+      <textarea id="template" placeholder="Template goes here">&lt;div class="hello {world}">{#hello.world}{.}{/hello.world}&lt;/div></textarea>
       <textarea id="context" placeholder="Context goes here">{
-  hello: ['yes']
+  hello: ['yes', 'no']
 }</textarea>
       <button id="render">Render</button>
     </div>

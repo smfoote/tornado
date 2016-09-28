@@ -11,7 +11,7 @@ textarea {
 #output div {
   border: 1px solid #CCC;
   background-color: #DDD;
-  max-height: 2000px;
+  /*max-height: 2000px;*/
   overflow: hidden;
   transition: max-height 400ms ease;
 }

@@ -21,6 +21,14 @@ grunt.initConfig({
         {expand: true, cwd: 'test/acceptance/', dest: 'test/cacceptance/', ext: '.js', src: '**/*.js'},
         {dest: 'test/testRunner.js', src: 'test/testRunner.es6'}
       ]
+    },
+    dependencyFree: {
+      options: {
+        sourceMap: true
+      },
+      files: [
+        {expand: true, cwd: 'test/dependency-free/', dest: 'test/cdependency-free/', ext: '.js', src: '**/*.js'}
+      ]
     }
   },
   bytesize: {
@@ -43,6 +51,10 @@ grunt.initConfig({
       },
       src: 'benchmark/benchmark.js',
       dest: 'benchmark/bundle.js'
+    },
+    dependencyFree: {
+      src: 'test/cdependency-free/main.js',
+      dest: 'test/dependency-free/bundle.js'
     }
   },
   eslint: {
@@ -85,6 +97,7 @@ grunt.loadNpmTasks('grunt-mocha');
 grunt.registerTask('dist', ['peg', 'eslint', 'babel:dist']);
 grunt.registerTask('test', ['dist', 'babel:acceptance', 'browserify:test', 'mocha']);
 grunt.registerTask('sandbox', ['dist', 'browserify:sandbox']);
+grunt.registerTask('depFree', ['dist', 'babel:dependencyFree', 'browserify:dependencyFree']);
 grunt.registerTask('benchmark', ['dist', 'bytesize']);
 
 grunt.registerTask('default', ['dist', 'browserify']);

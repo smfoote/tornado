@@ -1,6 +1,6 @@
 'use strict';
 import Context from './compiler/context';
-import builtinHelpers from './compiler/extensions/builtinHelpers';
+// import builtinHelpers from './compiler/extensions/builtinHelpers';
 import htmlEntities from './compiler/extensions/htmlEntities';
 import adjustAttrs from './compiler/extensions/adjustAttrs';
 import setStateChange from './compiler/extensions/setStateChange';
@@ -62,6 +62,6 @@ let compiler = {
   }
 };
 
-compiler.useExtensions([setStateChange, builtinHelpers, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
+compiler.useExtensions([setStateChange, htmlEntities, adjustAttrs, buildStackItems, buildInstructions]);
 
 export default compiler;

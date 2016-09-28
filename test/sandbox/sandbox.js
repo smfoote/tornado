@@ -1,6 +1,7 @@
 var parser = require('../../dist/parser'),
     compiler = require('../../dist/compiler'),
     tdDebugger = require('../../dist/compiler/extensions/debugger'),
+    fullPackageGenerator = require('../../dist/compiler/extensions/fullPackageJSGenerator'),
     td = require('../../dist/runtime');
 
 window.td = td;
@@ -14,6 +15,7 @@ var stringContainer = document.querySelector('#output .string');
 
 // Customize compiler
 
+compiler.useCodeGenerator(fullPackageGenerator);
 compiler.useExtension(tdDebugger);
 
 button.addEventListener('click', function() {
